@@ -10,6 +10,6 @@
     "electron": "^27.1.2"
   },
   "scripts": {
-    "start": "electron ."
+    "start": "electron ./src/main.js"
   }
 }
