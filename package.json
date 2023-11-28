@@ -2,14 +2,20 @@
   "name": "txbspi-app",
   "version": "0.1.0",
   "description": "Electron desktop app for efficiently performing bayesian causal inference",
-  "main": "main.js",
+  "main": "./src/main.js",
   "repository": "https://silicontwin@github.com/silicontwin/txbspi-app.git",
   "author": "Nicholas Warren <nicholas.warren@austin.utexas.edu>",
   "license": "UNLICENSED",
   "devDependencies": {
+    "@electron/packager": "^18.0.0",
     "electron": "^27.1.2"
   },
   "scripts": {
-    "start": "electron ./src/main.js"
+    "start": "electron ./src/main.js",
+    "build": "electron-packager . TxBSPI --overwrite --platform=mas --arch=x64 --icon=assets/icon.icns"
+  },
+  "dependencies": {
+    "axios": "^1.6.2",
+    "electron-is-dev": "^2.0.0"
   }
 }
