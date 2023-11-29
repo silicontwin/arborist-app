@@ -14,6 +14,7 @@
 - [ ] Add visualizations export API
 - [ ] Add NLP with input recognition/parsing and scoring
 - [ ] Consider using an uncommon port for the API to avoid conflicts with other apps on the user's machine
+- [ ] Check that the `api` executable is being shut down when quitting the dev app
 
 ---
 
@@ -63,3 +64,4 @@ We use FastAPI to create a REST API that can be called from within the Electron 
 
 # Dev Notes:
 - If you experience `[Errno 48] error while attempting to bind on address ('0.0.0.0', 8000): address already in use` it can be helpful to run `lsof -i :8000` (macOS) to see what process is using that port. You can then kill that process with `kill -9 <PID>` (macOS) to stop it.
+- Electron can only execute JavaScript files, not TypeScript. Therefore, we must compile the TypeScript files to JavaScript before running the app. This is done automatically when running `yarn start` or `yarn build`, and the resulting JavaScript file is stored as `main.js` in the `dist` folder.
