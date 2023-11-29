@@ -1,0 +1,26 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "jsx": "react",
+    "esModuleInterop": true,
+    "target": "es6", // ECMAScript version
+    "module": "commonjs", // Set module code generation to 'commonjs' for Electron compatibility
+    "resolveJsonModule": true, // Allow importing of '.json' modules
+    "moduleResolution": "node", // Resolve modules using Node.js-style resolution
+    "outDir": "./dist", // Redirect output structure to the 'dist' folder
+    "baseUrl": "./", // Base directory to resolve non-relative module names
+    "paths": {
+      // Specify paths for module names (useful for aliases)
+      "@components/*": ["src/components/*"],
+      "@utils/*": ["src/utils/*"]
+    },
+    "noEmitOnError": true, // Do not emit outputs if any errors were reported
+    "sourceMap": true, // Generates corresponding '.map' file for debugging
+    "allowSyntheticDefaultImports": true, // Allow default imports from modules with no default export
+    "experimentalDecorators": true, // Enable experimental support for decorators
+    "skipLibCheck": true, // Skip type checking of all declaration files (*.d.ts)
+    "forceConsistentCasingInFileNames": true // Disallow inconsistently-cased references to the same file
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"] // Exclude these directories from the compilation
+}
