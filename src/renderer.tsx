@@ -1,4 +1,4 @@
-// /src/renderer.js
+// /src/renderer.tsx
 document.addEventListener('DOMContentLoaded', () => {
   const fetchData = () => {
     axios
