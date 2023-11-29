@@ -1,4 +1,4 @@
-// /webpack.config.js
+// /webpack.config.ts
 
 const path = require('path');
 
