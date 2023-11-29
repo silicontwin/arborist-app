@@ -13,6 +13,7 @@
 - [ ] Add visualizations
 - [ ] Add visualizations export API
 - [ ] Add NLP with input recognition/parsing and scoring
+- [ ] Consider using an uncommon port for the API to avoid conflicts with other apps on the user's machine
 
 ---
 
@@ -57,3 +58,8 @@ We use FastAPI to create a REST API that can be called from within the Electron 
     - The packaged python code will be called `api` and will be located in the `dist` folder
     - Move this `api` file to the `resources` folder in the `src` directory in the app repo
   - [ ] `yarn build`: Build the app
+
+---
+
+# Dev Notes:
+- If you experience `[Errno 48] error while attempting to bind on address ('0.0.0.0', 8000): address already in use` it can be helpful to run `lsof -i :8000` (macOS) to see what process is using that port. You can then kill that process with `kill -9 <PID>` (macOS) to stop it.
