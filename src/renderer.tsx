@@ -1,16 +1,26 @@
 // /src/renderer.tsx
+import axios, { AxiosResponse, AxiosError } from 'axios';
+
 document.addEventListener('DOMContentLoaded', () => {
   const fetchData = () => {
     axios
       .get('http://localhost:8000/data')
-      .then((response) => {
-        document.getElementById('api-data').innerText = JSON.stringify(
-          response.data,
-        );
-        document.getElementById('loading').style.display = 'none'; // Hide loading
-        document.getElementById('content').style.display = 'block'; // Show content
+      .then((response: AxiosResponse) => {
+        const apiDataElement = document.getElementById('api-data');
+        const loadingElement = document.getElementById('loading');
+        const contentElement = document.getElementById('content');
+
+        if (apiDataElement) {
+          apiDataElement.innerText = JSON.stringify(response.data);
+        }
+        if (loadingElement) {
+          loadingElement.style.display = 'none'; // Hide loading
+        }
+        if (contentElement) {
+          contentElement.style.display = 'block'; // Show content
+        }
       })
-      .catch((error) => {
+      .catch((error: AxiosError) => {
         if (error.response) {
           // The request was made and the server responded with a status code
           console.error('Error data:', error.response.data);
