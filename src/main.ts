@@ -1,4 +1,4 @@
-// /src/main.js
+// /src/main.ts
 const { app, BrowserWindow } = require('electron');
 const path = require('node:path');
 const isDev = require('electron-is-dev');
