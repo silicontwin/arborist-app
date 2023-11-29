@@ -1,8 +1,8 @@
 
 # Dev Roadmap
 
-- [ ] Add React
-- [ ] Enforce TypeScript in strict mode
+- [x] Add React
+- [x] Enforce TypeScript in strict mode
 - [ ] Remove menu bar
 - [ ] Add custom header
 - [ ] Add IPC communication between React, Electron, and Python
