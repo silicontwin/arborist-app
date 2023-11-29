@@ -1,3 +1,21 @@
+
+# Dev Roadmap
+
+- [ ] Add React
+- [ ] Enforce TypeScript in strict mode
+- [ ] Remove menu bar
+- [ ] Add custom header
+- [ ] Add IPC communication between React, Electron, and Python
+- [ ] Add drag-and-drop SPSS file upload recognition
+- [ ] Add SPSS file parsing and sanity checking
+- [ ] Add causal inference model training to API
+- [ ] Add causal inference model prediction and export API
+- [ ] Add visualizations
+- [ ] Add visualizations export API
+- [ ] Add NLP with input recognition/parsing and scoring
+
+---
+
 # Overview
 This is a cross platform desktop app that enables users to efficiently leverage stochastic tree ensembles (BART/XBART) for supervised learning and causal inference on a local dataset. The resulting predictions can then be exported to their local machine along with a variety of visualizations of the resulting data.
 
