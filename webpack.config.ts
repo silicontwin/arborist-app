@@ -4,12 +4,18 @@ const path = require('path');
 
 module.exports = {
   mode: 'development',
-  entry: './src/renderer.tsx',
+  target: 'electron-main',
+  entry: {
+    main: './src/main.ts',
+    preload: './src/preload.ts',
+    renderer: './src/renderer.tsx',
+  },
   module: {
     rules: [
       {
-        test: /\.tsx?$/,
-        use: 'ts-loader',
+        test: /\.(ts|tsx)$/,
+        include: /src/,
+        use: [{ loader: 'ts-loader' }],
         exclude: /node_modules/,
       },
       {
@@ -35,7 +41,7 @@ module.exports = {
     },
   },
   output: {
-    filename: 'bundle.js',
     path: path.resolve(__dirname, 'dist'),
+    filename: '[name].js', // Outputs main.js, preload.js, renderer.js
   },
 };
