@@ -78,18 +78,6 @@ const createWindow = (): void => {
     },
   );
 
-  serverProcess = execFile(
-    apiPath,
-    (error: Error | null, stdout: string, stderr: string) => {
-      if (error) {
-        console.error('Error starting FastAPI server:', error);
-        return;
-      }
-      console.log(`stdout: ${stdout}`);
-      console.error(`stderr: ${stderr}`);
-    },
-  );
-
   console.log('FastAPI server should be running...');
 
   console.log('Setting up IPC handler for fetch-data');
