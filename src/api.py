@@ -26,8 +26,7 @@ def run_server(port=8000):
         uvicorn.run(app, host="0.0.0.0", port=port)
     except OSError as e:
         if e.errno == errno.EADDRINUSE:
-            print(f"Port {port} is in use. Trying port {port+1}...")
-            run_server(port+1)
+            print(f"Port {port} is in use. Server already running.")
         else:
             raise
 
