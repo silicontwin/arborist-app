@@ -26,12 +26,13 @@
     "webpack-cli": "^5.1.4"
   },
   "scripts": {
-    "start": "tsc && electron ./dist/main.js",
+    "start": "tsc && webpack --mode development && electron ./dist/main.js",
     "build": "webpack --mode production && electron-packager . TxBSPI --overwrite --platform=mas --arch=x64 --icon=assets/icon.icns"
   },
   "dependencies": {
     "axios": "^1.6.2",
     "electron-is-dev": "^2.0.0",
+    "path-browserify": "^1.0.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   }
