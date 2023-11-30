@@ -76,7 +76,40 @@ const createWindow = (): void => {
     },
   );
 
+  serverProcess = execFile(
+    apiPath,
+    (error: Error | null, stdout: string, stderr: string) => {
+      if (error) {
+        console.error('Error starting FastAPI server:', error);
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+    },
+  );
+
   console.log('FastAPI server should be running...');
+
+  console.log('Setting up IPC handler for fetch-data');
+
+  ipcMain.handle('fetch-data', async () => {
+    console.log('IPC fetch-data called');
+    const serverReady = await isServerReady('http://localhost:8000/data');
+    if (!serverReady) {
+      console.error('FastAPI server is not ready');
+      return { error: 'FastAPI server is not ready' };
+    }
+
+    console.log('Fetching data from FastAPI server');
+    try {
+      const response = await axios.get('http://localhost:8000/data');
+      console.log('Data fetched:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching data:', error);
+      return { error: 'Failed to fetch data' };
+    }
+  });
 };
 
 const terminateServer = (): void => {
