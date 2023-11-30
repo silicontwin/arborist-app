@@ -3,9 +3,13 @@
 
 - [x] Add React
 - [x] Enforce TypeScript in strict mode
-- [ ] Remove menu bar
-- [ ] Add custom header
-- [ ] Add IPC communication between React, Electron, and Python
+- [x] Add IPC communication between React, Electron, and Python
+- [x] Remove menu bar
+- [x] Add custom header
+- [ ] Add buttons for maximize, minimize, and close
+- [ ] Identify/resolve issue with multiple api server spin-ups
+- [ ] Add hot reloading
+- [ ] Add Tailwind
 - [ ] Add drag-and-drop SPSS file upload recognition
 - [ ] Add SPSS file parsing and sanity checking
 - [ ] Add causal inference model training to API
