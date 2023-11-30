@@ -4,19 +4,13 @@
 <html>
   <head>
     <meta charset="UTF-8" />
-    <!-- <meta
-      http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src http://localhost:8000;"
-    /> -->
     <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src http://localhost:8000;"
     />
     <link rel="stylesheet" type="text/css" href="styles/global.css" />
     <title>TxBSPI App</title>
-    <script src="renderer.tsx"></script>
   </head>
-
   <body>
     <div>
       <div id="title-bar" style="-webkit-app-region: drag">
