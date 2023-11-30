@@ -1,5 +1,6 @@
 // /src/main.ts
-import { app, BrowserWindow, ipcMain } from 'electron';
+const { app, BrowserWindow, ipcMain } = require('electron');
+// import { app, BrowserWindow, ipcMain } from 'electron';
 import axios from 'axios';
 import path from 'node:path';
 import isDev from 'electron-is-dev';
