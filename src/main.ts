@@ -1,12 +1,14 @@
 // /src/main.ts
-const { app, BrowserWindow, ipcMain } = require('electron');
-// import { app, BrowserWindow, ipcMain } from 'electron';
+
+import { app, BrowserWindow, ipcMain } from 'electron';
 import axios from 'axios';
 import path from 'node:path';
 import isDev from 'electron-is-dev';
 import { execFile, ChildProcess } from 'child_process';
 
-let serverProcess: ChildProcess | null = null;
+let serverProcess: ChildProcess | string | null = null;
+let mainWindow: BrowserWindow | null = null;
+let appInitialized = false;
 
 // Function to check if the server is ready
 const isServerReady = async (
@@ -14,7 +16,9 @@ const isServerReady = async (
   retries: number = 5,
   delay: number = 1000,
 ): Promise<boolean> => {
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // Initial delay
   console.log(`Checking if server is ready at ${url}`);
+
   for (let i = 0; i < retries; i++) {
     try {
       await axios.get(url);
@@ -40,8 +44,38 @@ const isServerReady = async (
   return false; // Server not ready after retries
 };
 
+const startServer = (): void => {
+  if (serverProcess !== null) {
+    console.log('Server already started or starting');
+    return;
+  }
+
+  const apiPath = isDev
+    ? path.join(__dirname, '../src/resources', 'api')
+    : path.join(process.resourcesPath, 'app', 'src', 'resources', 'api');
+
+  console.log('Starting FastAPI server...');
+
+  serverProcess = 'starting';
+
+  serverProcess = execFile(
+    apiPath,
+    (error: Error | null, stdout: string, stderr: string) => {
+      if (error) {
+        console.error('Error starting FastAPI server:', error);
+        serverProcess = null;
+        return;
+      }
+      console.log(`stdout: ${stdout}`);
+      console.error(`stderr: ${stderr}`);
+    },
+  );
+
+  console.log('FastAPI server should be running...');
+};
+
 const createWindow = (): void => {
-  const win = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1600,
     height: 900,
     frame: false,
@@ -53,57 +87,38 @@ const createWindow = (): void => {
   });
 
   const indexPath = isDev
-    ? path.join(__dirname, '../src/index.html') // Path in development
-    : path.join(process.resourcesPath, 'app', 'src', 'index.html'); // Path in production
+    ? path.join(__dirname, '../src/index.html')
+    : path.join(process.resourcesPath, 'app', 'src', 'index.html');
 
-  win.loadFile(indexPath);
-  win.webContents.openDevTools();
+  mainWindow.loadFile(indexPath);
+  // mainWindow.webContents.openDevTools();
 
-  // Start the FastAPI server
-  const apiPath = isDev
-    ? path.join(__dirname, '../src/resources', 'api') // Path in development
-    : path.join(process.resourcesPath, 'app', 'src', 'resources', 'api'); // Path in production
-
-  console.log('Starting FastAPI server...');
-
-  serverProcess = execFile(
-    apiPath,
-    (error: Error | null, stdout: string, stderr: string) => {
-      if (error) {
-        console.error('Error starting FastAPI server:', error);
-        return;
-      }
-      console.log(`stdout: ${stdout}`);
-      console.error(`stderr: ${stderr}`);
-    },
-  );
-
-  console.log('FastAPI server should be running...');
-
-  console.log('Setting up IPC handler for fetch-data');
-
-  ipcMain.handle('fetch-data', async () => {
-    console.log('IPC fetch-data called');
-    const serverReady = await isServerReady('http://localhost:8000/data');
-    if (!serverReady) {
-      console.error('FastAPI server is not ready');
-      return { error: 'FastAPI server is not ready' };
-    }
-
-    console.log('Fetching data from FastAPI server');
-    try {
-      const response = await axios.get('http://localhost:8000/data');
-      console.log('Data fetched:', response.data);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      return { error: 'Failed to fetch data' };
-    }
+  mainWindow.on('closed', () => {
+    mainWindow = null;
   });
 };
 
+ipcMain.handle('fetch-data', async () => {
+  console.log('IPC fetch-data called');
+  const serverReady = await isServerReady('http://localhost:8000/data');
+  if (!serverReady) {
+    console.error('FastAPI server is not ready');
+    return { error: 'FastAPI server is not ready' };
+  }
+
+  console.log('Fetching data from FastAPI server');
+  try {
+    const response = await axios.get('http://localhost:8000/data');
+    console.log('Data fetched:', response.data);
+    return response.data;
+  } catch (error) {
+    console.error('Error fetching data:', error);
+    return { error: 'Failed to fetch data' };
+  }
+});
+
 const terminateServer = (): void => {
-  if (serverProcess) {
+  if (serverProcess && typeof serverProcess !== 'string') {
     console.log('Terminating FastAPI server...');
     serverProcess.kill();
     serverProcess = null;
@@ -118,4 +133,10 @@ app.on('window-all-closed', () => {
 
 app.on('before-quit', terminateServer);
 
-app.on('ready', createWindow);
+app.on('ready', () => {
+  if (!appInitialized) {
+    appInitialized = true;
+    startServer();
+    createWindow();
+  }
+});
