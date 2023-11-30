@@ -1,11 +1,16 @@
 <!-- /src/index.html -->
+
 <!DOCTYPE html>
 <html>
   <head>
     <meta charset="UTF-8" />
-    <meta
+    <!-- <meta
       http-equiv="Content-Security-Policy"
       content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; connect-src http://localhost:8000;"
+    /> -->
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; connect-src http://localhost:8000;"
     />
     <link rel="stylesheet" type="text/css" href="styles/global.css" />
     <title>TxBSPI App</title>
@@ -13,13 +18,26 @@
   </head>
 
   <body>
-    <div id="content" style="display: none">
-      <h1>Hello World!</h1>
-      <div id="api-data"></div>
-    </div>
+    <div>
+      <div id="title-bar" style="-webkit-app-region: drag">
+        <div id="title">TxBSPI App</div>
+        <div id="title-bar-btns">
+          <div id="min-btn" class="title-bar-btn"></div>
+          <div id="max-btn" class="title-bar-btn"></div>
+          <div id="close-btn" class="title-bar-btn"></div>
+        </div>
+      </div>
 
-    <div id="loading" style="display: block">
-      <p>Initializing server . . .</p>
+      <div id="content" style="display: none">
+        <div>
+          <h1>Hello World!</h1>
+          <div id="api-data"></div>
+        </div>
+      </div>
+
+      <div id="loading" style="display: block">
+        <p>Initializing server . . .</p>
+      </div>
     </div>
 
     <script src="../dist/bundle.js"></script>
