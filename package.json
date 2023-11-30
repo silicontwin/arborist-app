@@ -26,8 +26,8 @@
     "webpack-cli": "^5.1.4"
   },
   "scripts": {
-    "start": "tsc && webpack --mode development && electron ./dist/main.js",
-    "build": "webpack --mode production && electron-packager . TxBSPI --overwrite --platform=mas --arch=x64 --icon=assets/icon.icns"
+    "start": "webpack --config webpack.config.ts --mode development && webpack --mode development && electron ./dist/main.js",
+    "build": "webpack --config webpack.config.ts --mode production && webpack --mode production && electron-packager . TxBSPI --overwrite --platform=mas --arch=x64 --icon=assets/icon.icns"
   },
   "dependencies": {
     "axios": "^1.6.2",
