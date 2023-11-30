@@ -15,6 +15,7 @@
 - [ ] Add NLP with input recognition/parsing and scoring
 - [ ] Consider using an uncommon port for the API to avoid conflicts with other apps on the user's machine
 - [ ] Check that the `api` executable is being shut down when quitting the dev app
+- [ ] Create OS-specific versions of the `api` executable named `api-macOS`, `api-windows`, and `api-linux` and include them in the `resources` folder in the `src` directory in the app repo
 
 ---
 
