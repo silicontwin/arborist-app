@@ -17,7 +17,6 @@ const isServerReady = async (
   retries: number = 5,
   delay: number = 1000,
 ): Promise<boolean> => {
-  await new Promise((resolve) => setTimeout(resolve, 2000)); // Initial delay
   console.log(`Checking if server is ready at ${url}`);
 
   for (let i = 0; i < retries; i++) {
