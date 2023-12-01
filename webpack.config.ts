@@ -7,7 +7,7 @@ module.exports = {
   target: 'electron-main',
   // target: 'electron-renderer',
   entry: {
-    main: './src/index.tsx',
+    main: './src/main.tsx',
     preload: './src/preload.ts',
     renderer: './src/renderer.tsx',
   },
