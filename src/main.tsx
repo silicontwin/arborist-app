@@ -5,6 +5,7 @@ import axios from 'axios';
 import path from 'node:path';
 import isDev from 'electron-is-dev';
 import { execFile, ChildProcess } from 'child_process';
+import fs from 'fs';
 
 let serverProcess: ChildProcess | string | null = null;
 let mainWindow: BrowserWindow | null = null;
@@ -53,6 +54,15 @@ const startServer = (): void => {
   const apiPath = isDev
     ? path.join(__dirname, '../src/resources', 'api')
     : path.join(process.resourcesPath, 'app', 'src', 'resources', 'api');
+
+  // Log the apiPath
+  console.log(`API Path: ${apiPath}`);
+
+  // Check if the API exe file exists
+  if (!fs.existsSync(apiPath)) {
+    console.error(`FastAPI executable not found at ${apiPath}`);
+    return;
+  }
 
   console.log('Starting FastAPI server...');
 
