@@ -18,7 +18,7 @@ app.add_middleware(
 
 @app.get("/data")
 def read_data():
-    return {"Hello": "World"}
+    return {"status": "active"}
 
 # Run server with uvicorn (and check for port collisions)
 def run_server(port=8000):
