@@ -1,21 +1,5 @@
 /* /src/styles/global.css */
 
-body {
-  background-color: #ffff;
-  margin: 0;
-  padding: 0;
-}
-
-#title-bar {
-  -webkit-user-select: none;
-  -webkit-app-region: drag;
-  background: #bf5700;
-  color: #fff;
-  padding: 5px 10px;
-  text-align: center;
-  height: 30px;
-}
-
-#title {
-  display: inline-block;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
