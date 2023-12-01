@@ -87,8 +87,8 @@ const createWindow = (): void => {
   });
 
   const indexPath = isDev
-    ? path.join(__dirname, '../src/index.html')
-    : path.join(process.resourcesPath, 'app', 'src', 'index.html');
+    ? path.join(__dirname, '../index.html')
+    : path.join(process.resourcesPath, 'app', 'index.html');
 
   mainWindow.loadFile(indexPath);
   // mainWindow.webContents.openDevTools();
