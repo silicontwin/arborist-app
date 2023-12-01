@@ -1,4 +1,4 @@
-// /src/main.ts
+// /src/main.tsx
 
 import { app, BrowserWindow, ipcMain } from 'electron';
 import axios from 'axios';
