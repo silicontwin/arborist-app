@@ -46,9 +46,9 @@ const Homepage = () => {
         Drag SPSS file here
       </div>
 
-      <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-white rounded-md p-4">
+      {/* <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-white rounded-md p-4">
         <code>{JSON.stringify(data, null, 2)}</code>
-      </pre>
+      </pre> */}
 
       <div className="h-[50px] w-full bg-gray-200 flex flex-row justify-start items-center px-4">
         API Status: {data?.status}
