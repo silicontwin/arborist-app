@@ -7,11 +7,11 @@
 - [x] Remove menu bar
 - [x] Add custom header
 - [x] Add Tailwind
+- [x] Identify/resolve issue with multiple api server spin-ups (this is expected behavior)
+- [x] Add drag-and-drop SPSS file upload recognition
 - [ ] Add buttons for maximize, minimize, and close
 - [ ] Add app icon
-- [ ] Identify/resolve issue with multiple api server spin-ups
 - [ ] Add hot reloading
-- [ ] Add drag-and-drop SPSS file upload recognition
 - [ ] Add SPSS file parsing and sanity checking
 - [ ] Add causal inference model training to API
 - [ ] Add causal inference model prediction and export API
