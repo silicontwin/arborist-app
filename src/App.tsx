@@ -9,12 +9,15 @@ import About from './pages/About';
 const App = () => {
   return (
     <Router>
-      <div className="bg-gray-300 w-screen h-screen">
+      <div className="w-full">
         <Header />
-        <Routes>
-          <Route path="/" element={<Homepage />} />
-          <Route path="/about" element={<About />} />
-        </Routes>
+
+        <div className="bg-gray-100 h-[calc(800px_-_50px)]">
+          <Routes>
+            <Route path="/" element={<Homepage />} />
+            <Route path="/about" element={<About />} />
+          </Routes>
+        </div>
       </div>
     </Router>
   );
