@@ -1,5 +1,5 @@
 // /src/renderer.tsx
-import './styles/global.css';
+import '../public/styles/global.css';
 
 document.addEventListener('DOMContentLoaded', () => {
   window.electron
