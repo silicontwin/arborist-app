@@ -9,6 +9,9 @@ const Homepage = () => {
   const [data, setData] = useState<FetchDataResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isDragOver, setIsDragOver] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [fileSize, setFileSize] = useState<number | null>(null);
 
   useEffect(() => {
     window.electron
@@ -40,10 +43,63 @@ const Homepage = () => {
     );
   }
 
+  // Handle drag over
+  const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragOver(true);
+  };
+
+  // Handle drag leave
+  const handleDragLeave = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+  };
+
+  // Handle file drop
+  const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setIsDragOver(false);
+
+    const files = event.dataTransfer.files;
+    if (files.length) {
+      const file = files[0];
+
+      if (file.name.endsWith('.spss')) {
+        console.log('SPSS file detected:', file.name);
+        setFileName(file.name);
+        setFileSize(file.size);
+        // Handle the SPSS data file
+      } else {
+        console.log('File dropped:', file.name);
+        setFileName(`Unsupported file type: ${file.name}`);
+        setFileSize(null);
+      }
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col justify-between items-start">
-      <div className="w-full h-full p-4 flex flex-col justify-center items-center">
-        Drag SPSS file here
+      <div
+        id="dropZone"
+        className={`w-full h-full p-4 flex flex-col justify-center items-center ${
+          isDragOver ? 'bg-gray-300' : ''
+        }`}
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+      >
+        {fileName ? (
+          fileSize ? (
+            <div>
+              <p>File Name: {fileName}</p>
+              <p>File Size: {fileSize} bytes</p>
+            </div>
+          ) : (
+            <div>{fileName}</div> // Display error message for unsupported file type
+          )
+        ) : (
+          'Drag SPSS file here'
+        )}
       </div>
 
       {/* <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-white rounded-md p-4">
