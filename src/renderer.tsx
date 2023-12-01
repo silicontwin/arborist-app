@@ -1,4 +1,6 @@
 // /src/renderer.tsx
+import './styles/global.css';
+
 document.addEventListener('DOMContentLoaded', () => {
   window.electron
     .fetchData()
