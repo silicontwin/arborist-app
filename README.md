@@ -8,6 +8,7 @@
 - [x] Add custom header
 - [x] Add Tailwind
 - [ ] Add buttons for maximize, minimize, and close
+- [ ] Add app icon
 - [ ] Identify/resolve issue with multiple api server spin-ups
 - [ ] Add hot reloading
 - [ ] Add drag-and-drop SPSS file upload recognition
