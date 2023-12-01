@@ -6,10 +6,10 @@
 - [x] Add IPC communication between React, Electron, and Python
 - [x] Remove menu bar
 - [x] Add custom header
+- [x] Add Tailwind
 - [ ] Add buttons for maximize, minimize, and close
 - [ ] Identify/resolve issue with multiple api server spin-ups
 - [ ] Add hot reloading
-- [ ] Add Tailwind
 - [ ] Add drag-and-drop SPSS file upload recognition
 - [ ] Add SPSS file parsing and sanity checking
 - [ ] Add causal inference model training to API
