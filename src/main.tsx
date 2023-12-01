@@ -76,8 +76,8 @@ const startServer = (): void => {
 
 const createWindow = (): void => {
   mainWindow = new BrowserWindow({
-    width: 1600,
-    height: 900,
+    width: 1400,
+    height: 800,
     frame: false,
     webPreferences: {
       nodeIntegration: false,
