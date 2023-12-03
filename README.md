@@ -9,6 +9,7 @@
 - [x] Add Tailwind
 - [x] Identify/resolve issue with multiple api server spin-ups (this is expected behavior)
 - [x] Add drag-and-drop SPSS file upload recognition
+- [x] Separate webpack.config into `main` and `renderer` configs
 - [ ] Add buttons for maximize, minimize, and close
 - [ ] Add app icon
 - [ ] Add hot reloading
