@@ -1,4 +1,0 @@
-# /src/resources/requirements.txt
-fastapi
-pyinstaller
-uvicorn
