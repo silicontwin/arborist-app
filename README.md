@@ -9,9 +9,9 @@
 - [x] Identify/resolve issue with multiple api server spin-ups (this is expected behavior)
 - [x] Add drag-and-drop SPSS file upload recognition
 - [x] Separate webpack.config into `main` and `renderer` configs
+- [x] Add hot reloading
 - [ ] Add buttons for maximize, minimize, and close
 - [ ] Add app icon
-- [ ] Add hot reloading
 - [ ] Add SPSS file parsing and sanity checking
 - [ ] Add causal inference model training to API
 - [ ] Add causal inference model prediction and export API
