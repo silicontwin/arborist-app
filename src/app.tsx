@@ -7,10 +7,10 @@ import Homepage from './pages/Homepage';
 
 const App = () => (
   <Router>
-    <div className="bg-[#1D1D1D] w-full text-white">
+    <div className="bg-[#1D1D1D] w-full text-white h-screen flex flex-col">
       <Header />
 
-      <div className="h-[calc(800px_-_50px)]">
+      <div className="flex-1 overflow-auto">
         <Routes>
           <Route path="/" element={<Homepage />} />
           <Route path="/about" element={<About />} />
