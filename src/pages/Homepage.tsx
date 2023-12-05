@@ -106,8 +106,11 @@ const Homepage = () => {
         <code>{JSON.stringify(data, null, 2)}</code>
       </pre> */}
 
-      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4">
-        API Status: {data?.status || 'Not connected'}
+      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-1">
+        <div>API Status:</div>
+        {(data?.status && <div className="text-[#bf5700]">active</div>) || (
+          <div className="text-gray-300">offline</div>
+        )}
       </div>
     </div>
   );
