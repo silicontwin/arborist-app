@@ -108,10 +108,21 @@ const Homepage = () => {
             <div>{fileName}</div> // Display error message for unsupported file type
           )
         ) : (
-          <div className="flex flex-col justify-center items-center w-full">
+          <div className="flex flex-col justify-center items-center w-full space-y-4">
             <div className="text-xl">Drag your local dataset file here</div>
-            <div className="text-white/30">
-              Supported file types: .spss, .sav, .csv
+            <div className="text-white/30 flex flex-row justify-start items-center space-x-2">
+              <div>Supported file types:</div>
+              <ul className="flex flex-row justify-start items-center space-x-2">
+                <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
+                  .spss
+                </li>
+                <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
+                  .sav
+                </li>
+                <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
+                  .csv
+                </li>
+              </ul>
             </div>
           </div>
         )}
