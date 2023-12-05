@@ -14,10 +14,10 @@ const Header = () => {
   return (
     <div
       style={dragStyle}
-      className="h-[50px] text-white/30 text-sm flex flex-row justify-between uppercase font-semibold bg-[#242424] w-full px-5"
+      className="h-[50px] text-white/70 text-sm flex flex-row justify-between uppercase font-semibold bg-[#242424] w-full px-5"
     >
       <div className="h-full flex flex-col justify-center items-center">
-        TxBSPI App
+        Arborist
       </div>
 
       <div className="h-full flex flex-row justify-start items-center space-x-4">

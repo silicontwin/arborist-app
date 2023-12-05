@@ -1,8 +1,8 @@
 {
-  "name": "txbspi-app",
-  "productName": "txbspi-app",
+  "name": "arborist",
+  "productName": "arborist",
   "version": "0.1.0",
-  "description": "Electron desktop app for efficiently performing bayesian causal inference",
+  "description": "Electron desktop app for efficiently performing bayesian causal inference using tree-based models.",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
