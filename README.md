@@ -11,6 +11,7 @@
 - [x] Add custom header
 - [x] Add Tailwind
 - [x] Identify/resolve issue with multiple api server spin-ups (this is expected behavior)
+- [x] Check that the `api` executable is being shut down when quitting the dev app
 - [x] Add drag-and-drop SPSS file upload recognition
 - [x] Separate webpack.config into `main` and `renderer` configs
 - [x] Add hot reloading
@@ -25,7 +26,6 @@
 - [ ] Add visualizations export API
 - [ ] Add NLP with input recognition/parsing and scoring
 - [ ] Consider using an uncommon port for the API to avoid conflicts with other apps on the user's machine
-- [ ] Check that the `api` executable is being shut down when quitting the dev app
 - [ ] Create OS-specific versions of the `api` executable named `api-macOS`, `api-windows`, and `api-linux` and include them in the `api` folder in the `src` directory in the app repo
 
 ---
