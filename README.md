@@ -21,7 +21,7 @@
 - [ ] Add NLP with input recognition/parsing and scoring
 - [ ] Consider using an uncommon port for the API to avoid conflicts with other apps on the user's machine
 - [ ] Check that the `api` executable is being shut down when quitting the dev app
-- [ ] Create OS-specific versions of the `api` executable named `api-macOS`, `api-windows`, and `api-linux` and include them in the `resources` folder in the `src` directory in the app repo
+- [ ] Create OS-specific versions of the `api` executable named `api-macOS`, `api-windows`, and `api-linux` and include them in the `api` folder in the `src` directory in the app repo
 
 ---
 
@@ -56,7 +56,7 @@ We use FastAPI to create a REST API that can be called from within the Electron 
 - [ ] Update the version number in `package.json`
 - [ ] Package the Python API code:
   - [ ] Navigate to a directory where you want to create a virtual environment
-  - [ ] Copy the `requirements.txt` file from the `src/resources` folder in this repo to the directory where the venv was created
+  - [ ] Copy the `requirements.txt` file from the `src/api` folder in this repo to the directory where the venv was created
   - [ ] `python3 -m venv venv`: Create a virtual environment on your local machine
   - [ ] `source venv/bin/activate`: Activate the virtual environment
   - [ ] `pip install -r requirements.txt`: Install the dependencies listed in the `requirements.txt` file
@@ -64,7 +64,7 @@ We use FastAPI to create a REST API that can be called from within the Electron 
     - The `<PATH_TO_PYTHON_LIBRARIES_IN_VENV>` will be something like `venv/lib/pythonX.X/site-packages`
     - The `<PATH_TO_SRC_FOLDER_IN_APP_REPO>` is simply the path to the `src` folder in this repo
     - The packaged python code will be called `api` and will be located in the `dist` folder
-    - Move this `api` file to the `resources` folder in the `src` directory in the app repo
+    - Move this `api` file to the `api` folder in the `src` directory in the app repo
   - [ ] `yarn build`: Build the app
 
 ---
