@@ -10,11 +10,12 @@
 - [x] Add drag-and-drop SPSS file upload recognition
 - [x] Separate webpack.config into `main` and `renderer` configs
 - [x] Add hot reloading
+- [x] Add app icon
 - [ ] Add buttons for maximize, minimize, and close
-- [ ] Add app icon
 - [ ] Add SPSS file parsing and sanity checking
 - [ ] Add causal inference model training to API
 - [ ] Add causal inference model prediction and export API
+- [ ] Add GitHub page for download the app for each OS
 - [ ] Add visualizations
 - [ ] Add visualizations export API
 - [ ] Add NLP with input recognition/parsing and scoring
