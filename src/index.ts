@@ -19,25 +19,25 @@ const isServerReady = async (
   retries: number = 10,
   delay: number = 1000,
 ): Promise<boolean> => {
-  console.log(`Checking if server is ready at ${url}`);
+  // console.log(`Checking if server is ready at ${url}`);
 
   for (let i = 0; i < retries; i++) {
     try {
       await axios.get(url);
-      console.log('Server is ready!');
+      // console.log('Server is ready!');
       return true; // Server responded successfully
     } catch (error) {
       // Type guard to check if error is an instance of Error
       if (error instanceof Error) {
-        console.log(
-          `Attempt ${i + 1}: Server not ready, retrying in ${delay}ms...`,
-          error.message,
-        );
+        // console.log(
+        //   `Attempt ${i + 1}: Server not ready, retrying in ${delay}ms...`,
+        //   error.message,
+        // );
       } else {
         // Handle cases where error is not an Error instance
-        console.log(
-          `Attempt ${i + 1}: Server not ready, retrying in ${delay}ms...`,
-        );
+        // console.log(
+        //   `Attempt ${i + 1}: Server not ready, retrying in ${delay}ms...`,
+        // );
       }
       await new Promise((resolve) => setTimeout(resolve, delay)); // Wait before the next retry
     }
@@ -65,7 +65,7 @@ const startServer = (): void => {
     return;
   }
 
-  console.log('Starting FastAPI server...');
+  // console.log('Starting FastAPI server...');
 
   serverProcess = 'starting';
 
@@ -82,7 +82,7 @@ const startServer = (): void => {
     },
   );
 
-  console.log('FastAPI server should be running...');
+  // console.log('FastAPI server should be running...');
 };
 
 // -----------------------------------------------------------------------------
@@ -115,20 +115,20 @@ const createWindow = (): void => {
 // -----------------------------------------------------------------------------
 
 ipcMain.handle('fetch-data', async () => {
-  console.log('IPC fetch-data called');
+  // console.log('IPC fetch-data called');
   const serverReady = await isServerReady('http://0.0.0.0:8000/data'); // https://localhost:8000/data doesn't work
   if (!serverReady) {
     console.error('FastAPI server is not ready');
     return { error: 'FastAPI server is not ready' };
   }
 
-  console.log('Fetching data from FastAPI server');
+  // console.log('Fetching data from FastAPI server');
   try {
     const response = await axios.get('http://0.0.0.0:8000/data'); // https://localhost:8000/data doesn't work
-    console.log('Data fetched:', response.data);
+    // console.log('Data fetched:', response.data);
     return response.data;
   } catch (error) {
-    console.error('Error fetching data:', error);
+    // console.error('Error fetching data:', error);
     return { error: 'Failed to fetch data' };
   }
 });
