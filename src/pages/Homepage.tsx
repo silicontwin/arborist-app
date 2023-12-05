@@ -98,7 +98,12 @@ const Homepage = () => {
             <div>{fileName}</div> // Display error message for unsupported file type
           )
         ) : (
-          'Drag SPSS file here'
+          <div className="flex flex-col justify-center items-center w-full">
+            <div className="text-xl">Drag your local dataset file here</div>
+            <div className="text-white/30">
+              Supported file types: .spss, .sav, .csv
+            </div>
+          </div>
         )}
       </div>
 
