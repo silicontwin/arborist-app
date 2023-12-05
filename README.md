@@ -60,11 +60,11 @@ We use FastAPI to create a REST API that can be called from within the Electron 
   - [ ] `python3 -m venv venv`: Create a virtual environment on your local machine
   - [ ] `source venv/bin/activate`: Activate the virtual environment
   - [ ] `pip install -r requirements.txt`: Install the dependencies listed in the `requirements.txt` file
-  - [ ] `pyinstaller --onefile --add-data "<PATH_TO_PYTHON_LIBRARIES_IN_VENV>:./lib" <PATH_TO_SRC_FOLDER_IN_APP_REPO>/api.py`: Package the Python code
+  - [ ] `pyinstaller --onefile --add-data "<PATH_TO_PYTHON_LIBRARIES_IN_VENV>:./lib" <PATH_TO_SRC_FOLDER_IN_APP_REPO>/main.py`: Package the Python code
     - The `<PATH_TO_PYTHON_LIBRARIES_IN_VENV>` will be something like `venv/lib/pythonX.X/site-packages`
     - The `<PATH_TO_SRC_FOLDER_IN_APP_REPO>` is simply the path to the `src` folder in this repo
-    - The packaged python code will be called `api` and will be located in the `dist` folder
-    - Move this `api` file to the `api` folder in the `src` directory in the app repo
+    - The packaged python code will be called `main` and will be located in the `dist` folder
+    - Move this `main` file to the `api` folder in the `src` directory in the app repo
   - [ ] `yarn build`: Build the app
 
 ---
