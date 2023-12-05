@@ -72,7 +72,7 @@ const Homepage = () => {
         )}
       </div>
 
-      {/* <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-white rounded-md p-4">
+      {/* <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-[#242424] rounded-md p-4">
         <code>{JSON.stringify(data, null, 2)}</code>
       </pre> */}
 
