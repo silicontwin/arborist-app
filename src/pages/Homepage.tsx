@@ -63,16 +63,26 @@ const Homepage = () => {
     const files = event.dataTransfer.files;
     if (files.length) {
       const file = files[0];
+      const fileExtension = file.name.split('.').pop();
 
-      if (file.name.endsWith('.spss')) {
-        console.log('SPSS file detected:', file.name);
-        setFileName(file.name);
-        setFileSize(file.size);
-        // Handle the SPSS data file
-      } else {
-        console.log('File dropped:', file.name);
-        setFileName(`Unsupported file type: ${file.name}`);
-        setFileSize(null);
+      switch (fileExtension) {
+        case 'spss':
+        case 'sav':
+          console.log(`SPSS/Sav file detected: ${file.name}`);
+          setFileName(file.name);
+          setFileSize(file.size);
+          // Handle the SPSS/Sav data file
+          break;
+        case 'csv':
+          console.log(`CSV file detected: ${file.name}`);
+          setFileName(file.name);
+          setFileSize(file.size);
+          // Handle the CSV data file
+          break;
+        default:
+          console.log(`Unsupported file type: ${file.name}`);
+          setFileName(`Unsupported file type: ${file.name}`);
+          setFileSize(null);
       }
     }
   };
