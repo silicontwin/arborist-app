@@ -16,7 +16,7 @@ let serverProcess: ChildProcess | string | null = null;
 // Function to check if the server is ready
 const isServerReady = async (
   url: string,
-  retries: number = 10,
+  retries: number = 30,
   delay: number = 1000,
 ): Promise<boolean> => {
   // console.log(`Checking if server is ready at ${url}`);
