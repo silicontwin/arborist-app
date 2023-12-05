@@ -1,6 +1,6 @@
 {
   "name": "arborist",
-  "productName": "arborist",
+  "productName": "Arborist",
   "version": "0.1.0",
   "description": "Electron desktop app for efficiently performing bayesian causal inference using tree-based models.",
   "main": ".webpack/main",
