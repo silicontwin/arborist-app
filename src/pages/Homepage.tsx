@@ -13,6 +13,36 @@ const Homepage = () => {
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
 
+  useEffect(() => {
+    window.electron
+      .fetchData()
+      .then((fetchedData: FetchDataResponse) => {
+        setData(fetchedData);
+        setLoading(false);
+      })
+      .catch((fetchError) => {
+        console.error('Error in fetchData:', fetchError);
+        setError('Failed to fetch data');
+        setLoading(false);
+      });
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="w-full h-full flex flex-col justify-center items-center font-bold">
+        <div>Initializing Analytics Engine . . .</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="w-full h-full flex flex-col justify-center items-center">
+        <div>Error: {error}</div>
+      </div>
+    );
+  }
+
   // Handle drag over
   const handleDragOver = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
