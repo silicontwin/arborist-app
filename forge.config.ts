@@ -11,6 +11,7 @@ import { rendererConfig } from './webpack.renderer.config';
 
 const config: ForgeConfig = {
   packagerConfig: {
+    icon: './src/images/icons/icon',
     asar: true,
     extraResource: ['./src/resources/api'],
   },
