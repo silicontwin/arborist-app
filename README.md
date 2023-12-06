@@ -20,7 +20,9 @@
 - [ ] Add SPSS file parsing and sanity checking
 - [ ] Add causal inference model training to API
 - [ ] Add causal inference model prediction and export API
+- [ ] Ensure that spinning up th main exe is non-blocking (add to background) when loading the app
 - [ ] Upload the large `main` API exe file to GitHub releases
+- [ ] Add a GitHub action to automatically create a new release (and upload the main binary)
 - [ ] Add GitHub page for download the app for each OS
 - [ ] Add visualizations
 - [ ] Add visualizations export API
