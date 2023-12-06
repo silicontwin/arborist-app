@@ -132,9 +132,15 @@ const Homepage = () => {
       >
         {fileName ? (
           fileSize ? (
-            <div>
-              <p>File Name: {fileName}</p>
-              <p>File Size: {fileSize} bytes</p>
+            <div className="flex flex-col justify-start items-center space-y-4">
+              <div>
+                <p>File Name: {fileName}</p>
+                <p>File Size: {fileSize} bytes</p>
+              </div>
+
+              <button className="bg-red-600 text-white px-3 py-1.5 rounded-md">
+                Analyze
+              </button>
             </div>
           ) : (
             <div>{fileName}</div> // Display error message for unsupported file type
