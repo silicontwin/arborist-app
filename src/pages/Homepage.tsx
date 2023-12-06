@@ -15,11 +15,14 @@ const Homepage = () => {
   const [loadingTime, setLoadingTime] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const [fileContent, setFileContent] = useState<File | null>(null); // Store the file
+  const [uploadedData, setUploadedData] = useState(null); // State to store uploaded data
 
   const steps = [
     'Loading Python . . .',
-    'Starting server . . .',
+    'Starting server process . . .',
+    'Waiting for application startup . . .',
     'Checking API status . . .',
+    'Application startup complete . . .',
   ];
 
   useEffect(() => {
@@ -29,7 +32,7 @@ const Homepage = () => {
 
     const stepTimer = setInterval(() => {
       setCurrentStep((prev) => (prev + 1) % steps.length);
-    }, 4000);
+    }, 3000);
 
     window.electron
       .fetchData()
