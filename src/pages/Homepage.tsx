@@ -203,6 +203,33 @@ const Homepage = () => {
         )}
       </div>
 
+      {/* {uploadedData && (
+        <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-[#242424] rounded-md p-4">
+          <code>{JSON.stringify(uploadedData, null, 2)}</code>
+        </pre>
+      )} */}
+
+      {uploadedData &&
+        uploadedData.uploadedData &&
+        uploadedData.uploadedData.split('\n').map((line, index) => {
+          const parts = line.split(',');
+
+          return (
+            <div className="w-full">
+              <ul
+                key={index}
+                className="grid grid-flow-col auto-cols-fr w-full border-b border-b-white/10 p-1"
+              >
+                {parts.map((part, partIndex) => (
+                  <li key={partIndex} className="text-left">
+                    {part}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+
       {/* <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-[#242424] rounded-md p-4">
         <code>{JSON.stringify(data, null, 2)}</code>
       </pre> */}
