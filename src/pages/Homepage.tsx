@@ -92,14 +92,11 @@ const Homepage = () => {
   };
 
   // Upload the file
-  const uploadFile = async () => {
-    if (!fileContent) {
-      alert('No file selected');
-      return;
-    }
-
+  const uploadFile = async (file: File) => {
     const formData = new FormData();
-    formData.append('file', fileContent);
+    formData.append('file', file);
+
+    // console.log(`File Name: ${file.name}, File Type: ${file.type}`);
 
     try {
       const response = await fetch('http://localhost:8000/uploadfile/', {
@@ -113,7 +110,7 @@ const Homepage = () => {
 
       const result = await response.json();
       console.log('Uploaded data:', result);
-      // Process the entire data here
+      setUploadedData(result); // Update state with uploaded data
     } catch (error) {
       console.error('Error in uploading file:', error);
       alert(error.message);
@@ -144,6 +141,12 @@ const Homepage = () => {
           setFileSize(file.size);
           setFileContent(file); // Store the CSV data file
           break;
+        case 'txt':
+          console.log(`CSV file detected: ${file.name}`);
+          setFileName(file.name);
+          setFileSize(file.size);
+          setFileContent(file); // Store the TXT data file
+          break;
         default:
           console.log(`Unsupported file type: ${file.name}`);
           setFileName(`Unsupported file type: ${file.name}`);
@@ -151,6 +154,8 @@ const Homepage = () => {
           setFileContent(null); // Clear the file content for unsupported types
       }
     }
+
+    uploadFile(files[0]);
   };
 
   return (
@@ -173,7 +178,7 @@ const Homepage = () => {
               </div>
 
               <button
-                onClick={uploadFile}
+                // onClick={uploadFile}
                 className="bg-red-600 text-white px-3 py-1.5 rounded-md"
               >
                 Analyze
