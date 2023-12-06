@@ -54,7 +54,7 @@ const startServer = (): void => {
 
   const apiPath = isDev
     ? path.join(__dirname, '../../src/api', 'main')
-    : path.join(process.apiPath, 'api');
+    : path.join(process.resourcesPath, 'main');
 
   // Log the apiPath
   // console.log(`API Path: ${apiPath}`);
