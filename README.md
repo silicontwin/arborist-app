@@ -10,16 +10,18 @@
 - [x] Remove menu bar
 - [x] Add custom header
 - [x] Add Tailwind
-- [x] Identify/resolve issue with multiple api server spin-ups (this is expected behavior)
+- [x] Identify/resolve issue with multiple API server spin-ups (this is expected behavior)
 - [x] Check that the `api` executable is being shut down when quitting the dev app
 - [x] Add drag-and-drop SPSS file upload recognition
 - [x] Separate webpack.config into `main` and `renderer` configs
 - [x] Add hot reloading
 - [x] Add app icon
-- [ ] Add buttons for maximize, minimize, and close
+- [ ] Add CSV file parsing and sanity checking
 - [ ] Add SPSS file parsing and sanity checking
+- [ ] Add workspace directory with file listing
 - [ ] Add causal inference model training to API
 - [ ] Add causal inference model prediction and export API
+- [ ] Add buttons for maximize, minimize, and close
 - [ ] Ensure that spinning up th main exe is non-blocking (add to background) when loading the app
 - [ ] Upload the large `main` API exe file to GitHub releases
 - [ ] Add a GitHub action to automatically create a new release (and upload the main binary)
