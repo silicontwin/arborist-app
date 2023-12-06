@@ -14,6 +14,7 @@ const Homepage = () => {
   const [fileSize, setFileSize] = useState<number | null>(null);
   const [loadingTime, setLoadingTime] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
+  const [fileContent, setFileContent] = useState<File | null>(null); // Store the file
 
   const steps = [
     'Loading Python . . .',
@@ -87,6 +88,35 @@ const Homepage = () => {
     setIsDragOver(false);
   };
 
+  // Upload the file
+  const uploadFile = async () => {
+    if (!fileContent) {
+      alert('No file selected');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', fileContent);
+
+    try {
+      const response = await fetch('http://localhost:8000/uploadfile/', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        throw new Error('File upload failed');
+      }
+
+      const result = await response.json();
+      console.log('Uploaded data:', result);
+      // Process the entire data here
+    } catch (error) {
+      console.error('Error in uploading file:', error);
+      alert(error.message);
+    }
+  };
+
   // Handle file drop
   const handleDrop = (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -95,7 +125,7 @@ const Homepage = () => {
     const files = event.dataTransfer.files;
     if (files.length) {
       const file = files[0];
-      const fileExtension = file.name.split('.').pop();
+      const fileExtension = file.name.split('.').pop()?.toLowerCase();
 
       switch (fileExtension) {
         case 'spss':
@@ -103,18 +133,19 @@ const Homepage = () => {
           console.log(`SPSS/Sav file detected: ${file.name}`);
           setFileName(file.name);
           setFileSize(file.size);
-          // Handle the SPSS/Sav data file
+          setFileContent(file); // Store the SPSS/Sav data file
           break;
         case 'csv':
           console.log(`CSV file detected: ${file.name}`);
           setFileName(file.name);
           setFileSize(file.size);
-          // Handle the CSV data file
+          setFileContent(file); // Store the CSV data file
           break;
         default:
           console.log(`Unsupported file type: ${file.name}`);
           setFileName(`Unsupported file type: ${file.name}`);
           setFileSize(null);
+          setFileContent(null); // Clear the file content for unsupported types
       }
     }
   };
@@ -138,7 +169,10 @@ const Homepage = () => {
                 <p>File Size: {fileSize} bytes</p>
               </div>
 
-              <button className="bg-red-600 text-white px-3 py-1.5 rounded-md">
+              <button
+                onClick={uploadFile}
+                className="bg-red-600 text-white px-3 py-1.5 rounded-md"
+              >
                 Analyze
               </button>
             </div>
