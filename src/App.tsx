@@ -4,6 +4,7 @@ import * as ReactDOM from 'react-dom/client';
 import Header from './components/Header';
 import About from './pages/About';
 import Homepage from './pages/Homepage';
+import Workspace from './pages/Workspace';
 
 const App = () => (
   <Router>
@@ -14,6 +15,7 @@ const App = () => (
         <Routes>
           <Route path="/" element={<Homepage />} />
           <Route path="/about" element={<About />} />
+          <Route path="/workspace" element={<Workspace />} />
         </Routes>
       </div>
     </div>
