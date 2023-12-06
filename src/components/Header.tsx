@@ -25,8 +25,13 @@ const Header = () => {
         <Link to="/" style={noDragStyle}>
           Home
         </Link>
+
         <Link to="/about" style={noDragStyle}>
           About
+        </Link>
+
+        <Link to="/workspace" style={noDragStyle}>
+          Workspace
         </Link>
       </div>
     </div>
