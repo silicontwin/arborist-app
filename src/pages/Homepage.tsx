@@ -160,21 +160,52 @@ const Homepage = () => {
 
   return (
     <div className="w-full h-full flex flex-col justify-between items-start">
-      <div
-        id="dropZone"
-        className={`w-full h-full p-4 flex flex-col justify-center items-center ${
-          isDragOver ? 'bg-[#242424]' : ''
-        }`}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-      >
-        {fileName ? (
-          fileSize ? (
-            <div className="flex flex-col justify-start items-center space-y-4">
+      {!fileName && (
+        <div
+          id="dropZone"
+          className={`w-full h-full p-4 flex flex-col justify-center items-center ${
+            isDragOver ? 'bg-[#242424]' : ''
+          }`}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+        >
+          {!fileName && (
+            <div className="flex flex-col justify-center items-center w-full space-y-4">
+              <div className="text-xl">Drag your local dataset file here</div>
+              <div className="text-white/30 flex flex-row justify-start items-center space-x-2">
+                <div>Supported file types:</div>
+                <ul className="flex flex-row justify-start items-center space-x-2">
+                  <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
+                    .spss
+                  </li>
+                  <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
+                    .sav
+                  </li>
+                  <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
+                    .csv
+                  </li>
+                </ul>
+              </div>
+            </div>
+          )}
+
+          {!fileName && !fileSize && (
+            <div>{fileName}</div> // Display error message for unsupported file typ
+          )}
+
+          {/* <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-[#242424] rounded-md p-4">
+        <code>{JSON.stringify(data, null, 2)}</code>
+      </pre> */}
+        </div>
+      )}
+
+      {fileName && fileSize && uploadedData && (
+        <div className="w-full h-full px-4">
+          {fileName && fileSize && (
+            <div className="flex flex-row justify-between items-center space-y-4 w-full">
               <div>
-                <p>File Name: {fileName}</p>
-                <p>File Size: {fileSize} bytes</p>
+                {fileName} ({fileSize} bytes)
               </div>
 
               <button
@@ -184,60 +215,30 @@ const Homepage = () => {
                 Analyze
               </button>
             </div>
-          ) : (
-            <div>{fileName}</div> // Display error message for unsupported file type
-          )
-        ) : (
-          <div className="flex flex-col justify-center items-center w-full space-y-4">
-            <div className="text-xl">Drag your local dataset file here</div>
-            <div className="text-white/30 flex flex-row justify-start items-center space-x-2">
-              <div>Supported file types:</div>
-              <ul className="flex flex-row justify-start items-center space-x-2">
-                <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
-                  .spss
-                </li>
-                <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
-                  .sav
-                </li>
-                <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
-                  .csv
-                </li>
-              </ul>
-            </div>
-          </div>
-        )}
-      </div>
+          )}
 
-      {/* {uploadedData && (
-        <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-[#242424] rounded-md p-4">
-          <code>{JSON.stringify(uploadedData, null, 2)}</code>
-        </pre>
-      )} */}
+          {uploadedData &&
+            uploadedData.uploadedData &&
+            uploadedData.uploadedData.split('\n').map((line, index) => {
+              const parts = line.split(',');
 
-      {uploadedData &&
-        uploadedData.uploadedData &&
-        uploadedData.uploadedData.split('\n').map((line, index) => {
-          const parts = line.split(',');
-
-          return (
-            <div className="w-full">
-              <ul
-                key={index}
-                className="grid grid-flow-col auto-cols-fr w-full border-b border-b-white/10 p-1"
-              >
-                {parts.map((part, partIndex) => (
-                  <li key={partIndex} className="text-left">
-                    {part}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-
-      {/* <pre className="w-full overflow-x-auto whitespace-pre-wrap text-left text-xs border bg-[#242424] rounded-md p-4">
-        <code>{JSON.stringify(data, null, 2)}</code>
-      </pre> */}
+              return (
+                <div className="w-full">
+                  <ul
+                    key={index}
+                    className="grid grid-flow-col auto-cols-fr w-full border-b border-b-white/10 p-1"
+                  >
+                    {parts.map((part, partIndex) => (
+                      <li key={partIndex} className="text-left">
+                        {part}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              );
+            })}
+        </div>
+      )}
 
       <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-1">
         <div>API:</div>
