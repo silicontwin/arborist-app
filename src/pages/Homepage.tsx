@@ -201,9 +201,9 @@ const Homepage = () => {
       )}
 
       {fileName && fileSize && uploadedData && (
-        <div className="w-full h-full px-4">
+        <div className="w-full h-full p-4 flex flex-col justify-start items-start space-y-4">
           {fileName && fileSize && (
-            <div className="flex flex-row justify-between items-center space-y-4 w-full">
+            <div className="flex flex-row justify-between items-center w-full">
               <div>
                 {fileName} ({fileSize} bytes)
               </div>
@@ -217,16 +217,19 @@ const Homepage = () => {
             </div>
           )}
 
-          {uploadedData &&
-            uploadedData.uploadedData &&
-            uploadedData.uploadedData.split('\n').map((line, index) => {
-              const parts = line.split(',');
+          <div className="w-full">
+            {uploadedData &&
+              uploadedData.uploadedData &&
+              uploadedData.uploadedData.split('\n').map((line, index) => {
+                const parts = line.split(',');
 
-              return (
-                <div className="w-full">
+                // Determine the background class based on row index
+                const bgClass = index % 2 === 0 && 'bg-[#242424]/40'; // Adjust colors as needed
+
+                return (
                   <ul
                     key={index}
-                    className="grid grid-flow-col auto-cols-fr w-full border-b border-b-white/10 p-1"
+                    className={`w-full ${bgClass} grid grid-flow-col auto-cols-fr w-full border-b border-b-white/10 p-1.5`}
                   >
                     {parts.map((part, partIndex) => (
                       <li key={partIndex} className="text-left">
@@ -234,9 +237,9 @@ const Homepage = () => {
                       </li>
                     ))}
                   </ul>
-                </div>
-              );
-            })}
+                );
+              })}
+          </div>
         </div>
       )}
 
