@@ -54,7 +54,7 @@ const Homepage = () => {
   if (loading) {
     return (
       <div className="w-full h-full flex flex-col justify-center items-center">
-        <div className="w-[200px] flex flex-col justify-start items-start space-y-2">
+        <div className="w-[260px] flex flex-col justify-start items-start space-y-2">
           <div className="font-bold">
             Initializing Arborist: {loadingTime} sec
           </div>
