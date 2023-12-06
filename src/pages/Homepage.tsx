@@ -12,25 +12,57 @@ const Homepage = () => {
   const [isDragOver, setIsDragOver] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
   const [fileSize, setFileSize] = useState<number | null>(null);
+  const [loadingTime, setLoadingTime] = useState(0);
+  const [currentStep, setCurrentStep] = useState(0);
+
+  const steps = [
+    'Loading Python . . .',
+    'Starting server . . .',
+    'Checking API status . . .',
+  ];
 
   useEffect(() => {
+    const timer = setInterval(() => {
+      setLoadingTime((prev) => prev + 1);
+    }, 1000);
+
+    const stepTimer = setInterval(() => {
+      setCurrentStep((prev) => (prev + 1) % steps.length);
+    }, 4000);
+
     window.electron
       .fetchData()
       .then((fetchedData: FetchDataResponse) => {
         setData(fetchedData);
         setLoading(false);
+        clearInterval(timer);
+        clearInterval(stepTimer);
       })
       .catch((fetchError) => {
         console.error('Error in fetchData:', fetchError);
         setError('Failed to fetch data');
         setLoading(false);
+        clearInterval(timer);
+        clearInterval(stepTimer);
       });
-  }, []);
 
+    return () => {
+      clearInterval(timer);
+      clearInterval(stepTimer);
+    };
+  }, []);
   if (loading) {
     return (
-      <div className="w-full h-full flex flex-col justify-center items-center font-bold">
-        <div>Initializing Analytics Engine . . .</div>
+      <div className="w-full h-full flex flex-col justify-center items-center">
+        <div className="w-auto flex flex-col justify-start items-start space-y-2">
+          <div className="font-bold">
+            Initializing Arborist: {loadingTime} sec
+          </div>
+
+          <ul className="list-inside text-white/30">
+            <ol>{steps[currentStep]}</ol>
+          </ul>
+        </div>
       </div>
     );
   }
