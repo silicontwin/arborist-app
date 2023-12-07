@@ -94,3 +94,8 @@ out/
 # FastAPI binary file (needs to be hosted via GitHub releases)
 src/api/
 
+# Test data
+*.spss
+*.sav
+*.csv
+
