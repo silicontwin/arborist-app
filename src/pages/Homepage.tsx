@@ -179,6 +179,27 @@ const Homepage = () => {
 
   // ---------------------------------------------------------------------------
 
+  // Prepend predictions to data
+  const prependPredictionsToData = (dataString: string, predictions: any) => {
+    const predictionValues = predictions.predictions.map((p: number[]) => p[0]);
+
+    // Trim the dataString to remove any trailing newlines or whitespace
+    const trimmedDataString = dataString.trim();
+
+    const observations = trimmedDataString.split('\n');
+    const headers = 'predictions,' + observations[0]; // Prepending the 'predictions' header
+
+    const observationRows = observations.slice(1).map((observation, index) => {
+      const prediction =
+        predictionValues[index] !== undefined
+          ? predictionValues[index].toString()
+          : 'N/A';
+      return `${prediction},${observation}`; // Prepending the prediction to each observation
+    });
+
+    return [headers, ...observationRows].join('\n');
+  };
+
   const analyzeData = async () => {
     if (!uploadedData?.uploadedData) {
       alert('No data to analyze');
@@ -245,7 +266,7 @@ const Homepage = () => {
 
       setPredictions(predictionData.predictions); // Store the predictions in state
 
-      const updatedData = appendPredictionsToData(
+      const updatedData = prependPredictionsToData(
         uploadedData.uploadedData,
         predictionData,
       );
@@ -254,27 +275,6 @@ const Homepage = () => {
       console.error('Error in making prediction:', error);
       alert(error.message);
     }
-  };
-
-  // Append predictions to data
-  const appendPredictionsToData = (dataString: string, predictions: any) => {
-    const predictionValues = predictions.predictions.map((p: number[]) => p[0]);
-
-    // Trim the dataString to remove any trailing newlines or whitespace
-    const trimmedDataString = dataString.trim();
-
-    const rows = trimmedDataString.split('\n');
-    const headers = rows[0] + ',predictions';
-
-    const dataRows = rows.slice(1).map((row, index) => {
-      const prediction =
-        predictionValues[index] !== undefined
-          ? predictionValues[index].toString()
-          : 'N/A';
-      return row + `,${prediction}`;
-    });
-
-    return [headers, ...dataRows].join('\n');
   };
 
   return (
