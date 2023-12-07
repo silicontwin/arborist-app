@@ -208,37 +208,48 @@ const Homepage = () => {
                 {fileName} ({fileSize} bytes)
               </div>
 
-              <button
-                // onClick={uploadFile}
-                className="bg-red-600 text-white px-3 py-1.5 rounded-md"
-              >
-                Analyze
-              </button>
+              <div className="flex flex-row justify-start items-center space-x-4">
+                <div className="flex flex-row justify-start items-center space-x-1">
+                  <div className="text-white/40">Model:</div>
+                  <select className="bg-black text-white px-2.5 py-[7px] rounded-md">
+                    <option value="bart">BART</option>
+                    <option value="xbart">XBART</option>
+                    <option value="bcf">bcf</option>
+                  </select>
+                </div>
+
+                <button
+                  // onClick={uploadFile}
+                  className="bg-[#bf5700] text-white px-2.5 py-1 rounded-md"
+                >
+                  Analyze
+                </button>
+              </div>
             </div>
           )}
 
           <div className="w-full">
             {uploadedData &&
               uploadedData.uploadedData &&
-              uploadedData.uploadedData.split('\n').map((line, index) => {
-                const parts = line.split(',');
+              uploadedData.uploadedData
+                .split('\n')
+                .map((line: string, index: number) => {
+                  const parts = line.split(',');
+                  const bgClass = index % 2 === 0 && 'bg-[#24242460]';
 
-                // Determine the background class based on row index
-                const bgClass = index % 2 === 0 && 'bg-[#242424]/40'; // Adjust colors as needed
-
-                return (
-                  <ul
-                    key={index}
-                    className={`w-full ${bgClass} grid grid-flow-col auto-cols-fr w-full border-b border-b-white/10 p-1.5`}
-                  >
-                    {parts.map((part, partIndex) => (
-                      <li key={partIndex} className="text-left">
-                        {part}
-                      </li>
-                    ))}
-                  </ul>
-                );
-              })}
+                  return (
+                    <ul
+                      key={index}
+                      className={`w-full ${bgClass} grid grid-flow-col auto-cols-fr w-full border-b border-b-[#FFFFFF10] p-1.5`}
+                    >
+                      {parts.map((part, partIndex) => (
+                        <li key={partIndex} className="text-left">
+                          {part}
+                        </li>
+                      ))}
+                    </ul>
+                  );
+                })}
           </div>
         </div>
       )}
