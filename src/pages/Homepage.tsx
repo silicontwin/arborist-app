@@ -17,6 +17,24 @@ const Homepage = () => {
   const [fileContent, setFileContent] = useState<File | null>(null); // Store the file
   const [uploadedData, setUploadedData] = useState(null); // State to store uploaded data
 
+  // Calculate the data metrics
+  let observations = 0;
+  let features = 0;
+  let fileSizeKB = fileSize ? fileSize / 1024 : 0; // Convert bytes to kilobytes
+
+  if (uploadedData?.uploadedData) {
+    // Split the data into rows and filter out empty rows
+    const rows = uploadedData.uploadedData
+      .split('\n')
+      .filter((row) => row.trim() !== '');
+
+    // Calculate observations (excluding the header)
+    observations = rows.length > 0 ? rows.length - 1 : 0; // Assuming the first row is a header
+
+    // Calculate features based on the header row
+    features = rows[0]?.split(',').length || 0;
+  }
+
   const steps = [
     'Loading Python . . .',
     'Starting server process . . .',
@@ -205,7 +223,9 @@ const Homepage = () => {
           {fileName && fileSize && (
             <div className="flex flex-row justify-between items-center w-full">
               <div>
-                {fileName} ({fileSize} bytes)
+                {fileName} ({fileSizeKB.toFixed(2)} KB) |{' '}
+                {observations.toLocaleString()} observations x {features}{' '}
+                features
               </div>
 
               <div className="flex flex-row justify-start items-center space-x-4">
