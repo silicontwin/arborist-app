@@ -286,6 +286,22 @@ const Homepage = () => {
     return predictionsAvailable && cellIndex === 0;
   };
 
+  // ---------------------------------------------------------------------------
+
+  const downloadCSV = () => {
+    const csvString = uploadedData?.uploadedData;
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    // Create a temporary link to trigger the download
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', 'predictions.csv'); // Need to add the date to the beginning of the file name
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="w-full h-full flex flex-col justify-between items-start overflow-x-auto">
       {!fileName && (
@@ -345,6 +361,17 @@ const Homepage = () => {
                   features
                 </div>
               </div>
+
+              {predictions && (
+                <div>
+                  <button
+                    onClick={downloadCSV}
+                    className="bg-yellow-500 px-2.5 py-1 rounded-md"
+                  >
+                    Download
+                  </button>
+                </div>
+              )}
 
               <div className="flex flex-row justify-start items-center space-x-4">
                 <div className="flex flex-row justify-start items-center space-x-1">
