@@ -222,10 +222,18 @@ const Homepage = () => {
         <div className="w-full h-full p-4 flex flex-col justify-start items-start space-y-4">
           {fileName && fileSize && (
             <div className="flex flex-row justify-between items-center w-full">
-              <div>
-                {fileName} ({fileSizeKB.toFixed(2)} KB) |{' '}
-                {observations.toLocaleString()} observations x {features}{' '}
-                features
+              <div className="flex flex-row justify-start items-center space-x-2">
+                <div>
+                  {fileName}{' '}
+                  <span className="text-white/50">
+                    ({fileSizeKB.toFixed(2)} KB)
+                  </span>
+                </div>
+
+                <div className="flex flex-row justify-start items-start bg-white/10 rounded-full px-[8px] py-[2px] text-sm">
+                  {observations.toLocaleString()} observations x {features}{' '}
+                  features
+                </div>
               </div>
 
               <div className="flex flex-row justify-start items-center space-x-4">
