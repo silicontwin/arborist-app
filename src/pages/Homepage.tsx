@@ -27,7 +27,7 @@ const Homepage = () => {
     // Split the data into rows and filter out empty rows
     const rows = uploadedData.uploadedData
       .split('\n')
-      .filter((row) => row.trim() !== '');
+      .filter((row: string) => row.trim() !== '');
 
     // Calculate observations (excluding the header)
     observations = rows.length > 0 ? rows.length - 1 : 0; // Assuming the first row is a header
@@ -207,8 +207,8 @@ const Homepage = () => {
     }
 
     const observations = uploadedData.uploadedData.split('\n').slice(1);
-    const formattedData = observations.map((observation) =>
-      observation.split(',').map((val) => parseFloat(val)),
+    const formattedData = observations.map((observation: string) =>
+      observation.split(',').map((val: string) => parseFloat(val)),
     );
 
     // Determine the correct length of observations
@@ -216,7 +216,8 @@ const Homepage = () => {
 
     // Filter out observations with incorrect lengths
     const consistentFormattedData = formattedData.filter(
-      (observation) => observation.length === correctObvervationLength,
+      (observation: number[]) =>
+        observation.length === correctObvervationLength,
     );
 
     if (consistentFormattedData.length !== formattedData.length) {
@@ -225,11 +226,12 @@ const Homepage = () => {
       );
     }
 
-    const X = consistentFormattedData.map((observation) =>
+    const X = consistentFormattedData.map((observation: number[]) =>
       observation.slice(0, -1),
     ); // all features except last
+
     const y = consistentFormattedData.map(
-      (observation) => observation[observation.length - 1],
+      (observation: number[]) => observation[observation.length - 1],
     ); // last feature
 
     const requestBody = { X, y };
@@ -388,34 +390,36 @@ const Homepage = () => {
                 return (
                   <table className="w-full border-collapse">
                     <tbody>
-                      {features.map((feature: string, featureIndex: number) => (
-                        <tr
-                          key={featureIndex}
-                          className={
-                            featureIndex % 2 === 0 ? 'bg-[#24242480]' : ''
-                          }
-                        >
-                          {feature.map((cell: string, cellIndex: number) => (
-                            <td
-                              key={cellIndex}
-                              className={`border-b border-b-[#FFFFFF10] p-1.5 ${
-                                isPredictionColumn(
-                                  cellIndex,
-                                  predictionsAvailable,
-                                )
-                                  ? 'bg-[#393A4C]'
-                                  : ''
-                              } ${
-                                featureIndex === 0
-                                  ? 'text-blue-500'
-                                  : 'text-white'
-                              }`}
-                            >
-                              {cell}
-                            </td>
-                          ))}
-                        </tr>
-                      ))}
+                      {features.map(
+                        (feature: string[], featureIndex: number) => (
+                          <tr
+                            key={featureIndex}
+                            className={
+                              featureIndex % 2 === 0 ? 'bg-[#24242480]' : ''
+                            }
+                          >
+                            {feature.map((cell: string, cellIndex: number) => (
+                              <td
+                                key={cellIndex}
+                                className={`border-b border-b-[#FFFFFF10] p-1.5 ${
+                                  isPredictionColumn(
+                                    cellIndex,
+                                    predictionsAvailable,
+                                  )
+                                    ? 'bg-[#393A4C]'
+                                    : ''
+                                } ${
+                                  featureIndex === 0
+                                    ? 'text-blue-500'
+                                    : 'text-white'
+                                }`}
+                              >
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ),
+                      )}
                     </tbody>
                   </table>
                 );
