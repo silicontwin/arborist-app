@@ -16,6 +16,7 @@ const Homepage = () => {
   const [currentStep, setCurrentStep] = useState(0);
   const [fileContent, setFileContent] = useState<File | null>(null); // Store the file
   const [uploadedData, setUploadedData] = useState(null); // State to store uploaded data
+  const [predictions, setPredictions] = useState(null); // State for storing predictions
 
   // Calculate the data metrics
   let observations = 0;
@@ -176,6 +177,64 @@ const Homepage = () => {
     uploadFile(files[0]);
   };
 
+  // ---------------------------------------------------------------------------
+  const analyzeData = async () => {
+    if (!uploadedData?.uploadedData) {
+      alert('No data to analyze');
+      return;
+    }
+
+    const observations = uploadedData.uploadedData.split('\n').slice(1);
+    const formattedData = observations.map((observation) =>
+      observation.split(',').map((val) => parseFloat(val)),
+    );
+
+    // Determine the correct length of observations
+    const correctObvervationLength = formattedData[0].length;
+
+    // Filter out observations with incorrect lengths
+    const consistentFormattedData = formattedData.filter(
+      (observation) => observation.length === correctObvervationLength,
+    );
+
+    if (consistentFormattedData.length !== formattedData.length) {
+      console.warn(
+        'Some observations were skipped due to inconsistent lengths',
+      );
+    }
+
+    const X = consistentFormattedData.map((observation) =>
+      observation.slice(0, -1),
+    ); // all features except last
+    const y = consistentFormattedData.map(
+      (observation) => observation[observation.length - 1],
+    ); // last feature
+
+    const requestBody = { X, y };
+
+    console.log('Sending data to /predict:', requestBody); // Debugging
+
+    try {
+      const response = await fetch('http://localhost:8000/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error('Prediction failed');
+      }
+
+      const predictionData = await response.json();
+      setPredictions(predictionData); // Store the predictions in state
+    } catch (error) {
+      console.error('Error in making prediction:', error);
+      alert(error.message);
+    }
+  };
+
   return (
     <div className="w-full h-full flex flex-col justify-between items-start overflow-x-auto">
       {!fileName && (
@@ -247,11 +306,20 @@ const Homepage = () => {
                 </div>
 
                 <button
-                  // onClick={uploadFile}
+                  onClick={analyzeData}
                   className="bg-[#bf5700] text-white px-2.5 py-1 rounded-md"
                 >
                   Analyze
                 </button>
+
+                {predictions && (
+                  <div>
+                    <h3>Predictions:</h3>
+                    <pre>
+                      <code>{JSON.stringify(predictions, null, 2)}</code>
+                    </pre>
+                  </div>
+                )}
               </div>
             </div>
           )}
