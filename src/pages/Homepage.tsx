@@ -178,6 +178,7 @@ const Homepage = () => {
   };
 
   // ---------------------------------------------------------------------------
+
   const analyzeData = async () => {
     if (!uploadedData?.uploadedData) {
       alert('No data to analyze');
@@ -228,11 +229,52 @@ const Homepage = () => {
       }
 
       const predictionData = await response.json();
-      setPredictions(predictionData); // Store the predictions in state
+      console.log('Received predictions:', predictionData);
+
+      // Ensure predictionData has the 'predictions' key and is an array
+      if (
+        !predictionData.predictions ||
+        !Array.isArray(predictionData.predictions)
+      ) {
+        console.error(
+          'Prediction data is missing the predictions key or is not an array:',
+          predictionData,
+        );
+        return;
+      }
+
+      setPredictions(predictionData.predictions); // Store the predictions in state
+
+      const updatedData = appendPredictionsToData(
+        uploadedData.uploadedData,
+        predictionData,
+      );
+      setUploadedData({ ...uploadedData, uploadedData: updatedData });
     } catch (error) {
       console.error('Error in making prediction:', error);
       alert(error.message);
     }
+  };
+
+  // Append predictions to data
+  const appendPredictionsToData = (dataString: string, predictions: any) => {
+    const predictionValues = predictions.predictions.map((p: number[]) => p[0]);
+
+    // Trim the dataString to remove any trailing newlines or whitespace
+    const trimmedDataString = dataString.trim();
+
+    const rows = trimmedDataString.split('\n');
+    const headers = rows[0] + ',predictions';
+
+    const dataRows = rows.slice(1).map((row, index) => {
+      const prediction =
+        predictionValues[index] !== undefined
+          ? predictionValues[index].toString()
+          : 'N/A';
+      return row + `,${prediction}`;
+    });
+
+    return [headers, ...dataRows].join('\n');
   };
 
   return (
@@ -312,14 +354,14 @@ const Homepage = () => {
                   Analyze
                 </button>
 
-                {predictions && (
+                {/* {predictions && (
                   <div>
                     <h3>Predictions:</h3>
                     <pre>
                       <code>{JSON.stringify(predictions, null, 2)}</code>
                     </pre>
                   </div>
-                )}
+                )} */}
               </div>
             </div>
           )}
@@ -369,12 +411,12 @@ const Homepage = () => {
         </div>
       )}
 
-      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-1">
+      {/* <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-1">
         <div>API:</div>
         {(data?.status && <div className="text-[#bf5700]">Online</div>) || (
           <div className="text-gray-300">Offline</div>
         )}
-      </div>
+      </div> */}
     </div>
   );
 };
