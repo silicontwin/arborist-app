@@ -159,7 +159,7 @@ const Homepage = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between items-start">
+    <div className="w-full h-full flex flex-col justify-between items-start overflow-x-auto">
       {!fileName && (
         <div
           id="dropZone"
@@ -228,28 +228,47 @@ const Homepage = () => {
             </div>
           )}
 
-          <div className="w-full">
-            {uploadedData &&
-              uploadedData.uploadedData &&
-              uploadedData.uploadedData
-                .split('\n')
-                .map((line: string, index: number) => {
-                  const parts = line.split(',');
-                  const bgClass = index % 2 === 0 && 'bg-[#24242460]';
+          <div className="w-full text-sm">
+            {uploadedData?.uploadedData &&
+              (() => {
+                // Split the data into observations
+                const observations = uploadedData.uploadedData.split('\n');
 
-                  return (
-                    <ul
-                      key={index}
-                      className={`w-full ${bgClass} grid grid-flow-col auto-cols-fr w-full border-b border-b-[#FFFFFF10] p-1.5`}
-                    >
-                      {parts.map((part, partIndex) => (
-                        <li key={partIndex} className="text-left">
-                          {part}
-                        </li>
-                      ))}
-                    </ul>
-                  );
-                })}
+                // Split each observation by its corresponding features
+                const features = observations.map((observation: string) =>
+                  observation.split(','),
+                );
+
+                return (
+                  <table className="w-full border-collapse">
+                    <tbody>
+                      {features.map(
+                        (feature: string[], featureIndex: number) => (
+                          <tr
+                            key={featureIndex}
+                            className={
+                              featureIndex % 2 === 0 ? 'bg-[#24242460]' : ''
+                            }
+                          >
+                            {feature.map((cell: string, cellIndex: number) => (
+                              <td
+                                key={cellIndex}
+                                className={`border-b border-b-[#FFFFFF10] p-1.5 ${
+                                  featureIndex === 0
+                                    ? 'text-blue-500'
+                                    : 'text-white'
+                                }`}
+                              >
+                                {cell}
+                              </td>
+                            ))}
+                          </tr>
+                        ),
+                      )}
+                    </tbody>
+                  </table>
+                );
+              })()}
           </div>
         </div>
       )}
