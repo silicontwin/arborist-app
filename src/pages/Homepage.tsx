@@ -301,7 +301,7 @@ const Homepage = () => {
         </div>
       )}
 
-      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-1 fixed bottom-0 left-0">
+      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-1">
         <div>API:</div>
         {(data?.status && <div className="text-[#bf5700]">Online</div>) || (
           <div className="text-gray-300">Offline</div>
