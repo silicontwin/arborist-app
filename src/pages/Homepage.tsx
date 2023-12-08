@@ -92,7 +92,7 @@ const Homepage = () => {
 
   if (loading) {
     return (
-      <div className="w-full h-full flex flex-col justify-center items-center">
+      <div className="w-full min-h-[calc(100vh_-_50px)] flex flex-col justify-center items-center">
         <div className="w-[260px] flex flex-col justify-start items-start space-y-2">
           <div className="font-bold">
             Initializing Arborist: {loadingTime} sec
@@ -336,11 +336,27 @@ const Homepage = () => {
   };
 
   return (
-    <div className="w-full h-full flex flex-col justify-between items-start overflow-x-auto">
+    <div className="w-full h-full flex flex-col justify-start items-start">
+      <div
+        id="statusBar"
+        className="h-[30px] text-sm w-full text-white/30 bg-[#24242460] flex flex-row justify-start items-center px-4 space-x-4"
+      >
+        <div className="flex space-x-1">
+          <div>API:</div>
+          {(data?.status && <div className="text-yellow-300">Online</div>) || (
+            <div className="text-gray-300">Offline</div>
+          )}
+        </div>
+        <div className="flex space-x-1">
+          Workspace path:{' '}
+          <span className="text-white/60">`{userDataPath}`</span>
+        </div>
+      </div>
+
       {!fileName && (
         <div
           id="dropZone"
-          className={`w-full h-full p-4 flex flex-col justify-center items-center ${
+          className={`w-full h-full flex flex-col justify-center items-center ${
             isDragOver ? 'bg-[#242424]' : ''
           }`}
           onDrop={handleDrop}
@@ -348,7 +364,7 @@ const Homepage = () => {
           onDragLeave={handleDragLeave}
         >
           {!fileName && (
-            <div className="flex flex-col justify-center items-center w-full space-y-4">
+            <div className="h-[calc(100vh_-_80px)] flex flex-col justify-center items-center w-full space-y-4">
               <div className="text-xl">Drag your local dataset file here</div>
               <div className="text-white/30 flex flex-row justify-start items-center space-x-2">
                 <div>Supported file types:</div>
@@ -378,9 +394,9 @@ const Homepage = () => {
       )}
 
       {fileName && fileSize && uploadedData && (
-        <div className="w-full h-full p-4 flex flex-col justify-start items-start space-y-4">
+        <div className="w-full h-full flex flex-col justify-start items-start">
           {fileName && fileSize && (
-            <div className="flex flex-row justify-between items-center w-full">
+            <div className="h-[50px] flex flex-row justify-between items-center w-full absolute top-[80px] left-0 px-4">
               <div className="flex flex-row justify-start items-center space-x-2">
                 <div>
                   {fileName}{' '}
@@ -406,10 +422,10 @@ const Homepage = () => {
                 </div>
               )}
 
-              <div className="flex flex-row justify-start items-center space-x-4">
+              <div className="flex flex-row justify-start items-center space-x-2">
                 <div className="flex flex-row justify-start items-center space-x-1">
                   <div className="text-white/40">Model:</div>
-                  <select className="bg-black text-white px-2.5 py-[7px] rounded-md">
+                  <select className="bg-black text-white px-2 py-[5px] rounded-md">
                     <option value="bart">BART</option>
                     <option value="xbart">XBART</option>
                     <option value="bcf">bcf</option>
@@ -418,7 +434,7 @@ const Homepage = () => {
 
                 <button
                   onClick={analyzeData}
-                  className="bg-[#bf5700] text-white px-2.5 py-1 rounded-md"
+                  className="bg-red-600 text-white px-2 py-0.5 rounded-md"
                 >
                   Analyze
                 </button>
@@ -435,7 +451,10 @@ const Homepage = () => {
             </div>
           )}
 
-          <div className="w-full text-sm">
+          <div
+            id="data"
+            className="w-full overflow-auto min-h-[calc(100vh_-_130px)] max-h-[calc(100vh_-_130px)] mt-[50px] px-4 text-sm"
+          >
             {uploadedData?.uploadedData &&
               (() => {
                 // Split the data into observations
@@ -487,17 +506,6 @@ const Homepage = () => {
           </div>
         </div>
       )}
-
-      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-4">
-        <div className="flex space-x-1">
-          <div>API:</div>
-          {(data?.status && <div className="text-[#bf5700]">Online</div>) || (
-            <div className="text-gray-300">Offline</div>
-          )}
-        </div>
-
-        <div className="flex space-x-1">Workspace path: `{userDataPath}`</div>
-      </div>
     </div>
   );
 };
