@@ -370,8 +370,8 @@ const Homepage = () => {
           isUploading || isAnalyzing ? '' : 'hidden'
         }`}
       >
-        {isUploading && 'Uploading data . . .'}
-        {isAnalyzing && 'Analyzing Data . . .'}
+        {isUploading && 'Loading data . . .'}
+        {isAnalyzing && 'Analyzing data . . .'}
       </div>
 
       {!fileName && (
