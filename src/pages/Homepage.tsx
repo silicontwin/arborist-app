@@ -126,8 +126,25 @@ const Homepage = () => {
     setIsDragOver(false);
   };
 
+  // Get the file storage path
+  const getFileStoragePath = async () => {
+    try {
+      const path = await window.electron.invoke('get-file-storage-path');
+      return path;
+    } catch (error) {
+      console.error('Error getting file storage path:', error);
+      return null;
+    }
+  };
+
   // Upload the file
   const uploadFile = async (file: File) => {
+    const fileStoragePath = await getFileStoragePath();
+    if (!fileStoragePath) {
+      console.error('Failed to get file storage path');
+      return;
+    }
+
     const formData = new FormData();
     formData.append('file', file);
 
