@@ -5,5 +5,6 @@ interface Window {
   electron: {
     onFetchDataReply: (callback: (data: any) => void) => void;
     fetchData: () => Promise<any>;
+    invoke: (channel: string, ...args: any[]) => Promise<any>;
   };
 }
