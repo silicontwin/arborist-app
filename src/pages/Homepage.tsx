@@ -18,6 +18,7 @@ const Homepage = () => {
   const [uploadedData, setUploadedData] = useState(null); // State to store uploaded data
   const [predictions, setPredictions] = useState(null); // State for storing predictions
   const [userDataPath, setUserDataPath] = useState('');
+  const [isUploading, setIsUploading] = useState(false); // State for tracking upload status
 
   // Calculate the data metrics
   let observations = 0;
@@ -139,9 +140,12 @@ const Homepage = () => {
 
   // Upload the file
   const uploadFile = async (file: File) => {
+    setIsUploading(true);
+
     const fileStoragePath = await getFileStoragePath();
     if (!fileStoragePath) {
       console.error('Failed to get file storage path');
+      setIsUploading(false);
       return;
     }
 
@@ -166,6 +170,8 @@ const Homepage = () => {
     } catch (error) {
       console.error('Error in uploading file:', error);
       alert(error.message);
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -352,6 +358,12 @@ const Homepage = () => {
           <span className="text-white/60">`{userDataPath}`</span>
         </div>
       </div>
+
+      {isUploading && (
+        <div className="w-full min-h-[calc(100vh_-_80px)] bg-[#393A4C] flex flex-col justify-center items-center">
+          Uploading data . . .
+        </div>
+      )}
 
       {!fileName && (
         <div
