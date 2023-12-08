@@ -19,6 +19,7 @@ const Homepage = () => {
   const [predictions, setPredictions] = useState(null); // State for storing predictions
   const [userDataPath, setUserDataPath] = useState('');
   const [isUploading, setIsUploading] = useState(false); // State for tracking upload status
+  const [isAnalyzing, setIsAnalyzing] = useState(false); // State for tracking analysis status
 
   // Calculate the data metrics
   let observations = 0;
@@ -245,6 +246,8 @@ const Homepage = () => {
       return;
     }
 
+    setIsAnalyzing(true);
+
     const observations = uploadedData.uploadedData.split('\n').slice(1);
     const formattedData = observations.map((observation: string) =>
       observation.split(',').map((val: string) => parseFloat(val)),
@@ -312,9 +315,11 @@ const Homepage = () => {
         predictionData,
       );
       setUploadedData({ ...uploadedData, uploadedData: updatedData });
+      setIsAnalyzing(false);
     } catch (error) {
       console.error('Error in making prediction:', error);
       alert(error.message);
+      setIsAnalyzing(false);
     }
   };
 
@@ -359,11 +364,15 @@ const Homepage = () => {
         </div>
       </div>
 
-      {isUploading && (
-        <div className="w-full min-h-[calc(100vh_-_80px)] bg-[#393A4C] flex flex-col justify-center items-center">
-          Uploading data . . .
-        </div>
-      )}
+      <div
+        id="loadingPanel"
+        className={`w-full min-h-[calc(100vh_-_80px)] bg-[#393A4C] flex flex-col justify-center items-center ${
+          isUploading || isAnalyzing ? '' : 'hidden'
+        }`}
+      >
+        {isUploading && 'Uploading data . . .'}
+        {isAnalyzing && 'Analyzing Data . . .'}
+      </div>
 
       {!fileName && (
         <div
