@@ -114,6 +114,12 @@ const createWindow = (): void => {
 
 // -----------------------------------------------------------------------------
 
+// Used for managing the user's workspace directory
+ipcMain.handle('get-file-storage-path', async () => {
+  return app.getPath('userData');
+});
+
+// Used for fetching data from the FastAPI server
 ipcMain.handle('fetch-data', async () => {
   // console.log('IPC fetch-data called');
   const serverReady = await isServerReady('http://0.0.0.0:8000/data'); // https://localhost:8000/data doesn't work
