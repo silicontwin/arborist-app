@@ -17,6 +17,7 @@ const Homepage = () => {
   const [fileContent, setFileContent] = useState<File | null>(null); // Store the file
   const [uploadedData, setUploadedData] = useState(null); // State to store uploaded data
   const [predictions, setPredictions] = useState(null); // State for storing predictions
+  const [userDataPath, setUserDataPath] = useState('');
 
   // Calculate the data metrics
   let observations = 0;
@@ -74,6 +75,21 @@ const Homepage = () => {
       clearInterval(stepTimer);
     };
   }, []);
+
+  // Function to fetch the userData path
+  useEffect(() => {
+    const fetchUserDataPath = async () => {
+      try {
+        const path = await window.electron.invoke('get-file-storage-path');
+        setUserDataPath(path);
+      } catch (error) {
+        console.error('Error getting user data path:', error);
+      }
+    };
+
+    fetchUserDataPath();
+  }, []);
+
   if (loading) {
     return (
       <div className="w-full h-full flex flex-col justify-center items-center">
@@ -455,11 +471,15 @@ const Homepage = () => {
         </div>
       )}
 
-      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-1">
-        <div>API:</div>
-        {(data?.status && <div className="text-[#bf5700]">Online</div>) || (
-          <div className="text-gray-300">Offline</div>
-        )}
+      <div className="h-[50px] w-full text-white/30 bg-[#242424] flex flex-row justify-start items-center px-4 space-x-4">
+        <div className="flex space-x-1">
+          <div>API:</div>
+          {(data?.status && <div className="text-[#bf5700]">Online</div>) || (
+            <div className="text-gray-300">Offline</div>
+          )}
+        </div>
+
+        <div className="flex space-x-1">Workspace path: `{userDataPath}`</div>
       </div>
     </div>
   );
