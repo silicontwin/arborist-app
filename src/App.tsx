@@ -8,7 +8,7 @@ import Workspace from './pages/Workspace';
 
 const App = () => (
   <Router>
-    <div className="bg-[#1D1D1D] w-full text-white h-screen flex flex-col">
+    <div className="bg-[#1D1D1D] w-full text-white h-full flex flex-col">
       <Header />
 
       <div className="flex-1 overflow-auto">
