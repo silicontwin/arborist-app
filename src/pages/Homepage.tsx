@@ -423,17 +423,6 @@ const Homepage = () => {
                 </div>
               </div>
 
-              {predictions && (
-                <div>
-                  <button
-                    onClick={downloadCSV}
-                    className="bg-yellow-500 px-2.5 py-1 rounded-md"
-                  >
-                    Download
-                  </button>
-                </div>
-              )}
-
               <div className="flex flex-row justify-start items-center space-x-2">
                 <div className="flex flex-row justify-start items-center space-x-1">
                   <div className="text-white/40">Model:</div>
@@ -450,6 +439,17 @@ const Homepage = () => {
                 >
                   Analyze
                 </button>
+
+                {predictions && (
+                  <div>
+                    <button
+                      onClick={downloadCSV}
+                      className="bg-yellow-400 text-black px-2 py-0.5 rounded-md"
+                    >
+                      Download
+                    </button>
+                  </div>
+                )}
 
                 {/* {predictions && (
                   <div>
