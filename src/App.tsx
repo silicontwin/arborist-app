@@ -3,7 +3,6 @@ import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import * as ReactDOM from 'react-dom/client';
 import Header from './components/Header';
 import About from './pages/About';
-import Homepage from './pages/Homepage';
 import Workspace from './pages/Workspace';
 
 const App = () => (
@@ -13,9 +12,8 @@ const App = () => (
 
       <div className="flex-1 overflow-auto">
         <Routes>
-          <Route path="/" element={<Homepage />} />
+          <Route path="/" element={<Workspace />} />
           <Route path="/about" element={<About />} />
-          <Route path="/workspace" element={<Workspace />} />
         </Routes>
       </div>
     </div>
