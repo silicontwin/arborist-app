@@ -22,15 +22,11 @@ const Header = () => {
       <div className="h-full flex flex-row justify-start items-center space-x-4 uppercase font-semibold">
         {/* Add noDragStyle to interactive elements */}
         <Link to="/" style={noDragStyle}>
-          Home
+          Workspace
         </Link>
 
         <Link to="/about" style={noDragStyle}>
           About
-        </Link>
-
-        <Link to="/workspace" style={noDragStyle}>
-          Workspace
         </Link>
       </div>
     </div>
