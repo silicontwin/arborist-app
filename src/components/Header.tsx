@@ -9,18 +9,17 @@ const Header = () => {
   // Define the styles for the non-draggable elements (like buttons and links)
   const noDragStyle: React.CSSProperties = { WebkitAppRegion: 'no-drag' };
 
-  // bg-[#bf5700]
-
   return (
     <div
       style={dragStyle}
-      className="h-[50px] text-white/70 text-sm flex flex-row justify-between uppercase font-semibold bg-[#242424] w-full px-5"
+      className="h-[50px] text-sm flex flex-row justify-between bg-[#242424] w-full px-5"
     >
-      <div className="h-full flex flex-col justify-center items-center">
-        Arborist
+      <div className="h-full flex flex-row justify-center items-center space-x-2">
+        <div className="uppercase font-semibold">Arborist</div>
+        <div className="font-light text-white/70">prototype</div>
       </div>
 
-      <div className="h-full flex flex-row justify-start items-center space-x-4">
+      <div className="h-full flex flex-row justify-start items-center space-x-4 uppercase font-semibold">
         {/* Add noDragStyle to interactive elements */}
         <Link to="/" style={noDragStyle}>
           Home
