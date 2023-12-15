@@ -3,37 +3,7 @@
 
 
 # Status
-- **Arborist** is currently in alpha development. We are actively working on adding core application functionality. The beta testing phase has not yet commenced, and the `Issues` tab for this repository will remain disabled until further progress is made.
-
-# Dev Roadmap
-
-- [x] Add React
-- [x] Enforce TypeScript in strict mode
-- [x] Add IPC communication between React, Electron, and Python
-- [x] Remove menu bar
-- [x] Add custom header
-- [x] Add Tailwind
-- [x] Identify/resolve issue with multiple API server spin-ups (this is expected behavior)
-- [x] Check that the `api` executable is being shut down when quitting the dev app
-- [x] Add drag-and-drop SPSS file upload recognition
-- [x] Separate webpack.config into `main` and `renderer` configs
-- [x] Add hot reloading
-- [x] Add app icon
-- [ ] Add CSV file parsing and sanity checking
-- [ ] Add SPSS file parsing and sanity checking
-- [ ] Add workspace directory with file listing
-- [ ] Add causal inference model training to API
-- [ ] Add causal inference model prediction and export API
-- [ ] Add buttons for maximize, minimize, and close
-- [ ] Ensure that spinning up th main exe is non-blocking (add to background) when loading the app
-- [ ] Upload the large `main` API exe file to GitHub releases
-- [ ] Add a GitHub action to automatically create a new release (and upload the main binary)
-- [ ] Add GitHub page for download the app for each OS
-- [ ] Add visualizations
-- [ ] Add visualizations export API
-- [ ] Add NLP with input recognition/parsing and scoring
-- [ ] Consider using an uncommon port for the API to avoid conflicts with other apps on the user's machine
-- [ ] Create OS-specific versions of the `api` executable named `api-macOS`, `api-windows`, and `api-linux` and include them in the `api` folder in the `src` directory in the app repo
+- **Arborist** is currently in alpha development. We're actively working on adding core application functionality. The beta testing phase has not yet commenced, and the `Issues` tab for this repository will remain disabled until the app reaches the appropriate level of usability/polish.
 
 ---
 
