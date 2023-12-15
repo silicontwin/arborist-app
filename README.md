@@ -2,6 +2,9 @@
 ![Header Image](/github/readme_header.png)
 
 
+# Status
+- **Arborist** is currently in alpha development. We are actively working on adding core application functionality. The beta testing phase has not yet commenced, and the `Issues` tab for this repository will remain disabled until further progress is made.
+
 # Dev Roadmap
 
 - [x] Add React
@@ -74,7 +77,7 @@ We use FastAPI to create a REST API that can be called from within the Electron 
     - The `<PATH_TO_SRC_FOLDER_IN_APP_REPO>` is simply the path to the `src` folder in this repo
     - The packaged python code will be called `main` and will be located in the `dist` folder
     - Move this `main` file to the `api` folder in the `src` directory in the app repo
-  - [ ] `yarn build`: Build the app
+  - [ ] `yarn package`: Build the app
 
 ---
 
