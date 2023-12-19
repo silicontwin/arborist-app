@@ -23,7 +23,9 @@ const Header = () => {
     >
       <div className="h-full flex flex-row justify-center items-center space-x-2">
         <div className="uppercase font-semibold">Arborist</div>
-        <div className="font-light text-white/70">prototype v.0.1</div>
+        <div className="font-light text-white/60">
+          prototype v.0.1 (not for use with real data)
+        </div>
       </div>
 
       <div className="h-full flex flex-row justify-start items-center space-x-4 uppercase font-semibold">
