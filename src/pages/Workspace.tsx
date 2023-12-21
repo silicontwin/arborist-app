@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 
 interface FetchDataResponse {
-  status: string;
+  api: string;
 }
 
 const Workspace = () => {
@@ -354,10 +354,11 @@ const Workspace = () => {
       >
         <div className="flex space-x-1">
           <div>API:</div>
-          {(data?.status && <div className="text-yellow-300">Online</div>) || (
-            <div className="text-gray-300">Offline</div>
-          )}
+          {(data?.api === 'online' && (
+            <div className="text-yellow-300">Online</div>
+          )) || <div className="text-gray-300">Offline</div>}
         </div>
+
         <div className="flex space-x-1">
           Workspace path:{' '}
           <span className="text-white/60">`{userDataPath}`</span>
