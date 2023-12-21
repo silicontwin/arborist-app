@@ -34,6 +34,13 @@ We use FastAPI to create a REST API that can be called from within the Electron 
 
 ---
 
+# Relevant Repos
+- [arborist-api](https://github.com/silicontwin/arborist-api)
+- [bcf](https://github.com/jaredsmurray/bcf)
+- [StochasticTree](https://github.com/andrewherren/StochasticTree)
+
+---
+
 # Building Arborist for Distribution
 - [ ] Update the version number in `package.json` (Arborist dev team only)
 - [ ] Package the Python API code as an executable via `pyinstaller`:
