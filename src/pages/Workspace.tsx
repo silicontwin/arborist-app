@@ -392,13 +392,13 @@ const Workspace = () => {
                 <div>Supported file types:</div>
                 <ul className="flex flex-row justify-start items-center space-x-2">
                   <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
+                    .csv
+                  </li>
+                  <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
                     .spss
                   </li>
                   <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
                     .sav
-                  </li>
-                  <li className="border-[2px] border-white/10 rounded-full px-[10px] py-[4px]">
-                    .csv
                   </li>
                 </ul>
               </div>
