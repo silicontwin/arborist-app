@@ -90,6 +90,14 @@ const Workspace = () => {
     }
   };
 
+  const parseCSVData = (data: string) => {
+    // Split the data into rows, then slice to get only the first 500 rows
+    return data
+      .split('\n')
+      .slice(0, 500)
+      .map((row) => row.split(','));
+  };
+
   return (
     <>
       <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
@@ -156,7 +164,22 @@ const Workspace = () => {
         }`}
       >
         <button onClick={() => setIsDataModalOpen(false)}>Close</button>
-        <pre>{selectedFileData}</pre>
+        <table className="w-full text-sm">
+          <tbody>
+            {parseCSVData(selectedFileData).map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className={rowIndex % 2 === 0 ? 'bg-gray-100' : ''}
+              >
+                {row.map((cell, cellIndex) => (
+                  <td key={cellIndex} className="border p-2">
+                    {cell}
+                  </td>
+                ))}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </>
   );
