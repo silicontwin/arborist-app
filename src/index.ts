@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import axios from 'axios';
 import path from 'node:path';
 import isDev from 'electron-is-dev';
@@ -109,7 +109,7 @@ const createWindow = (): void => {
   mainWindow.loadURL(MAIN_WINDOW_WEBPACK_ENTRY);
 
   // Open the DevTools.
-  // mainWindow.webContents.openDevTools({ mode: 'detach' });
+  mainWindow.webContents.openDevTools({ mode: 'detach' });
 };
 
 // -----------------------------------------------------------------------------
@@ -146,6 +146,59 @@ const terminateServer = (): void => {
     serverProcess = null;
   }
 };
+
+// -----------------------------------------------------------------------------
+
+// Handler to list files in a specific directory
+ipcMain.handle('list-files', async (event, directoryPath) => {
+  try {
+    const files = fs.readdirSync(directoryPath);
+    return files;
+  } catch (error) {
+    console.error('Error listing files:', error);
+    throw error;
+  }
+});
+
+// Handler to upload a file to a specific directory
+ipcMain.handle('upload-file', async (event, { filePath, destination }) => {
+  try {
+    const fileName = path.basename(filePath);
+    const destinationPath = path.join(destination, fileName);
+    fs.copyFileSync(filePath, destinationPath);
+    return { success: true, path: destinationPath };
+  } catch (error) {
+    console.error('Error uploading file:', error);
+    throw error;
+  }
+});
+
+// Handler to open file dialog and return selected file path
+ipcMain.handle('select-file', async () => {
+  const result = await dialog.showOpenDialog({ properties: ['openFile'] });
+  if (result.canceled) {
+    return null;
+  }
+  return result.filePaths[0];
+});
+
+ipcMain.handle('get-desktop-path', async () => {
+  const desktopPath = app.getPath('desktop');
+  console.log('Desktop Path:', desktopPath);
+  return desktopPath;
+});
+
+ipcMain.handle('get-data-path', async () => {
+  const userDataPath = app.getPath('userData');
+  const dataPath = path.join(userDataPath, 'workspace');
+
+  // Check if the 'data' directory exists, if not, create it
+  if (!fs.existsSync(dataPath)) {
+    fs.mkdirSync(dataPath, { recursive: true });
+  }
+
+  return dataPath;
+});
 
 // -----------------------------------------------------------------------------
 
