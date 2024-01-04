@@ -19,7 +19,7 @@ const Header = () => {
   return (
     <div
       style={dragStyle}
-      className="bg-gray-100 border-b h-[50px] flex flex-row justify-between w-full px-5"
+      className="bg-gray-100 border-b h-[50px] flex flex-row justify-between w-full px-4"
     >
       <div className="h-full flex flex-row justify-center items-center space-x-3">
         <div className="font-bold text-[1.2em] text-blue-700">Arborist</div>
