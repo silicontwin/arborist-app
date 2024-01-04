@@ -1,6 +1,8 @@
 // /src/preload.ts
 import { contextBridge, ipcRenderer } from 'electron';
 
+import type { FileDetails } from './types/fileDetails';
+
 type InvokeFunction = {
   (channel: 'fetch-data'): Promise<any>;
   (channel: 'get-file-storage-path'): Promise<string>;
@@ -18,7 +20,7 @@ const electronAPI = {
   fetchData: () => ipcRenderer.invoke('fetch-data'),
   invoke: ((channel: string, ...args: any[]) =>
     ipcRenderer.invoke(channel, ...args)) as InvokeFunction,
-  listFiles: (directoryPath: string) =>
+  listFiles: (directoryPath: string): Promise<FileDetails[]> =>
     ipcRenderer.invoke('list-files', directoryPath),
   uploadFile: (filePath: string, destination: string) =>
     ipcRenderer.invoke('upload-file', { filePath, destination }),
