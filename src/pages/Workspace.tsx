@@ -44,7 +44,11 @@ const Workspace = () => {
               className="border-y py-2 w-full bg-gray-100/40 px-4 flex flex-row justify-between items-center"
             >
               <div>{file.name}</div>
-              <div>{formatFileSize(file.size)}</div>
+
+              <div className="flex flex-row justify-start items-center space-x-4">
+                <div># observations x # features</div>
+                <div>{formatFileSize(file.size)}</div>
+              </div>
             </div>
           ))}
         </div>
