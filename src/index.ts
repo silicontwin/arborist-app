@@ -219,6 +219,19 @@ ipcMain.handle(
   },
 );
 
+ipcMain.handle('read-file', async (event, fileName) => {
+  const userDataPath = app.getPath('userData');
+  const workspacePath = path.join(userDataPath, 'workspace', fileName);
+
+  try {
+    const data = fs.readFileSync(workspacePath, 'utf8');
+    return data;
+  } catch (error) {
+    console.error('Error reading file:', error);
+    throw error;
+  }
+});
+
 // -----------------------------------------------------------------------------
 
 // This method will be called when Electron has finished
