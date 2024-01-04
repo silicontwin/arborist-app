@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 const Workspace = () => {
   const [files, setFiles] = useState([]);
   const [workspacePath, setWorkspacePath] = useState('');
+  const copyMarkerFileName = 'copy_marker.txt'; // Name of the marker file
 
   useEffect(() => {
     const fetchDataPathAndListFiles = async () => {
@@ -15,7 +16,9 @@ const Workspace = () => {
       setWorkspacePath(formattedPath);
 
       // Call the function to list files
-      const filesList = await window.electron.listFiles(dataPath);
+      let filesList = await window.electron.listFiles(dataPath);
+      // Filter out the copyMarker file
+      filesList = filesList.filter((file) => file !== copyMarkerFileName);
       setFiles(filesList);
     };
 
