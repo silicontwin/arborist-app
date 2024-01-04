@@ -23,8 +23,10 @@ const Header = () => {
     >
       <div className="h-full flex flex-row justify-center items-center space-x-3">
         <div className="font-bold text-[1.2em] text-blue-700">Arborist</div>
-        <div className="font-light text-[0.825em] opacity-40">
-          v.0.1 | alpha prototype: not for use with real data
+        <div className="font-light text-[0.825em] opacity-40 pt-[2px] flex flex-row space-x-2">
+          <div>v.0.1</div>
+          <div>prototype</div>
+          <div>not for use with real data</div>
         </div>
       </div>
 
