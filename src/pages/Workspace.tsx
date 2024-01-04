@@ -134,6 +134,13 @@ const Workspace = () => {
           </div>
         )}
       </div>
+
+      <div
+        id="dataModal"
+        className="hidden fixed top-[50px] left-0 w-full h-[calc(100vh_-_50px)] bg-red-300 z-20"
+      >
+        Selected file data goes here
+      </div>
     </>
   );
 };
