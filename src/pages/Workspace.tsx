@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { FileDetails } from '../types/fileDetails';
+import { FaRegFolderOpen } from 'react-icons/fa';
+import { MdOutlineInsertDriveFile } from 'react-icons/md';
 
 const Workspace = () => {
   const [files, setFiles] = useState<FileDetails[]>([]);
@@ -78,7 +80,10 @@ const Workspace = () => {
     <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
       <div className="w-full flex flex-col justify-start items-start h-full overflow-y-scroll">
         <div className="w-full h-[60px] px-4 flex flex-row justify-between items-center">
-          <h1 className="text-[1.4em] font-light">Workspace</h1>
+          <div className="flex flex-row justify-start items-center space-x-1">
+            <FaRegFolderOpen className="w-[26px] h-[26px]" />
+            <div className="text-[1.4em]">Workspace</div>
+          </div>
           <p>
             Path:{' '}
             <code className="bg-gray-100 p-1 rounded-md text-sm">
@@ -90,14 +95,19 @@ const Workspace = () => {
           {files.map((file, index) => (
             <div
               key={file.name}
-              className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center ${
+              className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 ${
                 index % 2 === 0 ? 'bg-gray-100/40' : 'bg-white'
               } ${index === 0 ? 'border-t border-t-gray-200' : ''}`}
             >
-              <div>{file.name}</div>
+              <div className="flex flex-row justify-start items-center space-x-1">
+                <MdOutlineInsertDriveFile className="w-[20px] h-[20px] text-gray-400" />
+                <div className="font-medium">{file.name}</div>
+              </div>
               <div className="flex flex-row justify-start items-center space-x-4">
                 <div># observations x # features</div>
-                <div>{formatFileSize(file.size)}</div>
+                <div className="w-[100px] text-right">
+                  {formatFileSize(file.size)}
+                </div>
               </div>
             </div>
           ))}
