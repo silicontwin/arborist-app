@@ -32,9 +32,18 @@ const Workspace = () => {
 
   const handleDrop = async (event: React.DragEvent<HTMLDivElement>) => {
     event.preventDefault();
-    const files = event.dataTransfer.files;
-    if (files.length) {
-      const file = files[0];
+    const droppedFiles = event.dataTransfer.files;
+    if (droppedFiles.length) {
+      const file = droppedFiles[0];
+      const fileName = file.name;
+
+      // Check for file collision
+      const fileExists = files.some((f) => f.name === fileName);
+      if (fileExists) {
+        setUploadError(`A file with the name ${fileName} already exists.`);
+        return;
+      }
+
       if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
         await uploadFile(file.path);
       } else {
@@ -56,10 +65,12 @@ const Workspace = () => {
           destinationPath,
         );
         setFiles(updatedFilesList);
+        setUploadError(''); // Clear any previous error
         console.log('File uploaded:', result.path);
       }
     } catch (error) {
       console.error('Error uploading file:', error);
+      setUploadError('Error uploading file');
     }
   };
 
@@ -79,7 +90,7 @@ const Workspace = () => {
           {files.map((file) => (
             <div
               key={file.name}
-              className="border-y py-2 w-full bg-gray-100/40 px-4 flex flex-row justify-between items-center"
+              className="border-b border-t border-b-gray-200 border-t-gray-100 py-2 w-full bg-gray-100/40 px-4 flex flex-row justify-between items-center"
             >
               <div>{file.name}</div>
               <div className="flex flex-row justify-start items-center space-x-4">
@@ -97,7 +108,11 @@ const Workspace = () => {
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
-        Drag your local dataset file here
+        {uploadError ? (
+          <p className="text-red-500">{uploadError}</p>
+        ) : (
+          'Drag your local dataset file here'
+        )}
       </div>
     </div>
   );
