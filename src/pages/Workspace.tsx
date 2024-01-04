@@ -26,9 +26,9 @@ const Workspace = () => {
   }, []);
 
   return (
-    <div className="px-5 py-20 w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
-      <div className="w-[1200px] flex flex-col justify-start items-start space-y-4 border h-full py-4 rounded-md overflow-y-scroll">
-        <div className="w-full px-4 flex flex-row justify-between items-center">
+    <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
+      <div className="w-full flex flex-col justify-start items-start h-full overflow-y-scroll">
+        <div className="w-full h-[50px] px-4 flex flex-row justify-between items-center">
           <h1 className="text-[1.4em] font-light">Workspace</h1>
           <p>
             Path:{' '}
@@ -37,9 +37,10 @@ const Workspace = () => {
             </code>
           </p>
         </div>
+
         <ul className="w-full">
           {files.map((file) => (
-            <li key={file} className="border-b py-2 w-full bg-gray-100 px-4">
+            <li key={file} className="border-y py-2 w-full bg-gray-100/40 px-4">
               {file}
             </li>
           ))}
