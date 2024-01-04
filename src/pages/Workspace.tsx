@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { FileDetails } from '../types/fileDetails';
 import { FaRegFolderOpen } from 'react-icons/fa';
 import { MdOutlineInsertDriveFile } from 'react-icons/md';
+import { TbDragDrop } from 'react-icons/tb';
 
 const Workspace = () => {
   const [files, setFiles] = useState<FileDetails[]>([]);
@@ -116,14 +117,19 @@ const Workspace = () => {
 
       <div
         id="dropzone"
-        className="bg-gray-100 border w-[400px] h-[100px] mb-6 flex flex-col justify-center items-center rounded-full"
+        className="bg-gray-100 border w-[380px] h-[100px] mb-10 flex flex-col justify-center items-center rounded-full"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
         {uploadError ? (
           <p className="text-red-500">{uploadError}</p>
         ) : (
-          'Drag your local dataset file here'
+          <div className="flex flex-row justify-start items-center space-x-2">
+            <TbDragDrop className="w-[26px] h-[26px]" />
+            <div className="text-[1.1em] font-semibold">
+              Drag your local .csv dataset here
+            </div>
+          </div>
         )}
       </div>
     </div>
