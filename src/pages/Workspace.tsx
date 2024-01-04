@@ -8,6 +8,8 @@ const Workspace = () => {
   const [files, setFiles] = useState<FileDetails[]>([]);
   const [workspacePath, setWorkspacePath] = useState('');
   const [uploadError, setUploadError] = useState('');
+  const [selectedFileData, setSelectedFileData] = useState('');
+  const [isDataModalOpen, setIsDataModalOpen] = useState(false);
 
   useEffect(() => {
     const fetchDataPathAndListFiles = async () => {
@@ -77,6 +79,17 @@ const Workspace = () => {
     }
   };
 
+  const handleFileDoubleClick = async (fileName: string) => {
+    try {
+      const fileData = await window.electron.invoke('read-file', fileName);
+      setSelectedFileData(fileData);
+      setIsDataModalOpen(true);
+    } catch (error) {
+      console.error('Error opening file:', error);
+      setUploadError('Failed to open file');
+    }
+  };
+
   return (
     <>
       <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
@@ -97,6 +110,7 @@ const Workspace = () => {
             {files.map((file, index) => (
               <div
                 key={file.name}
+                onDoubleClick={() => handleFileDoubleClick(file.name)}
                 className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 ${
                   index % 2 === 0 ? 'bg-gray-100/40' : 'bg-white'
                 } ${index === 0 ? 'border-t border-t-gray-200' : ''}`}
@@ -137,9 +151,12 @@ const Workspace = () => {
 
       <div
         id="dataModal"
-        className="hidden fixed top-[50px] left-0 w-full h-[calc(100vh_-_50px)] bg-red-300 z-20"
+        className={`fixed top-[50px] left-0 w-full h-[calc(100vh_-_50px)] bg-white z-20 p-4 overflow-auto ${
+          isDataModalOpen ? '' : 'hidden'
+        }`}
       >
-        Selected file data goes here
+        <button onClick={() => setIsDataModalOpen(false)}>Close</button>
+        <pre>{selectedFileData}</pre>
       </div>
     </>
   );
