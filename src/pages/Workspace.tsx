@@ -87,10 +87,12 @@ const Workspace = () => {
           </p>
         </div>
         <div className="w-full">
-          {files.map((file) => (
+          {files.map((file, index) => (
             <div
               key={file.name}
-              className="border-b border-t border-b-gray-200 border-t-gray-100 py-2 w-full bg-gray-100/40 px-4 flex flex-row justify-between items-center"
+              className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center ${
+                index % 2 === 0 ? 'bg-gray-100/40' : 'bg-white'
+              } ${index === 0 ? 'border-t border-t-gray-200' : ''}`}
             >
               <div>{file.name}</div>
               <div className="flex flex-row justify-start items-center space-x-4">
