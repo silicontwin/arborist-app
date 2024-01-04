@@ -13,7 +13,7 @@ const config: ForgeConfig = {
   packagerConfig: {
     icon: './src/images/icons/icon',
     asar: true,
-    extraResource: ['./src/api/main'],
+    extraResource: ['./src/api/main', './src/examples/test_data.csv'],
   },
   rebuildConfig: {},
   makers: [
