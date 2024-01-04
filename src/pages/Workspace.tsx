@@ -78,46 +78,48 @@ const Workspace = () => {
   };
 
   return (
-    <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
-      <div className="w-full flex flex-col justify-start items-start h-full overflow-y-scroll">
-        <div className="w-full h-[60px] px-4 flex flex-row justify-between items-center">
-          <div className="flex flex-row justify-start items-center space-x-1">
-            <FaRegFolderOpen className="w-[26px] h-[26px]" />
-            <div className="text-[1.4em]">Workspace</div>
+    <>
+      <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
+        <div className="w-full flex flex-col justify-start items-start h-full overflow-y-scroll">
+          <div className="w-full h-[60px] px-4 flex flex-row justify-between items-center">
+            <div className="flex flex-row justify-start items-center space-x-1">
+              <FaRegFolderOpen className="w-[26px] h-[26px]" />
+              <div className="text-[1.4em]">Workspace</div>
+            </div>
+            <p>
+              Path:{' '}
+              <code className="bg-gray-100 p-1 rounded-md text-sm">
+                {workspacePath}
+              </code>
+            </p>
           </div>
-          <p>
-            Path:{' '}
-            <code className="bg-gray-100 p-1 rounded-md text-sm">
-              {workspacePath}
-            </code>
-          </p>
-        </div>
-        <div className="w-full">
-          {files.map((file, index) => (
-            <div
-              key={file.name}
-              className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 ${
-                index % 2 === 0 ? 'bg-gray-100/40' : 'bg-white'
-              } ${index === 0 ? 'border-t border-t-gray-200' : ''}`}
-            >
-              <div className="flex flex-row justify-start items-center space-x-1">
-                <MdOutlineInsertDriveFile className="w-[20px] h-[20px] text-gray-400" />
-                <div className="font-medium">{file.name}</div>
-              </div>
-              <div className="flex flex-row justify-start items-center space-x-4">
-                <div># observations x # features</div>
-                <div className="w-[100px] text-right">
-                  {formatFileSize(file.size)}
+          <div className="w-full">
+            {files.map((file, index) => (
+              <div
+                key={file.name}
+                className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 ${
+                  index % 2 === 0 ? 'bg-gray-100/40' : 'bg-white'
+                } ${index === 0 ? 'border-t border-t-gray-200' : ''}`}
+              >
+                <div className="flex flex-row justify-start items-center space-x-1">
+                  <MdOutlineInsertDriveFile className="w-[20px] h-[20px] text-gray-400" />
+                  <div className="font-medium">{file.name}</div>
+                </div>
+                <div className="flex flex-row justify-start items-center space-x-4">
+                  <div># observations x # features</div>
+                  <div className="w-[100px] text-right">
+                    {formatFileSize(file.size)}
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
       <div
         id="dropzone"
-        className="bg-gray-100 border w-[380px] h-[100px] mb-10 flex flex-col justify-center items-center rounded-full"
+        className="bg-gray-100 fixed bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col justify-center items-center border w-[380px] h-[90px] rounded-full z-10"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
@@ -132,7 +134,7 @@ const Workspace = () => {
           </div>
         )}
       </div>
-    </div>
+    </>
   );
 };
 
