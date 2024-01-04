@@ -152,8 +152,17 @@ const terminateServer = (): void => {
 // Handler to list files in a specific directory
 ipcMain.handle('list-files', async (event, directoryPath) => {
   try {
-    const files = fs.readdirSync(directoryPath);
-    return files;
+    const files = fs
+      .readdirSync(directoryPath)
+      .filter((file) => file !== 'copy_marker.txt');
+    return files.map((file) => {
+      const filePath = path.join(directoryPath, file);
+      const stats = fs.statSync(filePath);
+      return {
+        name: file,
+        size: stats.size,
+      };
+    });
   } catch (error) {
     console.error('Error listing files:', error);
     throw error;
