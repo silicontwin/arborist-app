@@ -163,7 +163,13 @@ const Workspace = () => {
           isDataModalOpen ? '' : 'hidden'
         }`}
       >
-        <button onClick={() => setIsDataModalOpen(false)}>Close</button>
+        <button
+          onClick={() => setIsDataModalOpen(false)}
+          className="bg-gray-100 border rounded-md px-2 py-1 mb-2"
+        >
+          Close
+        </button>
+
         <table className="w-full text-sm">
           <tbody>
             {parseCSVData(selectedFileData).map((row, rowIndex) => (
