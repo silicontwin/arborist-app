@@ -28,7 +28,7 @@ const Workspace = () => {
   return (
     <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
       <div className="w-full flex flex-col justify-start items-start h-full overflow-y-scroll">
-        <div className="w-full h-[50px] px-4 flex flex-row justify-between items-center">
+        <div className="w-full h-[60px] px-4 flex flex-row justify-between items-center">
           <h1 className="text-[1.4em] font-light">Workspace</h1>
           <p>
             Path:{' '}
