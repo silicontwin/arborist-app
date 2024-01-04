@@ -1,3 +1,4 @@
+// /src/index.ts
 import { app, BrowserWindow, ipcMain, dialog } from 'electron';
 import axios from 'axios';
 import path from 'node:path';
@@ -208,6 +209,15 @@ ipcMain.handle('get-data-path', async () => {
 
   return dataPath;
 });
+
+ipcMain.handle(
+  'check-file-exists',
+  async (event, { fileName, destination }) => {
+    const filePath = path.join(destination, fileName);
+    const exists = fs.existsSync(filePath);
+    return { exists };
+  },
+);
 
 // -----------------------------------------------------------------------------
 
