@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, Router } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { FaRegFolderOpen } from 'react-icons/fa';
+import { HiMiniRocketLaunch } from 'react-icons/hi2';
 
 const Header = () => {
   // Define the styles for the draggable area
@@ -57,7 +58,10 @@ const Header = () => {
           style={noDragStyle}
           className={`${location.pathname === '/about' ? 'text-red-600' : ''}`}
         >
-          About
+          <div className="flex flex-row justify-start items-center space-x-1">
+            <HiMiniRocketLaunch className="w-[18px] h-[18px]" />
+            <div>About</div>
+          </div>
         </Link>
       </div>
     </div>
