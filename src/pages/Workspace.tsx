@@ -53,6 +53,10 @@ const Workspace = () => {
           ))}
         </div>
       </div>
+
+      <div className="bg-gray-100 border w-[400px] h-[100px] mb-6 flex flex-col justify-center items-center rounded-full">
+        Drag your local dataset file here
+      </div>
     </div>
   );
 };
