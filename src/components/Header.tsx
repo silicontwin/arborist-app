@@ -2,6 +2,7 @@
 import React from 'react';
 import { Link, Router } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
+import { FaRegFolderOpen } from 'react-icons/fa';
 
 const Header = () => {
   // Define the styles for the draggable area
@@ -37,7 +38,10 @@ const Header = () => {
           style={noDragStyle}
           className={`${location.pathname === '/' ? 'text-red-600' : ''}`}
         >
-          Workspace
+          <div className="flex flex-row justify-start items-center space-x-1">
+            <FaRegFolderOpen className="w-[20px] h-[20px]" />
+            <div>Workspace</div>
+          </div>
         </Link>
 
         <Link
