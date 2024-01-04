@@ -10,8 +10,8 @@ const About = () => {
           <p>
             Arborist is a cross-platform desktop application for efficiently
             performing Bayesian causal inference and supervised learning tasks
-            using tree-based models, including BART, XBART, bcf, and similar. It
-            was designed/developed by Nicholas Warren at the Texas Behavioral
+            using tree-based models, including bcf, BART, and XBART. It was
+            designed/developed by Nicholas Warren at the Texas Behavioral
             Science and Policy Institute (TxBSPI) at the University of Texas at
             Austin, in collaboration with Jared Murray and Andrew Herren.
           </p>
