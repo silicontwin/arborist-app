@@ -14,6 +14,7 @@ type InvokeFunction = {
   (channel: 'select-file'): Promise<string | null>;
   (channel: 'get-desktop-path'): Promise<string>;
   (channel: 'get-data-path'): Promise<string>;
+  (channel: 'read-file', filePath: string): Promise<string>;
 };
 
 const electronAPI = {
@@ -27,6 +28,7 @@ const electronAPI = {
   selectFile: () => ipcRenderer.invoke('select-file'),
   getDesktopPath: () => ipcRenderer.invoke('get-desktop-path'),
   getDataPath: () => ipcRenderer.invoke('get-data-path'),
+  readFile: (filePath: string) => ipcRenderer.invoke('read-file', filePath),
 };
 
 contextBridge.exposeInMainWorld('electron', electronAPI);
