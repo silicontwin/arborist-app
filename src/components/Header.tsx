@@ -14,7 +14,7 @@ const Header = () => {
   const location = useLocation();
 
   // Log the current path
-  console.log('Current path:', location.pathname);
+  // console.log('Current path:', location.pathname);
 
   return (
     <div
