@@ -1,29 +1,29 @@
 // /src/pages/Workspace.tsx
 import React, { useEffect, useState } from 'react';
+import { FileDetails } from '../types/fileDetails';
 
 const Workspace = () => {
-  const [files, setFiles] = useState([]);
+  const [files, setFiles] = useState<FileDetails[]>([]);
   const [workspacePath, setWorkspacePath] = useState('');
-  const copyMarkerFileName = 'copy_marker.txt'; // Name of the marker file
 
   useEffect(() => {
     const fetchDataPathAndListFiles = async () => {
       const dataPath = await window.electron.invoke('get-data-path');
-      console.log('Data Path:', dataPath);
-
-      // Format the path with quotes for terminal use
-      const formattedPath = `"${dataPath}"`;
-      setWorkspacePath(formattedPath);
-
-      // Call the function to list files
-      let filesList = await window.electron.listFiles(dataPath);
-      // Filter out the copyMarker file
-      filesList = filesList.filter((file) => file !== copyMarkerFileName);
+      setWorkspacePath(`"${dataPath}"`);
+      const filesList: FileDetails[] = await window.electron.listFiles(
+        dataPath,
+      );
       setFiles(filesList);
     };
 
     fetchDataPathAndListFiles();
   }, []);
+
+  const formatFileSize = (size: number) => {
+    if (size < 1024) return size + ' bytes';
+    else if (size < 1048576) return (size / 1024).toFixed(2) + ' KB';
+    else return (size / 1048576).toFixed(2) + ' MB';
+  };
 
   return (
     <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
@@ -37,14 +37,17 @@ const Workspace = () => {
             </code>
           </p>
         </div>
-
-        <ul className="w-full">
+        <div className="w-full">
           {files.map((file) => (
-            <li key={file} className="border-y py-2 w-full bg-gray-100/40 px-4">
-              {file}
-            </li>
+            <div
+              key={file.name}
+              className="border-y py-2 w-full bg-gray-100/40 px-4 flex flex-row justify-between items-center"
+            >
+              <div>{file.name}</div>
+              <div>{formatFileSize(file.size)}</div>
+            </div>
           ))}
-        </ul>
+        </div>
       </div>
     </div>
   );
