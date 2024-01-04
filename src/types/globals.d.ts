@@ -6,5 +6,8 @@ interface Window {
     onFetchDataReply: (callback: (data: any) => void) => void;
     fetchData: () => Promise<any>;
     invoke: (channel: string, ...args: any[]) => Promise<any>;
+    listFiles: (directoryPath: string) => Promise<string[]>;
+    getDesktopPath: () => Promise<string>;
+    getDataPath: () => Promise<string>;
   };
 }
