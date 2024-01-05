@@ -10,7 +10,7 @@
 ---
 
 # Overview
-**Arborist** is a cross-platform application designed for efficiently performing Bayesian causal inference and supervised learning tasks using tree-based models, including `bcf`, `BART`, and `XBART`. Arborist significantly lowers the barrier to entry for these types of analytics workflows by offering:
+**Arborist** is a cross-platform application designed for efficiently performing Bayesian causal inference and supervised learning tasks using tree-based models, including `BCF`, `BART`, and `XBART`. Arborist significantly lowers the barrier to entry for these types of analytics workflows by offering:
 
 - A user-friendly drag-and-drop interface for data import.
 - A streamlined process for model selection and analysis, accessible with just a few clicks.
@@ -41,13 +41,13 @@ All analyses are performed locally on the user's machine. No data is sent to rem
 # System Architecture
 
 ## Arborist API
-Built using FastAPI, the Arborist API includes a Python server that acts as an interface to the bcf/BART/XBART models. The API is packaged using PyInstaller and is included in the Electron app so that a user doesn't need to install Python on their machine to use the app. The FastAPI server is started when the Electron app is started and is stopped when the app is closed.
+Built using FastAPI, the Arborist API includes a Python server that acts as an interface to the BCF/BART/XBART models. The API is packaged using PyInstaller and is included in the Electron app so that a user doesn't need to install Python on their machine to use the app. The FastAPI server is started when the Electron app is started and is stopped when the app is closed.
 
 ## Electron
 Arborist is built on top of the Electron framework. Electron is a cross-platform framework for building desktop applications using JavaScript, HTML, and CSS. Electron is used to create the user interface and to communicate with the Arborist API.
 
 ## Baysian Causal Inference
-We are  using the bcf/BART/XBART Python models from the StochasticTree GitHub repository for our analyses. Models are trained on the user's local machine and the resulting predictions are returned to the Electron app. This enables us to perform any analyses locally without having to send the user's data to a remote server.
+We are  using the BCF/BART/XBART Python models from the StochasticTree GitHub repository for our analyses. Models are trained on the user's local machine and the resulting predictions are returned to the Electron app. This enables us to perform any analyses locally without having to send the user's data to a remote server.
 
 ---
 
