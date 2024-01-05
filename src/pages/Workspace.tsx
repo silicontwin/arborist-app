@@ -9,6 +9,7 @@ const Workspace = () => {
   const [workspacePath, setWorkspacePath] = useState('');
   const [uploadError, setUploadError] = useState('');
   const [selectedFileData, setSelectedFileData] = useState('');
+  const [selectedFileName, setSelectedFileName] = useState('');
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
 
   useEffect(() => {
@@ -83,6 +84,7 @@ const Workspace = () => {
     try {
       const fileData = await window.electron.invoke('read-file', fileName);
       setSelectedFileData(fileData);
+      setSelectedFileName(fileName);
       setIsDataModalOpen(true);
     } catch (error) {
       console.error('Error opening file:', error);
@@ -105,15 +107,37 @@ const Workspace = () => {
           <div className="w-full h-[60px] px-4 flex flex-row justify-between items-center">
             <div className="flex flex-row justify-start items-center space-x-1">
               <FaRegFolderOpen className="w-[26px] h-[26px]" />
-              <div className="text-[1.4em]">Workspace</div>
+
+              {!isDataModalOpen ? (
+                <div className="text-[1.4em]">Workspace</div>
+              ) : (
+                <div className="flex flex-row justify-start items-center space-x-3">
+                  <div className="h-full flex flex-row justify-start items-center space-x-1 text-[1.4em]">
+                    <div>Workspace</div>
+                    <div className="text-gray-400">/</div>
+                    <div>{selectedFileName}</div>
+                  </div>
+
+                  <button
+                    onClick={() => setIsDataModalOpen(false)}
+                    className="bg-gray-100 border rounded-md px-1.5 py-0.5 text-sm font-bold"
+                  >
+                    Close
+                  </button>
+                </div>
+              )}
             </div>
-            <p>
-              Path:{' '}
-              <code className="bg-gray-100 p-1 rounded-md text-sm">
-                {workspacePath}
-              </code>
-            </p>
+
+            {!isDataModalOpen && (
+              <div>
+                Path:{' '}
+                <code className="bg-gray-100 p-1 rounded-md text-sm">
+                  {workspacePath}
+                </code>
+              </div>
+            )}
           </div>
+
           <div className="w-full">
             {files.map((file, index) => (
               <div
@@ -159,33 +183,28 @@ const Workspace = () => {
 
       <div
         id="dataModal"
-        className={`fixed top-[50px] left-0 w-full h-[calc(100vh_-_50px)] bg-white z-20 p-4 overflow-auto ${
+        className={`fixed top-[110px] left-0 w-full h-[calc(100vh_-_110px)] bg-white z-20 ${
           isDataModalOpen ? '' : 'hidden'
         }`}
       >
-        <button
-          onClick={() => setIsDataModalOpen(false)}
-          className="bg-gray-100 border rounded-md px-2 py-1 mb-2"
-        >
-          Close
-        </button>
-
-        <table className="w-full text-sm">
-          <tbody>
-            {parseCSVData(selectedFileData).map((row, rowIndex) => (
-              <tr
-                key={rowIndex}
-                className={rowIndex % 2 === 0 ? 'bg-gray-100' : ''}
-              >
-                {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} className="border p-2">
-                    {cell}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <div className="w-full h-[calc(100vh_-_110px)] overflow-auto">
+          <table className="w-full text-sm">
+            <tbody>
+              {parseCSVData(selectedFileData).map((row, rowIndex) => (
+                <tr
+                  key={rowIndex}
+                  className={rowIndex % 2 === 0 ? 'bg-gray-100' : ''}
+                >
+                  {row.map((cell, cellIndex) => (
+                    <td key={cellIndex} className="border p-2">
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </>
   );
