@@ -436,9 +436,9 @@ const Upload = () => {
                 <div className="flex flex-row justify-start items-center space-x-1">
                   <div className="text-white/40">Model:</div>
                   <select className="bg-black text-white px-2 py-[5px] rounded-md">
+                    <option value="bcf">BCF</option>
                     <option value="bart">BART</option>
                     <option value="xbart">XBART</option>
-                    <option value="bcf">bcf</option>
                   </select>
                 </div>
 
