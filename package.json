@@ -2,7 +2,7 @@
   "name": "arborist",
   "productName": "Arborist",
   "version": "0.1.0",
-  "description": "The cross-platform app for efficiently performing Bayesian causal inference and supervised learning tasks using tree-based models, including BART, XBART, and bcf.",
+  "description": "The cross-platform app for efficiently performing Bayesian causal inference and supervised learning tasks using tree-based models, including BCF, BART, and XBART.",
   "main": ".webpack/main",
   "scripts": {
     "start": "electron-forge start",
