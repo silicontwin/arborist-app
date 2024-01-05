@@ -111,29 +111,58 @@ const Workspace = () => {
               {!isDataModalOpen ? (
                 <div className="text-[1.4em]">Workspace</div>
               ) : (
-                <div className="flex flex-row justify-start items-center space-x-3">
-                  <div className="h-full flex flex-row justify-start items-center space-x-1 text-[1.4em]">
-                    <div>Workspace</div>
-                    <div className="text-gray-400">/</div>
-                    <div>{selectedFileName}</div>
-                  </div>
+                <div className="flex flex-row justify-between items-center">
+                  <div className="flex flex-row justify-start items-center space-x-3">
+                    <div className="h-full flex flex-row justify-start items-center space-x-1 text-[1.4em]">
+                      <div>Workspace</div>
+                      <div className="text-gray-400">/</div>
+                      <div>{selectedFileName}</div>
+                    </div>
 
-                  <button
-                    onClick={() => setIsDataModalOpen(false)}
-                    className="bg-gray-100 border rounded-md px-1.5 py-0.5 text-sm font-bold"
-                  >
-                    Close
-                  </button>
+                    <button
+                      onClick={() => setIsDataModalOpen(false)}
+                      className="bg-gray-100 border rounded-md px-1.5 py-0.5 text-sm font-bold"
+                    >
+                      Close
+                    </button>
+                  </div>
                 </div>
               )}
             </div>
 
-            {!isDataModalOpen && (
-              <div>
+            {!isDataModalOpen ? (
+              <div className="w-auto flex flex-row">
                 Path:{' '}
                 <code className="bg-gray-100 p-1 rounded-md text-sm">
                   {workspacePath}
                 </code>
+              </div>
+            ) : (
+              <div className="flex flex-row justify-start items-center space-x-2">
+                <div className="flex flex-row justify-start items-center space-x-1">
+                  <div className="">Model:</div>
+                  <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
+                    <option value="bcf">BCF</option>
+                    <option value="bart">BART</option>
+                    <option value="xbart">XBART</option>
+                  </select>
+                </div>
+
+                <button
+                  // onClick={analyzeData}
+                  className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
+                >
+                  Analyze
+                </button>
+
+                <div>
+                  <button
+                    // onClick={downloadCSV}
+                    className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                  >
+                    Download
+                  </button>
+                </div>
               </div>
             )}
           </div>
@@ -193,10 +222,10 @@ const Workspace = () => {
               {parseCSVData(selectedFileData).map((row, rowIndex) => (
                 <tr
                   key={rowIndex}
-                  className={rowIndex % 2 === 0 ? 'bg-gray-100' : ''}
+                  className={`${rowIndex % 2 === 0 ? 'bg-gray-100' : ''}`}
                 >
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="border p-2">
+                    <td key={cellIndex} className="border py-2 pl-4">
                       {cell}
                     </td>
                   ))}
