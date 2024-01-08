@@ -360,6 +360,13 @@ const Workspace = () => {
           </table>
         </div>
       </div>
+
+      <div
+        id="loadingModal"
+        className="fixed top-[110px] left-0 w-full h-[calc(100vh_-_110px)] bg-white z-20 flex flex-col justify-center items-center text-lg font-semibold bg-orange-200"
+      >
+        Opening Dataset || Analyzing Data: X seconds
+      </div>
     </>
   );
 };
