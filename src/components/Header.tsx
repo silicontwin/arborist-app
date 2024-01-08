@@ -45,15 +45,15 @@ const Header = () => {
           </div>
         </Link>
 
-        <Link
+        {/* <Link
           to="/upload"
           style={noDragStyle}
           className={`${location.pathname === '/upload' ? 'text-red-600' : ''}`}
         >
           Upload
-        </Link>
+        </Link> */}
 
-        <Link
+        {/* <Link
           to="/about"
           style={noDragStyle}
           className={`${location.pathname === '/about' ? 'text-red-600' : ''}`}
@@ -62,7 +62,7 @@ const Header = () => {
             <HiMiniRocketLaunch className="w-[18px] h-[18px]" />
             <div>About</div>
           </div>
-        </Link>
+        </Link> */}
       </div>
     </div>
   );
