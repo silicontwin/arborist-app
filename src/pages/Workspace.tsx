@@ -11,6 +11,8 @@ const Workspace = () => {
   const [selectedFileData, setSelectedFileData] = useState('');
   const [selectedFileName, setSelectedFileName] = useState('');
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [predictions, setPredictions] = useState(null);
 
   useEffect(() => {
     const fetchDataPathAndListFiles = async () => {
@@ -23,6 +25,9 @@ const Workspace = () => {
     };
 
     fetchDataPathAndListFiles();
+
+    // Reset the predictions state to null on component mount
+    setPredictions(null);
   }, []);
 
   const formatFileSize = (size: number) => {
@@ -94,10 +99,128 @@ const Workspace = () => {
 
   const parseCSVData = (data: string) => {
     // Split the data into rows, then slice to get only the first 500 rows
-    return data
+    return (
+      data
+        .split('\n')
+        // .slice(0, 500)
+        .map((row) => row.split(','))
+    );
+  };
+
+  // ---
+
+  const analyzeData = async () => {
+    if (!selectedFileData) {
+      alert('No data to analyze');
+      return;
+    }
+
+    setIsAnalyzing(true);
+
+    const rows = selectedFileData
       .split('\n')
-      .slice(0, 500)
-      .map((row) => row.split(','));
+      .filter((row) => row.trim() !== '');
+    const observations = rows.length > 0 ? rows.length - 1 : 0;
+    const features = rows[0]?.split(',').length || 0;
+
+    const formattedData = rows
+      .slice(1)
+      .map((row) => row.split(',').map((val) => parseFloat(val) || null));
+
+    const correctObservationLength = features;
+    const consistentFormattedData = formattedData.filter(
+      (row) => row.length === correctObservationLength,
+    );
+
+    if (consistentFormattedData.length !== formattedData.length) {
+      console.warn(
+        'Some observations were skipped due to inconsistent lengths',
+      );
+    }
+
+    const X = consistentFormattedData.map((row) => row.slice(0, -1));
+    const y = consistentFormattedData.map((row) => row[row.length - 1]);
+
+    const requestBody = { X, y };
+
+    try {
+      const response = await fetch('http://localhost:8000/predict', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(requestBody),
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Prediction failed: ${response.status} ${response.statusText}`,
+        );
+      }
+
+      const predictionData = await response.json();
+      console.log('Received predictions:', predictionData);
+
+      if (
+        !predictionData.predictions ||
+        !Array.isArray(predictionData.predictions)
+      ) {
+        console.error('Invalid prediction data format:', predictionData);
+        return;
+      }
+
+      setPredictions(predictionData.predictions);
+
+      // Call a function to prepend predictions to the data
+      const updatedData = prependPredictionsToData(
+        selectedFileData,
+        predictionData.predictions,
+      );
+      setSelectedFileData(updatedData);
+    } catch (error) {
+      console.error('Error in making prediction:', error);
+      alert(error.message);
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
+  const prependPredictionsToData = (
+    dataString: string,
+    predictionValues: number[],
+  ) => {
+    const rows = dataString.split('\n');
+    const headers = 'prediction,' + rows[0];
+
+    const updatedRows = rows.slice(1).map((row: string, index: number) => {
+      const prediction =
+        predictionValues[index] !== undefined
+          ? predictionValues[index].toString()
+          : 'N/A';
+      return `${prediction},${row}`;
+    });
+
+    return [headers, ...updatedRows].join('\n');
+  };
+
+  // ---------------------------------------------------------------------------
+
+  const downloadCSV = () => {
+    const csvString = selectedFileData;
+    if (!csvString) {
+      alert('No data available to download');
+      return;
+    }
+
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `${selectedFileName}_predictions.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   return (
@@ -149,20 +272,22 @@ const Workspace = () => {
                 </div>
 
                 <button
-                  // onClick={analyzeData}
+                  onClick={analyzeData}
                   className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
                 >
                   Analyze
                 </button>
 
-                <div>
-                  <button
-                    // onClick={downloadCSV}
-                    className="rounded-md px-1.5 py-1 text-sm font-bold border"
-                  >
-                    Download
-                  </button>
-                </div>
+                {predictions && (
+                  <div>
+                    <button
+                      onClick={downloadCSV}
+                      className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                    >
+                      Download
+                    </button>
+                  </div>
+                )}
               </div>
             )}
           </div>
