@@ -412,6 +412,8 @@ const Workspace = () => {
                     <td
                       key={cellIndex}
                       className={`border py-2 pl-4 ${
+                        rowIndex === 0 ? 'font-bold' : ''
+                      } ${
                         isPredictionColumn(cellIndex) ? 'bg-blue-300/20' : ''
                       }`}
                     >
