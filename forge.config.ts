@@ -15,7 +15,9 @@ const config: ForgeConfig = {
     asar: true,
     extraResource: [
       './src/api/main',
+      './src/examples/test-data_n-1K_p-11.csv',
       './src/examples/test-data_n-10K_p-11.csv',
+      './src/examples/test-data_n-100K_p-11.csv',
     ],
   },
   rebuildConfig: {},
