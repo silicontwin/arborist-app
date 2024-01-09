@@ -255,12 +255,16 @@ const Workspace = () => {
       return;
     }
 
+    // Remove the '.csv' extension from the file name, if it exists
+    const baseFileName = selectedFileName.replace(/\.csv$/i, '');
+    const newFileName = `${baseFileName}_predictions.csv`;
+
     const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
 
     const link = document.createElement('a');
     link.href = url;
-    link.setAttribute('download', `${selectedFileName}_predictions.csv`);
+    link.setAttribute('download', newFileName);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
