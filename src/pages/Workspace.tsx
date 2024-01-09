@@ -261,6 +261,13 @@ const Workspace = () => {
     document.body.removeChild(link);
   };
 
+  // ---
+
+  // Determine if the cell is in the predictions column
+  const isPredictionColumn = (cellIndex: number) => {
+    return predictions != null && cellIndex === 0;
+  };
+
   return (
     <>
       <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
@@ -402,7 +409,12 @@ const Workspace = () => {
                   className={`${rowIndex % 2 === 0 ? 'bg-gray-100' : ''}`}
                 >
                   {row.map((cell, cellIndex) => (
-                    <td key={cellIndex} className="border py-2 pl-4">
+                    <td
+                      key={cellIndex}
+                      className={`border py-2 pl-4 ${
+                        isPredictionColumn(cellIndex) ? 'bg-blue-300/20' : ''
+                      }`}
+                    >
                       {cell}
                     </td>
                   ))}
