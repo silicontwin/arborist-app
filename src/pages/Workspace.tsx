@@ -20,6 +20,22 @@ const Workspace = () => {
   const [elapsedTime, setElapsedTime] = useState<number | null>(null);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [totalElapsedTime, setTotalElapsedTime] = useState<string | null>(null);
+  const [apiStatus, setApiStatus] = useState('Starting server');
+
+  useEffect(() => {
+    // Fetch API status when component mounts
+    const fetchApiStatus = async () => {
+      try {
+        const status = await window.electron.invoke('fetch-data');
+        setApiStatus(status.api === 'online' ? 'Online' : 'Offline');
+      } catch (error) {
+        console.error('Error fetching API status:', error);
+        setApiStatus('Error');
+      }
+    };
+
+    fetchApiStatus();
+  }, []);
 
   useEffect(() => {
     const fetchDataPathAndListFiles = async () => {
@@ -320,31 +336,44 @@ const Workspace = () => {
             </div>
 
             {!isDataModalOpen ? (
-              <div className="w-auto flex flex-row">
-                Path:{' '}
+              <div className="w-auto flex flex-row space-x-1">
+                <span>Local path:</span>
                 <code className="bg-gray-100 p-1 rounded-md text-sm">
                   {workspacePath}
                 </code>
               </div>
             ) : (
               <div className="flex flex-row justify-start items-center space-x-2">
-                <div className="flex flex-row justify-start items-center space-x-1">
-                  <div className="">Model:</div>
-                  <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
-                    <option value="bcf">BCF</option>
-                    <option value="bart">BART</option>
-                    <option value="xbart" selected>
-                      XBART
-                    </option>
-                  </select>
-                </div>
+                {apiStatus !== 'Online' && (
+                  <div id="apiStatus">
+                    API Status:{' '}
+                    <span className="bg-gray-100 rounded-full px-2 py-1 text-sm font-semibold">
+                      {apiStatus}
+                    </span>
+                  </div>
+                )}
 
-                <button
-                  onClick={analyzeData}
-                  className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
-                >
-                  Analyze
-                </button>
+                {apiStatus === 'Online' && !predictions && (
+                  <>
+                    <div className="flex flex-row justify-start items-center space-x-1">
+                      <div className="">Model:</div>
+                      <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
+                        <option value="bcf">BCF</option>
+                        <option value="bart">BART</option>
+                        <option value="xbart" selected>
+                          XBART
+                        </option>
+                      </select>
+                    </div>
+
+                    <button
+                      onClick={analyzeData}
+                      className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
+                    >
+                      Analyze
+                    </button>
+                  </>
+                )}
 
                 {predictions && (
                   <div>
