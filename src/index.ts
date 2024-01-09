@@ -253,30 +253,33 @@ app.on('ready', () => {
   // Copy the test dataset to the `workspace` directory if it doesn't exist
   const userDataPath = app.getPath('userData');
   const workspacePath = path.join(userDataPath, 'workspace');
-  const csvFilePath = path.join(workspacePath, 'test-data_n-10K_p-11.csv');
-  const copyMarker = path.join(workspacePath, 'copy_marker.txt');
+  const csvFiles = [
+    'test-data_n-1K_p-11.csv',
+    'test-data_n-10K_p-11.csv',
+    'test-data_n-100K_p-11.csv',
+  ];
 
   if (!fs.existsSync(workspacePath)) {
     fs.mkdirSync(workspacePath, { recursive: true });
   }
 
-  // Check if the marker file exists
-  if (!fs.existsSync(copyMarker)) {
-    const sourceCsvPath = path.join(
-      process.resourcesPath,
-      'test-data_n-10K_p-11.csv',
-    );
-    if (fs.existsSync(sourceCsvPath)) {
-      fs.copyFileSync(sourceCsvPath, csvFilePath);
-      // Create a marker file to indicate the file has been copied once
-      fs.writeFileSync(
-        copyMarker,
-        'test-data_n-10K_p-11.csv has been copied to this directory.',
-      );
-    } else {
-      console.error('CSV file not found at:', sourceCsvPath);
+  csvFiles.forEach((csvFile) => {
+    const csvFilePath = path.join(workspacePath, csvFile);
+    const copyMarker = path.join(workspacePath, `copy_marker_${csvFile}`);
+
+    if (!fs.existsSync(copyMarker)) {
+      const sourceCsvPath = path.join(process.resourcesPath, csvFile);
+      if (fs.existsSync(sourceCsvPath)) {
+        fs.copyFileSync(sourceCsvPath, csvFilePath);
+        fs.writeFileSync(
+          copyMarker,
+          `${csvFile} has been copied to this directory.`,
+        );
+      } else {
+        console.error('CSV file not found at:', sourceCsvPath);
+      }
     }
-  }
+  });
 
   startServer();
   createWindow();
