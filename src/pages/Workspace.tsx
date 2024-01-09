@@ -317,7 +317,9 @@ const Workspace = () => {
                   <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
                     <option value="bcf">BCF</option>
                     <option value="bart">BART</option>
-                    <option value="xbart">XBART</option>
+                    <option value="xbart" selected>
+                      XBART
+                    </option>
                   </select>
                 </div>
 
@@ -332,7 +334,7 @@ const Workspace = () => {
                   <div>
                     <button
                       onClick={downloadCSV}
-                      className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                      className="rounded-md px-1.5 py-1 text-sm font-bold border bg-blue-600 text-white"
                     >
                       Download
                     </button>
