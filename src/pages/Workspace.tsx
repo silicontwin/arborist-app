@@ -98,6 +98,11 @@ const Workspace = () => {
       setSelectedFileData(fileData);
       setSelectedFileName(fileName);
       setIsDataModalOpen(true);
+
+      // Reset predictions and elapsed time when a new file is opened
+      setPredictions(null);
+      setElapsedTime(null);
+      setTotalElapsedTime(null); // Reset the total elapsed time
     } catch (error) {
       console.error('Error opening file:', error);
       setUploadError('Failed to open file');
