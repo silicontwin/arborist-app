@@ -155,7 +155,7 @@ ipcMain.handle('list-files', async (event, directoryPath) => {
   try {
     const files = fs
       .readdirSync(directoryPath)
-      .filter((file) => file !== 'copy_marker.txt');
+      .filter((file) => !file.startsWith('copy_marker_')); // Updated line
     return files.map((file) => {
       const filePath = path.join(directoryPath, file);
       const stats = fs.statSync(filePath);
