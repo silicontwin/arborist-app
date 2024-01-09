@@ -13,6 +13,13 @@ const Workspace = () => {
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [predictions, setPredictions] = useState(null);
+  const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(
+    null,
+  );
+  const [analysisEndTime, setAnalysisEndTime] = useState<number | null>(null);
+  const [elapsedTime, setElapsedTime] = useState<number | null>(null);
+  const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
+  const [totalElapsedTime, setTotalElapsedTime] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchDataPathAndListFiles = async () => {
@@ -115,8 +122,6 @@ const Workspace = () => {
       return;
     }
 
-    setIsAnalyzing(true);
-
     const rows = selectedFileData
       .split('\n')
       .filter((row) => row.trim() !== '');
@@ -142,6 +147,16 @@ const Workspace = () => {
     const y = consistentFormattedData.map((row) => row[row.length - 1]);
 
     const requestBody = { X, y };
+
+    const startTime = Date.now();
+    setAnalysisStartTime(startTime);
+    setIsAnalyzing(true);
+
+    // Start an interval to update elapsed time every 10 milliseconds
+    const id = setInterval(() => {
+      setElapsedTime(Date.now() - startTime);
+    }, 10);
+    setIntervalId(id);
 
     try {
       const response = await fetch('http://localhost:8000/predict', {
@@ -171,6 +186,13 @@ const Workspace = () => {
 
       setPredictions(predictionData.predictions);
 
+      clearInterval(intervalId!); // Clear the interval once predictions are received
+      const endTime = Date.now();
+      setAnalysisEndTime(endTime);
+      const finalElapsedTime = endTime - startTime;
+      setElapsedTime(finalElapsedTime); // Update elapsed time one last time
+      setTotalElapsedTime((finalElapsedTime / 1000).toFixed(2) + ' seconds'); // Storing the total elapsed time
+
       // Call a function to prepend predictions to the data
       const updatedData = prependPredictionsToData(
         selectedFileData,
@@ -183,6 +205,22 @@ const Workspace = () => {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  // Clear interval when component is unmounted or when analysis is not in progress
+  useEffect(() => {
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [intervalId]);
+
+  // Function to display elapsed time in seconds to the nearest hundredth
+  const displayElapsedTime = () => {
+    return elapsedTime != null
+      ? (elapsedTime / 1000).toFixed(2) + ' seconds' // Updated to show hundredths of a second
+      : 'Calculating...';
   };
 
   const prependPredictionsToData = (
@@ -248,6 +286,18 @@ const Workspace = () => {
                     >
                       Close
                     </button>
+
+                    <div id="analyzeTime">
+                      {isAnalyzing ? (
+                        <span>
+                          Analyzing: {displayElapsedTime()} have elapsed
+                        </span>
+                      ) : (
+                        totalElapsedTime && (
+                          <span>Total analysis time: {totalElapsedTime}</span>
+                        )
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
