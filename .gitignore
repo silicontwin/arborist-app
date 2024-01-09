@@ -99,3 +99,6 @@ src/api/
 *.sav
 *.csv
 
+# Do not ignore .csv files in /src/examples
+!/src/examples/*.csv
+
