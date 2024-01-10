@@ -2,7 +2,6 @@ import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import * as ReactDOM from 'react-dom/client';
 import Header from './components/Header';
 import About from './pages/About';
-import Upload from './pages/Upload';
 import Workspace from './pages/Workspace';
 
 const App = () => (
@@ -13,7 +12,6 @@ const App = () => (
       <div className="flex-1 overflow-auto">
         <Routes>
           <Route path="/" element={<Workspace />} />
-          <Route path="/upload" element={<Upload />} />
           <Route path="/about" element={<About />} />
         </Routes>
       </div>
@@ -22,7 +20,10 @@ const App = () => (
 );
 
 function render() {
-  const root = ReactDOM.createRoot(document.getElementById('app'));
+  const rootElement = document.getElementById('app');
+  if (!rootElement) throw new Error('Root element not found');
+
+  const root = ReactDOM.createRoot(rootElement);
   root.render(<App />);
 }
 
