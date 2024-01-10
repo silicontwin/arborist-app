@@ -81,4 +81,4 @@ Testing is currently being performed using MacBook Pro M1 Max and newer machines
 
 # Dev Notes:
 - If you experience `[Errno 48] error while attempting to bind on address ('0.0.0.0', 8000): address already in use` it can be helpful to run `lsof -i :8000` (macOS) to see what process is using that port. You can then kill that process with `kill -9 <PID>` (macOS) to stop it.
-- Electron can only execute JavaScript files, not TypeScript. Therefore, we must compile the TypeScript files to JavaScript before running the app. This is done automatically when running `yarn start` or `yarn build`, and the resulting JavaScript file is stored as `main.js` in the `dist` folder.
+- Electron can only execute JavaScript files, not TypeScript. Therefore, we must compile the TypeScript files to JavaScript before running the app. This is done automatically when running `yarn start` or `yarn package`, and the resulting JavaScript file is stored as `main.js` in the `dist` folder.
