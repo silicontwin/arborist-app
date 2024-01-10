@@ -222,7 +222,11 @@ const Workspace = () => {
       setSelectedFileData(updatedData);
     } catch (error) {
       console.error('Error in making prediction:', error);
-      alert(error.message);
+      if (error instanceof Error) {
+        alert(error.message);
+      } else {
+        alert('An unknown error occurred');
+      }
     } finally {
       setIsAnalyzing(false);
     }
