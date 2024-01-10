@@ -398,7 +398,7 @@ const Workspace = () => {
               <div
                 key={file.name}
                 onDoubleClick={() => handleFileDoubleClick(file.name)}
-                className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 ${
+                className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 cursor-pointer ${
                   index % 2 === 0 ? 'bg-gray-100/40' : 'bg-white'
                 } ${index === 0 ? 'border-t border-t-gray-200' : ''}`}
               >
