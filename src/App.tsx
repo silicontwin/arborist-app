@@ -1,7 +1,7 @@
 import { HashRouter as Router, Route, Routes } from 'react-router-dom';
 import * as ReactDOM from 'react-dom/client';
 import Header from './components/Header';
-import About from './pages/About';
+import Plots from './pages/Plots';
 import Workspace from './pages/Workspace';
 
 const App = () => (
@@ -12,7 +12,7 @@ const App = () => (
       <div className="flex-1 overflow-auto">
         <Routes>
           <Route path="/" element={<Workspace />} />
-          <Route path="/about" element={<About />} />
+          <Route path="/plots" element={<Plots />} />
         </Routes>
       </div>
     </div>
