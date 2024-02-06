@@ -29,6 +29,7 @@ const electronAPI = {
   getDesktopPath: () => ipcRenderer.invoke('get-desktop-path'),
   getDataPath: () => ipcRenderer.invoke('get-data-path'),
   readFile: (filePath: string) => ipcRenderer.invoke('read-file', filePath),
+  fetchPlot: () => ipcRenderer.invoke('fetch-plot'),
 };
 
 contextBridge.exposeInMainWorld('electron', electronAPI);
