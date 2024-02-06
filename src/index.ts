@@ -232,6 +232,19 @@ ipcMain.handle('read-file', async (event, fileName) => {
   }
 });
 
+ipcMain.handle('fetch-plot', async () => {
+  try {
+    const response = await axios.get('http://0.0.0.0:8000/plot', {
+      responseType: 'arraybuffer',
+    });
+    const image = Buffer.from(response.data, 'binary').toString('base64');
+    return image; // Base64-encoded string from the API
+  } catch (error) {
+    console.error('Error fetching plot:', error);
+    return null;
+  }
+});
+
 // -----------------------------------------------------------------------------
 
 // This method will be called when Electron has finished
