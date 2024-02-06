@@ -3,6 +3,7 @@ import React from 'react';
 import { Link, Router } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { FaRegFolderOpen } from 'react-icons/fa';
+import { AiOutlineBoxPlot } from 'react-icons/ai';
 import { HiMiniRocketLaunch } from 'react-icons/hi2';
 
 const Header = () => {
@@ -42,6 +43,17 @@ const Header = () => {
           <div className="flex flex-row justify-start items-center space-x-1">
             <FaRegFolderOpen className="w-[20px] h-[20px]" />
             <div>Workspace</div>
+          </div>
+        </Link>
+
+        <Link
+          to="/plots"
+          style={noDragStyle}
+          className={`${location.pathname === '/plots' ? 'text-red-600' : ''}`}
+        >
+          <div className="flex flex-row justify-start items-center space-x-1">
+            <AiOutlineBoxPlot className="w-[24px] h-[24px]" />
+            <div>Plots</div>
           </div>
         </Link>
 
