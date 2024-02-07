@@ -380,12 +380,19 @@ const Workspace = () => {
                 )}
 
                 {predictions && (
-                  <div>
+                  <div className="flex space-x-4">
                     <button
                       onClick={downloadCSV}
                       className="rounded-md px-1.5 py-1 text-sm font-bold border bg-blue-600 text-white"
                     >
-                      Download
+                      Download Analysis
+                    </button>
+
+                    <button
+                      onClick={downloadCSV}
+                      className="rounded-md px-1.5 py-1 text-sm font-bold border bg-blue-600 text-white"
+                    >
+                      Download Posterior Matrices
                     </button>
                   </div>
                 )}
