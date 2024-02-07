@@ -253,7 +253,7 @@ const Workspace = () => {
     predictionValues: number[],
   ) => {
     const rows = dataString.split('\n');
-    const headers = 'prediction,' + rows[0];
+    const headers = 'Posterior Average (y^),' + rows[0];
 
     const updatedRows = rows.slice(1).map((row: string, index: number) => {
       const prediction =
