@@ -450,7 +450,7 @@ const Workspace = () => {
         }`}
       >
         <div className="w-full h-[calc(100vh_-_110px)] overflow-auto">
-          <table className="w-full text-sm">
+          <table className="w-full text-sm table-fixed">
             <tbody>
               {parseCSVData(selectedFileData).map((row, rowIndex) => (
                 <tr
@@ -460,10 +460,12 @@ const Workspace = () => {
                   {row.map((cell, cellIndex) => (
                     <td
                       key={cellIndex}
-                      className={`border py-2 pl-4 ${
+                      className={`w-[200px] border py-2 pl-4 ${
                         rowIndex === 0 ? 'font-bold' : ''
                       } ${
-                        isPredictionColumn(cellIndex) ? 'bg-blue-300/20' : ''
+                        isPredictionColumn(cellIndex)
+                          ? 'bg-blue-300/20 w-[300px]'
+                          : ''
                       }`}
                     >
                       {cell}
