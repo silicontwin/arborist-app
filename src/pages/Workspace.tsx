@@ -40,7 +40,7 @@ const Workspace = () => {
   useEffect(() => {
     const fetchDataPathAndListFiles = async () => {
       const dataPath = await window.electron.invoke('get-data-path');
-      setWorkspacePath(`"${dataPath}"`);
+      setWorkspacePath(dataPath);
       const filesList: FileDetails[] = await window.electron.listFiles(
         dataPath,
       );
