@@ -414,8 +414,7 @@ const Workspace = () => {
                   <div className="font-medium">{file.name}</div>
                 </div>
                 <div className="flex flex-row justify-start items-center space-x-4">
-                  <div># observations x # features</div>
-                  <div className="w-[100px] text-right">
+                  <div className="w-[100px] text-right text-sm font-medium text-gray-600">
                     {formatFileSize(file.size)}
                   </div>
                 </div>
