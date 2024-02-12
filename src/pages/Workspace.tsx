@@ -4,6 +4,10 @@ import { FaRegFolderOpen } from 'react-icons/fa';
 import { MdOutlineInsertDriveFile } from 'react-icons/md';
 import { TbDragDrop } from 'react-icons/tb';
 
+interface DataItem {
+  [key: string]: any;
+}
+
 const Workspace = () => {
   const [files, setFiles] = useState<FileDetails[]>([]);
   const [workspacePath, setWorkspacePath] = useState('');
@@ -138,13 +142,52 @@ const Workspace = () => {
     }
   };
 
-  const parseCSVData = (data: string) => {
-    // Split the data into rows, then slice to get only the first 500 rows
+  const renderTableFromJsonData = () => {
+    let jsonData: { data: DataItem[] };
+    try {
+      jsonData = JSON.parse(selectedFileData);
+    } catch (error) {
+      console.error('Error parsing JSON data:', error);
+      return <div>Invalid JSON format</div>;
+    }
+
+    const { data } = jsonData;
+    if (!data || !Array.isArray(data) || data.length === 0) {
+      return <div>No data available</div>;
+    }
+
+    const columns = Object.keys(data[0]);
+
     return (
-      data
-        .split('\n')
-        // .slice(0, 500)
-        .map((row) => row.split(','))
+      <table className="min-w-full text-sm table-fixed">
+        <thead>
+          <tr>
+            {columns.map((column, index) => (
+              <th
+                key={index}
+                className="border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em]"
+              >
+                {column}
+              </th>
+            ))}
+          </tr>
+        </thead>
+
+        <tbody>
+          {data.map((item, rowIndex) => (
+            <tr
+              key={rowIndex}
+              className={`${rowIndex % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
+            >
+              {columns.map((column, colIndex) => (
+                <td key={colIndex} className={`border py-2 px-4 text-left`}>
+                  {item[column]}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     );
   };
 
@@ -462,31 +505,7 @@ const Workspace = () => {
         }`}
       >
         <div className="w-full h-[calc(100vh_-_110px)] overflow-auto">
-          <table className="w-full text-sm table-fixed">
-            <tbody>
-              {parseCSVData(selectedFileData).map((row, rowIndex) => (
-                <tr
-                  key={rowIndex}
-                  className={`${rowIndex % 2 === 0 ? 'bg-gray-100' : ''}`}
-                >
-                  {row.map((cell, cellIndex) => (
-                    <td
-                      key={cellIndex}
-                      className={`w-[200px] border py-2 pl-4 ${
-                        rowIndex === 0 ? 'font-bold' : ''
-                      } ${
-                        isPredictionColumn(cellIndex)
-                          ? 'bg-blue-300/20 w-[300px]'
-                          : ''
-                      }`}
-                    >
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {renderTableFromJsonData()}
         </div>
       </div>
 
