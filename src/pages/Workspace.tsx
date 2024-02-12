@@ -110,18 +110,31 @@ const Workspace = () => {
 
   const handleFileDoubleClick = async (fileName: string) => {
     try {
-      const fileData = await window.electron.invoke('read-file', fileName);
-      setSelectedFileData(fileData);
-      setSelectedFileName(fileName);
-      setIsDataModalOpen(true);
+      const response = await fetch('http://localhost:8000/pyarrow', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: fileName,
+          workspacePath: workspacePath,
+        }),
+      });
 
-      // Reset predictions and elapsed time when a new file is opened
-      setPredictions(null);
-      setElapsedTime(null);
-      setTotalElapsedTime(null); // Reset the total elapsed time
+      if (!response.ok) {
+        throw new Error(`Failed to process file: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      setSelectedFileData(JSON.stringify(data, null, 2));
+      setIsDataModalOpen(true);
     } catch (error) {
-      console.error('Error opening file:', error);
-      setUploadError('Failed to open file');
+      console.error('Error processing file:', error);
+      alert(
+        `Error: ${
+          error instanceof Error ? error.message : 'An unknown error occurred'
+        }`,
+      );
     }
   };
 
