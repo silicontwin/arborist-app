@@ -31,7 +31,7 @@ const config: ForgeConfig = {
     new AutoUnpackNativesPlugin({}),
     new WebpackPlugin({
       mainConfig,
-      devContentSecurityPolicy: `default-src 'self' http://localhost:8000; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws://localhost:3000 http://localhost:8000;`,
+      devContentSecurityPolicy: `default-src 'self' http://127.0.0.1:8000; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self' ws://localhost:3000 http://127.0.0.1:8000;`,
       renderer: {
         config: rendererConfig,
         entryPoints: [
