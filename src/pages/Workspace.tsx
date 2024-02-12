@@ -343,7 +343,7 @@ const Workspace = () => {
               <div className="w-auto flex flex-row space-x-1">
                 <span>Local path:</span>
                 <code className="bg-gray-100 p-1 rounded-md text-sm">
-                  {workspacePath}
+                  {`"${workspacePath}"`}
                 </code>
               </div>
             ) : (
