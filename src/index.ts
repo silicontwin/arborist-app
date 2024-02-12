@@ -123,7 +123,7 @@ ipcMain.handle('get-file-storage-path', async () => {
 // Used for fetching data from the FastAPI server
 ipcMain.handle('fetch-data', async () => {
   // console.log('IPC fetch-data called');
-  const serverReady = await isServerReady('http://127.0.0.1:8000/status'); // https://localhost:8000/status doesn't work
+  const serverReady = await isServerReady('http://127.0.0.1:8000/status');
   if (!serverReady) {
     console.error('FastAPI server is not ready');
     return { error: 'FastAPI server is not ready' };
@@ -131,7 +131,7 @@ ipcMain.handle('fetch-data', async () => {
 
   // console.log('Fetching data from FastAPI server');
   try {
-    const response = await axios.get('http://127.0.0.1:8000/status'); // https://localhost:8000/status doesn't work
+    const response = await axios.get('http://127.0.0.1:8000/status');
     // console.log('Data fetched:', response.data);
     return response.data;
   } catch (error) {
