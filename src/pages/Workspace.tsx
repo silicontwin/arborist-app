@@ -132,6 +132,7 @@ const Workspace = () => {
       const data = await response.json();
       setSelectedFileData(JSON.stringify(data, null, 2));
       setIsDataModalOpen(true);
+      setSelectedFileName(fileName);
     } catch (error) {
       console.error('Error processing file:', error);
       alert(
