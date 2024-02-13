@@ -159,13 +159,13 @@ const Workspace = () => {
     const columns = Object.keys(data[0]);
 
     return (
-      <table className="min-w-full text-sm table-fixed">
+      <table className="min-w-full text-sm border-collapse">
         <thead>
           <tr>
             {columns.map((column, index) => (
               <th
                 key={index}
-                className="border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em]"
+                className="border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap"
               >
                 {column}
               </th>
@@ -180,7 +180,10 @@ const Workspace = () => {
               className={`${rowIndex % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
             >
               {columns.map((column, colIndex) => (
-                <td key={colIndex} className={`border py-2 px-4 text-left`}>
+                <td
+                  key={colIndex}
+                  className="border py-2 px-4 text-left whitespace-nowrap"
+                >
                   {item[column]}
                 </td>
               ))}
