@@ -114,7 +114,7 @@ const Workspace = () => {
 
   const handleFileDoubleClick = async (fileName: string) => {
     try {
-      const response = await fetch('http://localhost:8000/pyarrow', {
+      const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
