@@ -26,6 +26,7 @@ const Workspace = () => {
   const [totalElapsedTime, setTotalElapsedTime] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState('Starting server');
   const [observationSelection, setObservationSelection] = useState('all');
+  const [selectedModel, setSelectedModel] = useState('xbart');
 
   useEffect(() => {
     // Fetch API status when component mounts
@@ -365,6 +366,12 @@ const Workspace = () => {
     return predictions != null && cellIndex === 0;
   };
 
+  // ---
+
+  const handleChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedModel(event.target.value);
+  };
+
   return (
     <>
       <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
@@ -466,12 +473,14 @@ const Workspace = () => {
                     <div className="flex justify-start items-center space-x-1">
                       <div className="flex flex-row justify-start items-center space-x-2">
                         <div className="">Model:</div>
-                        <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
+                        <select
+                          className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                          value={selectedModel}
+                          onChange={handleChange}
+                        >
                           <option value="bcf">BCF</option>
                           <option value="bart">BART</option>
-                          <option value="xbart" selected>
-                            XBART
-                          </option>
+                          <option value="xbart">XBART</option>
                         </select>
                       </div>
 
