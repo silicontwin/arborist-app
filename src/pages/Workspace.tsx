@@ -150,6 +150,11 @@ const Workspace = () => {
   };
 
   const renderTableFromJsonData = () => {
+    // Check if selectedFileData contains data and is valid JSON before parsing
+    if (!selectedFileData.trim()) {
+      return <div>Select a file to view its data.</div>;
+    }
+
     let jsonData: DataItem[];
     try {
       jsonData = JSON.parse(selectedFileData);
@@ -176,7 +181,8 @@ const Workspace = () => {
                 <div className="flex flex-row justify-start items-center space-x-1">
                   <input
                     type="checkbox"
-                    defaultChecked={columnNumericStatus[column]} // Determined by the numeric flag
+                    // Use the columnNumericStatus state to conditionally render the checkbox as checked
+                    defaultChecked={columnNumericStatus[column]}
                     className="form-checkbox"
                   />
                   <div>{column}</div>
@@ -572,7 +578,11 @@ const Workspace = () => {
         }`}
       >
         <div className="w-full h-[calc(100vh_-_110px)] overflow-auto">
-          {renderTableFromJsonData()}
+          {selectedFileData.trim() ? (
+            renderTableFromJsonData()
+          ) : (
+            <div>Select a file to start.</div>
+          )}
         </div>
       </div>
 
