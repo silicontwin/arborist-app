@@ -168,7 +168,14 @@ const Workspace = () => {
                 key={index}
                 className="border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap"
               >
-                {column}
+                <div className="flex flex-row justify-start items-center space-x-1">
+                  <input
+                    type="checkbox"
+                    defaultChecked
+                    className="form-checkbox"
+                  />
+                  <div>{column}</div>
+                </div>
               </th>
             ))}
           </tr>
