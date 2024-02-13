@@ -425,25 +425,37 @@ const Workspace = () => {
                 )}
 
                 {apiStatus === 'Online' && !predictions && (
-                  <>
-                    <div className="flex flex-row justify-start items-center space-x-1">
-                      <div className="">Model:</div>
-                      <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
-                        <option value="bcf">BCF</option>
-                        <option value="bart">BART</option>
-                        <option value="xbart" selected>
-                          XBART
-                        </option>
-                      </select>
+                  <div className="flex justify-start items-center space-x-8">
+                    <div className="flex justify-start items-center space-x-1">
+                      <div>Observations:</div>
+                      <div>
+                        <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
+                          <option value="all">All</option>
+                          <option value="some">Some</option>
+                        </select>
+                      </div>
                     </div>
 
-                    <button
-                      onClick={analyzeData}
-                      className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
-                    >
-                      Analyze
-                    </button>
-                  </>
+                    <div className="flex justify-start items-center space-x-1">
+                      <div className="flex flex-row justify-start items-center space-x-2">
+                        <div className="">Model:</div>
+                        <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
+                          <option value="bcf">BCF</option>
+                          <option value="bart">BART</option>
+                          <option value="xbart" selected>
+                            XBART
+                          </option>
+                        </select>
+                      </div>
+
+                      <button
+                        onClick={analyzeData}
+                        className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
+                      >
+                        Analyze
+                      </button>
+                    </div>
+                  </div>
                 )}
 
                 {predictions && (
