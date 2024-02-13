@@ -27,6 +27,9 @@ const Workspace = () => {
   const [apiStatus, setApiStatus] = useState('Starting server');
   const [observationSelection, setObservationSelection] = useState('all');
   const [selectedModel, setSelectedModel] = useState('xbart');
+  const [columnNumericStatus, setColumnNumericStatus] = useState<{
+    [key: string]: boolean;
+  }>({});
 
   useEffect(() => {
     // Fetch API status when component mounts
@@ -132,7 +135,8 @@ const Workspace = () => {
       }
 
       const data = await response.json();
-      setSelectedFileData(JSON.stringify(data, null, 2));
+      setSelectedFileData(JSON.stringify(data.data, null, 2));
+      setColumnNumericStatus(data.is_numeric); // Store the numeric status of each column
       setIsDataModalOpen(true);
       setSelectedFileName(fileName);
     } catch (error) {
@@ -146,7 +150,7 @@ const Workspace = () => {
   };
 
   const renderTableFromJsonData = () => {
-    let jsonData: { data: DataItem[] };
+    let jsonData: DataItem[];
     try {
       jsonData = JSON.parse(selectedFileData);
     } catch (error) {
@@ -154,12 +158,11 @@ const Workspace = () => {
       return <div>Invalid JSON format</div>;
     }
 
-    const { data } = jsonData;
-    if (!data || !Array.isArray(data) || data.length === 0) {
+    if (!jsonData || !Array.isArray(jsonData) || jsonData.length === 0) {
       return <div>No data available</div>;
     }
 
-    const columns = Object.keys(data[0]);
+    const columns = Object.keys(jsonData[0]);
 
     return (
       <table className="min-w-full text-sm border-collapse">
@@ -173,7 +176,7 @@ const Workspace = () => {
                 <div className="flex flex-row justify-start items-center space-x-1">
                   <input
                     type="checkbox"
-                    defaultChecked
+                    defaultChecked={columnNumericStatus[column]} // Determined by the numeric flag
                     className="form-checkbox"
                   />
                   <div>{column}</div>
@@ -182,9 +185,8 @@ const Workspace = () => {
             ))}
           </tr>
         </thead>
-
         <tbody>
-          {data.map((item, rowIndex) => (
+          {jsonData.map((item, rowIndex) => (
             <tr
               key={rowIndex}
               className={`${rowIndex % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
