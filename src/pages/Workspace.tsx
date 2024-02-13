@@ -183,9 +183,16 @@ const Workspace = () => {
                     type="checkbox"
                     // Use the columnNumericStatus state to conditionally render the checkbox as checked
                     checked={columnNumericStatus[column] === true}
+                    disabled={columnNumericStatus[column] === false}
                     className="form-checkbox"
                   />
-                  <div>{column}</div>
+                  <div
+                    className={`${
+                      columnNumericStatus[column] === false && 'text-gray-400'
+                    }`}
+                  >
+                    {column}
+                  </div>
                 </div>
               </th>
             ))}
