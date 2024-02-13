@@ -139,6 +139,9 @@ const Workspace = () => {
       setColumnNumericStatus({ ...data.is_numeric }); // Spreading the data to create a new object
       setIsDataModalOpen(true);
       setSelectedFileName(fileName);
+
+      // Reset the observationSelection state to its default value
+      setObservationSelection('all');
     } catch (error) {
       console.error('Error processing file:', error);
       alert(
