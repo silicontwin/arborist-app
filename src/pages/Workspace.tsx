@@ -169,6 +169,15 @@ const Workspace = () => {
 
     const columns = Object.keys(jsonData[0]);
 
+    // ---
+
+    const handleCheckboxChange = (columnName: string) => {
+      setColumnNumericStatus((prevState) => ({
+        ...prevState,
+        [columnName]: !prevState[columnName],
+      }));
+    };
+
     return (
       <table className="min-w-full text-sm border-collapse">
         <thead>
@@ -183,6 +192,7 @@ const Workspace = () => {
                     type="checkbox"
                     // Use the columnNumericStatus state to conditionally render the checkbox as checked
                     checked={columnNumericStatus[column] === true}
+                    onChange={() => handleCheckboxChange(column)}
                     disabled={columnNumericStatus[column] === false}
                     className="form-checkbox"
                   />
