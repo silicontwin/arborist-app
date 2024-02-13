@@ -187,7 +187,7 @@ const Workspace = () => {
                 key={index}
                 className="border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap"
               >
-                <div className="flex flex-row justify-start items-center space-x-1">
+                <label className="flex flex-row justify-start items-center space-x-1 cursor-pointer">
                   <input
                     type="checkbox"
                     // Use the columnNumericStatus state to conditionally render the checkbox as checked
@@ -198,12 +198,14 @@ const Workspace = () => {
                   />
                   <div
                     className={`${
-                      columnNumericStatus[column] === false && 'text-gray-400'
+                      columnNumericStatus[column] === false
+                        ? 'text-gray-400'
+                        : ''
                     }`}
                   >
                     {column}
                   </div>
-                </div>
+                </label>
               </th>
             ))}
           </tr>
