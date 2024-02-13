@@ -136,7 +136,7 @@ const Workspace = () => {
 
       const data = await response.json();
       setSelectedFileData(JSON.stringify(data.data, null, 2));
-      setColumnNumericStatus(data.is_numeric); // Store the numeric status of each column
+      setColumnNumericStatus({ ...data.is_numeric }); // Spreading the data to create a new object
       setIsDataModalOpen(true);
       setSelectedFileName(fileName);
     } catch (error) {
@@ -182,7 +182,7 @@ const Workspace = () => {
                   <input
                     type="checkbox"
                     // Use the columnNumericStatus state to conditionally render the checkbox as checked
-                    defaultChecked={columnNumericStatus[column]}
+                    checked={columnNumericStatus[column] === true}
                     className="form-checkbox"
                   />
                   <div>{column}</div>
