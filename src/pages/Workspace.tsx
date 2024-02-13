@@ -464,10 +464,16 @@ const Workspace = () => {
             {files.map((file, index) => (
               <div
                 key={file.name}
-                onDoubleClick={() => handleFileDoubleClick(file.name)}
-                className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 cursor-pointer ${
+                onDoubleClick={
+                  apiStatus === 'Online'
+                    ? () => handleFileDoubleClick(file.name)
+                    : undefined
+                }
+                className={`border-b border-b-gray-200 py-2 w-full px-4 flex flex-row justify-between items-center hover:bg-gray-200/60 ${
                   index % 2 === 0 ? 'bg-gray-100/40' : 'bg-white'
-                } ${index === 0 ? 'border-t border-t-gray-200' : ''}`}
+                } ${index === 0 ? 'border-t border-t-gray-200' : ''} ${
+                  apiStatus === 'Online' && 'cursor-pointer'
+                }`}
               >
                 <div className="flex flex-row justify-start items-center space-x-1">
                   <MdOutlineInsertDriveFile className="w-[20px] h-[20px] text-gray-400" />
