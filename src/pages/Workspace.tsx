@@ -8,6 +8,10 @@ interface DataItem {
   [key: string]: any;
 }
 
+interface ColumnStatus {
+  [key: string]: { isNumeric: boolean; isChecked: boolean };
+}
+
 const Workspace = () => {
   const [files, setFiles] = useState<FileDetails[]>([]);
   const [workspacePath, setWorkspacePath] = useState('');
@@ -27,9 +31,9 @@ const Workspace = () => {
   const [apiStatus, setApiStatus] = useState('Starting server');
   const [observationSelection, setObservationSelection] = useState('all');
   const [selectedModel, setSelectedModel] = useState('xbart');
-  const [columnNumericStatus, setColumnNumericStatus] = useState<{
-    [key: string]: boolean;
-  }>({});
+  const [columnNumericStatus, setColumnNumericStatus] = useState<ColumnStatus>(
+    {},
+  );
 
   useEffect(() => {
     // Fetch API status when component mounts
@@ -136,7 +140,14 @@ const Workspace = () => {
 
       const data = await response.json();
       setSelectedFileData(JSON.stringify(data.data, null, 2));
-      setColumnNumericStatus({ ...data.is_numeric }); // Spreading the data to create a new object
+      const numericStatusUpdates: ColumnStatus = {};
+      Object.keys(data.is_numeric).forEach((column) => {
+        numericStatusUpdates[column] = {
+          isNumeric: data.is_numeric[column],
+          isChecked: true,
+        }; // Default numeric columns to checked
+      });
+      setColumnNumericStatus(numericStatusUpdates);
       setIsDataModalOpen(true);
       setSelectedFileName(fileName);
 
@@ -153,7 +164,6 @@ const Workspace = () => {
   };
 
   const renderTableFromJsonData = () => {
-    // Check if selectedFileData contains data and is valid JSON before parsing
     if (!selectedFileData.trim()) {
       return <div>Select a file to view its data.</div>;
     }
@@ -172,12 +182,13 @@ const Workspace = () => {
 
     const columns = Object.keys(jsonData[0]);
 
-    // ---
-
     const handleCheckboxChange = (columnName: string) => {
       setColumnNumericStatus((prevState) => ({
         ...prevState,
-        [columnName]: !prevState[columnName],
+        [columnName]: {
+          ...prevState[columnName],
+          isChecked: !prevState[columnName].isChecked,
+        },
       }));
     };
 
@@ -188,27 +199,23 @@ const Workspace = () => {
             {columns.map((column, index) => (
               <th
                 key={index}
-                className="border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap"
+                className={`border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
+                  !columnNumericStatus[column]?.isChecked ? 'text-gray-400' : ''
+                }`}
               >
-                <label className="flex flex-row justify-start items-center space-x-1 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    // Use the columnNumericStatus state to conditionally render the checkbox as checked
-                    checked={columnNumericStatus[column] === true}
-                    onChange={() => handleCheckboxChange(column)}
-                    disabled={columnNumericStatus[column] === false}
-                    className="form-checkbox"
-                  />
-                  <div
-                    className={`${
-                      columnNumericStatus[column] === false
-                        ? 'text-gray-400'
-                        : ''
-                    }`}
-                  >
-                    {column}
-                  </div>
-                </label>
+                {columnNumericStatus[column]?.isNumeric ? (
+                  <label className="flex flex-row justify-start items-center space-x-1 cursor-pointer">
+                    <input
+                      type="checkbox"
+                      checked={columnNumericStatus[column]?.isChecked}
+                      onChange={() => handleCheckboxChange(column)}
+                      className="form-checkbox"
+                    />
+                    <span>{column}</span>
+                  </label>
+                ) : (
+                  <span className="text-gray-400">{column}</span>
+                )}
               </th>
             ))}
           </tr>
