@@ -34,6 +34,7 @@ const Workspace = () => {
   const [columnNumericStatus, setColumnNumericStatus] = useState<ColumnStatus>(
     {},
   );
+  const [selectedFeature, setSelectedFeature] = useState<string>('');
 
   useEffect(() => {
     // Fetch API status when component mounts
@@ -183,13 +184,29 @@ const Workspace = () => {
     const columns = Object.keys(jsonData[0]);
 
     const handleCheckboxChange = (columnName: string) => {
-      setColumnNumericStatus((prevState) => ({
-        ...prevState,
-        [columnName]: {
-          ...prevState[columnName],
-          isChecked: !prevState[columnName].isChecked,
-        },
-      }));
+      setColumnNumericStatus((prevState) => {
+        const updatedStatus = {
+          ...prevState,
+          [columnName]: {
+            ...prevState[columnName],
+            isChecked: !prevState[columnName].isChecked,
+          },
+        };
+
+        // Find the first checked column to set as the selected feature
+        const firstCheckedColumn = Object.keys(updatedStatus).find(
+          (key) => updatedStatus[key].isChecked,
+        );
+
+        // Update the selected feature state
+        if (firstCheckedColumn) {
+          setSelectedFeature(firstCheckedColumn);
+        } else {
+          setSelectedFeature(''); // Reset if no columns are checked
+        }
+
+        return updatedStatus;
+      });
     };
 
     return (
@@ -494,7 +511,11 @@ const Workspace = () => {
                     <div className="flex justify-start items-center space-x-1">
                       <div>Features:</div>
                       <div>
-                        <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
+                        <select
+                          className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                          value={selectedFeature}
+                          onChange={(e) => setSelectedFeature(e.target.value)}
+                        >
                           {getFeatureOptions()}
                         </select>
                       </div>
