@@ -409,6 +409,20 @@ const Workspace = () => {
     setSelectedModel(event.target.value);
   };
 
+  const getFeatureOptions = () => {
+    // Filter columns that are numeric and checked
+    const checkedColumns = Object.entries(columnNumericStatus)
+      .filter(([columnName, status]) => status.isNumeric && status.isChecked)
+      .map(([columnName]) => columnName);
+
+    // Generate <option> elements for these columns
+    return checkedColumns.map((columnName) => (
+      <option key={columnName} value={columnName}>
+        {columnName}
+      </option>
+    ));
+  };
+
   return (
     <>
       <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
@@ -471,6 +485,14 @@ const Workspace = () => {
 
                 {apiStatus === 'Online' && !predictions && (
                   <div className="flex justify-start items-center space-x-8">
+                    <div className="flex justify-start items-center space-x-1">
+                      <div>Features:</div>
+                      <div>
+                        <select className="rounded-md px-1.5 py-1 text-sm font-bold border">
+                          {getFeatureOptions()}
+                        </select>
+                      </div>
+                    </div>
                     <div className="flex justify-start items-center space-x-1">
                       <div>Observations:</div>
                       <div>
