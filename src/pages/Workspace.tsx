@@ -608,8 +608,8 @@ const Workspace = () => {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 text-[0.725em] text-gray-400 z-10 text-center bg-gray-100 p-1 rounded-r-md">
-        Status: {apiStatus}
+      <div className="absolute bottom-0 left-0 text-[0.725em] text-gray-400 z-10 text-center px-2 py-1 rounded-r-md">
+        {apiStatus}
       </div>
     </>
   );
