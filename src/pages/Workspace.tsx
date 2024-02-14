@@ -224,7 +224,13 @@ const Workspace = () => {
           {jsonData.map((item, rowIndex) => (
             <tr
               key={rowIndex}
-              className={`${rowIndex % 2 === 0 ? 'bg-gray-100' : 'bg-white'}`}
+              className={`${
+                Object.values(item).some((value) => value === '...')
+                  ? 'bg-yellow-100'
+                  : rowIndex % 2 === 0
+                  ? 'bg-gray-100'
+                  : 'bg-white'
+              }`}
             >
               {columns.map((column, colIndex) => (
                 <td
