@@ -35,6 +35,7 @@ const Workspace = () => {
     {},
   );
   const [selectedFeature, setSelectedFeature] = useState<string>('');
+  const [headTailRows, setHeadTailRows] = useState<number>(100);
 
   useEffect(() => {
     // Fetch API status when component mounts
@@ -132,6 +133,7 @@ const Workspace = () => {
         body: JSON.stringify({
           fileName: fileName,
           workspacePath: workspacePath,
+          headTailRows: headTailRows,
         }),
       });
 
@@ -455,7 +457,25 @@ const Workspace = () => {
               <FaRegFolderOpen className="w-[26px] h-[26px]" />
 
               {!isDataModalOpen ? (
-                <div className="text-[1.4em]">Workspace</div>
+                <div className="flex justify-start items-center space-x-4">
+                  <div className="text-[1.4em]">Workspace</div>
+                  <div className="flex justify-start items-center space-x-1">
+                    <div>Head/tail rows:</div>
+                    <select
+                      className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                      value={headTailRows}
+                      onChange={(e) =>
+                        setHeadTailRows(parseInt(e.target.value, 10))
+                      }
+                    >
+                      <option value={20}>20</option>
+                      <option value={100}>100</option>
+                      <option value={200}>200</option>
+                      <option value={500}>500</option>
+                      <option value={1000}>1000</option>
+                    </select>
+                  </div>
+                </div>
               ) : (
                 <div className="flex flex-row justify-between items-center">
                   <div className="flex flex-row justify-start items-center space-x-3">
