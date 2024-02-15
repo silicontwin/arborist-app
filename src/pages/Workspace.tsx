@@ -3,6 +3,7 @@ import { FileDetails } from '../types/fileDetails';
 import { FaRegFolderOpen } from 'react-icons/fa';
 import { MdOutlineInsertDriveFile } from 'react-icons/md';
 import { TbDragDrop } from 'react-icons/tb';
+import { VscSettings } from 'react-icons/vsc';
 
 interface DataItem {
   [key: string]: any;
@@ -36,6 +37,8 @@ const Workspace = () => {
   );
   const [selectedFeature, setSelectedFeature] = useState<string>('');
   const [headTailRows, setHeadTailRows] = useState<number>(100);
+  const [isModelParamsVisible, setIsModelParamsVisible] =
+    useState<boolean>(false);
 
   useEffect(() => {
     // Fetch API status when component mounts
@@ -448,6 +451,10 @@ const Workspace = () => {
     ));
   };
 
+  const toggleModelParamsVisibility = () => {
+    setIsModelParamsVisible((prev) => !prev);
+  };
+
   return (
     <>
       <div className="w-full flex flex-col justify-center items-center h-[calc(100vh_-_50px)]">
@@ -576,7 +583,7 @@ const Workspace = () => {
                       )}
                     </div>
 
-                    <div className="flex justify-start items-center space-x-1">
+                    <div className="flex justify-start items-center">
                       <div className="flex flex-row justify-start items-center space-x-2">
                         <div className="">Model:</div>
                         <select
@@ -589,6 +596,11 @@ const Workspace = () => {
                           <option value="xbart">XBART</option>
                         </select>
                       </div>
+
+                      <VscSettings
+                        className="w-[24px] h-[24px] mx-2 text-blue-600"
+                        onClick={toggleModelParamsVisibility}
+                      />
 
                       <button
                         onClick={analyzeData}
@@ -687,6 +699,26 @@ const Workspace = () => {
       <div className="absolute bottom-0 left-0 text-[0.725em] text-gray-400 z-10 text-center px-2 py-1 rounded-r-md">
         {apiStatus}
       </div>
+
+      {isModelParamsVisible && (
+        <div
+          id="modelParams"
+          className="w-[300px] bg-blue-600 text-white p-4 rounded-b-md absolute top-[110px] right-[30px] z-20 shadow-md"
+        >
+          <div>
+            <div className="uppercase font-semibold text-[0.925em]">
+              Model Parameters
+            </div>
+            <div>
+              <div>Number of Trees (M)</div>
+              <div>Tree Depth (D)</div>
+              <div>Burn-in Iterations</div>
+              <div>Number of Draws</div>
+              <div>Thinning</div>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
