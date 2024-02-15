@@ -598,7 +598,7 @@ const Workspace = () => {
                       </div>
 
                       <VscSettings
-                        className="w-[24px] h-[24px] mx-2 text-blue-600"
+                        className="w-[24px] h-[24px] mx-2 text-blue-600 cursor-pointer"
                         onClick={toggleModelParamsVisibility}
                       />
 
@@ -703,18 +703,94 @@ const Workspace = () => {
       {isModelParamsVisible && (
         <div
           id="modelParams"
-          className="w-[300px] bg-blue-600 text-white p-4 rounded-b-md absolute top-[110px] right-[30px] z-20 shadow-md"
+          className="w-[400px] bg-blue-600 text-white p-2 rounded-b-md absolute top-[110px] right-[30px] z-20 shadow-md"
         >
           <div>
-            <div className="uppercase font-semibold text-[0.925em]">
+            <div className="uppercase font-semibold text-[0.925em] border-b border-b-white/30 py-1 text-center">
               Model Parameters
             </div>
-            <div>
-              <div>Number of Trees (M)</div>
-              <div>Tree Depth (D)</div>
-              <div>Burn-in Iterations</div>
-              <div>Number of Draws</div>
-              <div>Thinning</div>
+
+            <div className="w-full flex flex-col justify-start items-center">
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Number of Trees (M)</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="100"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Tree Depth (D)</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="3"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Burn-in Iterations</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="1000"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Number of Draws</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="5000"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Thinning</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="1"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Prior Mean of Leaf Parameters</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="0"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Prior Variance of Leaf Parameters</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="1"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Alpha (α) for Tree Structure Prior</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="0.95"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Beta (β) for Tree Structure Prior</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="2"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center py-1">
+                <div>Minimum Node Size</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="5"
+                />
+              </div>
             </div>
           </div>
         </div>
