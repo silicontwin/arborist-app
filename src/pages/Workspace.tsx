@@ -547,7 +547,7 @@ const Workspace = () => {
                         </select>
                       </div>
                     </div>
-                    <div className="flex justify-start items-center space-x-1">
+                    {/* <div className="flex justify-start items-center space-x-1">
                       <div>Observations:</div>
                       <div>
                         <select
@@ -581,7 +581,7 @@ const Workspace = () => {
                           </div>
                         </>
                       )}
-                    </div>
+                    </div> */}
 
                     <div className="flex justify-start items-center">
                       <div className="flex flex-row justify-start items-center space-x-2">
