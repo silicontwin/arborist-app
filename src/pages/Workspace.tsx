@@ -279,98 +279,59 @@ const Workspace = () => {
 
   // ---
 
-  const analyzeData = async () => {
-    if (!selectedFileData) {
-      alert('No data to analyze');
-      return;
-    }
-
-    const rows = selectedFileData
-      .split('\n')
-      .filter((row) => row.trim() !== '');
-    const observations = rows.length > 0 ? rows.length - 1 : 0;
-    const features = rows[0]?.split(',').length || 0;
-
-    const formattedData = rows
-      .slice(1)
-      .map((row) => row.split(',').map((val) => parseFloat(val) || null));
-
-    const correctObservationLength = features;
-    const consistentFormattedData = formattedData.filter(
-      (row) => row.length === correctObservationLength,
-    );
-
-    if (consistentFormattedData.length !== formattedData.length) {
-      console.warn(
-        'Some observations were skipped due to inconsistent lengths',
-      );
-    }
-
-    const X = consistentFormattedData.map((row) => row.slice(0, -1));
-    const y = consistentFormattedData.map((row) => row[row.length - 1]);
-
-    const requestBody = { X, y };
-
-    const startTime = Date.now();
-    setAnalysisStartTime(startTime);
-    setIsAnalyzing(true);
-
-    // Start an interval to update elapsed time every 10 milliseconds
-    const id = setInterval(() => {
-      setElapsedTime(Date.now() - startTime);
-    }, 10);
-    setIntervalId(id);
+  const analyzeData = async (fileName: string) => {
+    console.log('Starting analysis for:', fileName);
 
     try {
-      const response = await fetch('http://localhost:8000/predict', {
+      const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(requestBody),
+        body: JSON.stringify({
+          fileName: fileName,
+          workspacePath: workspacePath,
+          headTailRows: headTailRows,
+          action: 'analyze',
+        }),
       });
 
       if (!response.ok) {
+        const responseBody = await response.text();
         throw new Error(
-          `Prediction failed: ${response.status} ${response.statusText}`,
+          `Failed to process file: ${response.statusText} - ${responseBody}`,
         );
       }
 
-      const predictionData = await response.json();
-      console.log('Received predictions:', predictionData);
+      const data = await response.json();
+      console.log('Data received:', data);
+      setSelectedFileData(JSON.stringify(data.data, null, 2));
 
-      if (
-        !predictionData.predictions ||
-        !Array.isArray(predictionData.predictions)
-      ) {
-        console.error('Invalid prediction data format:', predictionData);
-        return;
+      const numericStatusUpdates: ColumnStatus = {};
+      Object.keys(data.is_numeric).forEach((column) => {
+        numericStatusUpdates[column] = {
+          isNumeric: data.is_numeric[column],
+          isChecked: true,
+        };
+      });
+      setColumnNumericStatus(numericStatusUpdates);
+
+      setIsDataModalOpen(true);
+      setSelectedFileName(fileName);
+
+      if (data.predictions) {
+        setPredictions(data.predictions);
       }
 
-      setPredictions(predictionData.predictions);
-
-      clearInterval(intervalId!); // Clear the interval once predictions are received
-      const endTime = Date.now();
-      setAnalysisEndTime(endTime);
-      const finalElapsedTime = endTime - startTime;
-      setElapsedTime(finalElapsedTime); // Update elapsed time one last time
-      setTotalElapsedTime((finalElapsedTime / 1000).toFixed(2) + ' seconds'); // Storing the total elapsed time
-
-      // Call a function to prepend predictions to the data
-      const updatedData = prependPredictionsToData(
-        selectedFileData,
-        predictionData.predictions,
-      );
-      setSelectedFileData(updatedData);
+      // Reset the observationSelection state to its default value
+      setObservationSelection('all');
     } catch (error) {
-      console.error('Error in making prediction:', error);
-      if (error instanceof Error) {
-        alert(error.message);
-      } else {
-        alert('An unknown error occurred');
-      }
-    } finally {
-      setIsAnalyzing(false);
+      console.error('Error processing file:', error);
+      alert(
+        `Error: ${
+          error instanceof Error ? error.message : 'An unknown error occurred'
+        }`,
+      );
     }
   };
 
@@ -611,7 +572,7 @@ const Workspace = () => {
                       />
 
                       <button
-                        onClick={analyzeData}
+                        onClick={() => analyzeData(selectedFileName)}
                         className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
                       >
                         Analyze
