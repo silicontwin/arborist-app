@@ -128,6 +128,17 @@ const Workspace = () => {
 
   const handleFileDoubleClick = async (fileName: string) => {
     try {
+      // Reset analysis time and related states before starting a new analysis
+      setIsAnalyzing(false);
+      setElapsedTime(null);
+      setAnalysisStartTime(null);
+      setAnalysisEndTime(null);
+      setTotalElapsedTime(null);
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
+
       const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
         headers: {
@@ -282,6 +293,15 @@ const Workspace = () => {
   const analyzeData = async (fileName: string) => {
     console.log('Starting analysis for:', fileName);
 
+    const startTime = Date.now(); // Start tracking time
+    setIsAnalyzing(true);
+
+    // Start an interval to update elapsed time every 10 milliseconds
+    const id = setInterval(() => {
+      setElapsedTime(Date.now() - startTime);
+    }, 10);
+    setIntervalId(id);
+
     try {
       const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
@@ -323,6 +343,14 @@ const Workspace = () => {
         setPredictions(data.predictions);
       }
 
+      // Complete the timing process
+      clearInterval(intervalId!); // Clear the interval once the analysis is done
+      const endTime = Date.now();
+      setAnalysisEndTime(endTime);
+      const finalElapsedTime = endTime - startTime;
+      setElapsedTime(finalElapsedTime); // Update elapsed time one last time
+      setTotalElapsedTime((finalElapsedTime / 1000).toFixed(2) + ' seconds'); // Storing the total elapsed time
+
       // Reset the observationSelection state to its default value
       setObservationSelection('all');
     } catch (error) {
@@ -332,6 +360,8 @@ const Workspace = () => {
           error instanceof Error ? error.message : 'An unknown error occurred'
         }`,
       );
+    } finally {
+      setIsAnalyzing(false);
     }
   };
 
