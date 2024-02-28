@@ -137,6 +137,7 @@ const Workspace = () => {
           fileName: fileName,
           workspacePath: workspacePath,
           headTailRows: headTailRows,
+          action: 'summarize',
         }),
       });
 
@@ -146,14 +147,21 @@ const Workspace = () => {
 
       const data = await response.json();
       setSelectedFileData(JSON.stringify(data.data, null, 2));
-      const numericStatusUpdates: ColumnStatus = {};
-      Object.keys(data.is_numeric).forEach((column) => {
-        numericStatusUpdates[column] = {
-          isNumeric: data.is_numeric[column],
-          isChecked: true,
-        }; // Default numeric columns to checked
-      });
-      setColumnNumericStatus(numericStatusUpdates);
+
+      // Ensure data.is_numeric exists and is an object before trying to use Object.keys
+      if (data.is_numeric && typeof data.is_numeric === 'object') {
+        const numericStatusUpdates: ColumnStatus = {};
+        Object.keys(data.is_numeric).forEach((column) => {
+          numericStatusUpdates[column] = {
+            isNumeric: data.is_numeric[column],
+            isChecked: true,
+          }; // Default numeric columns to checked
+        });
+        setColumnNumericStatus(numericStatusUpdates);
+      } else {
+        console.error('Invalid or missing is_numeric data:', data);
+      }
+
       setIsDataModalOpen(true);
       setSelectedFileName(fileName);
 
