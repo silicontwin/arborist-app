@@ -41,6 +41,14 @@ const Workspace = () => {
     useState<boolean>(false);
 
   useEffect(() => {
+    const selectedFeatures = Object.entries(columnNumericStatus)
+      .filter(([_, value]) => value.isChecked && value.isNumeric)
+      .map(([key]) => key);
+
+    console.log('Selected features:', selectedFeatures);
+  }, [columnNumericStatus]);
+
+  useEffect(() => {
     // Fetch API status when component mounts
     const fetchApiStatus = async () => {
       try {
