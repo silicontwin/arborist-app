@@ -720,14 +720,6 @@ const Workspace = () => {
                 />
               </div>
               <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
-                <div>Tree Depth (D)</div>
-                <input
-                  type="number"
-                  className="w-[100px] text-black p-1"
-                  defaultValue="3"
-                />
-              </div>
-              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
                 <div>Burn-in Iterations</div>
                 <input
                   type="number"
@@ -781,6 +773,14 @@ const Workspace = () => {
                   type="number"
                   className="w-[100px] text-black p-1"
                   defaultValue="2"
+                />
+              </div>
+              <div className="w-full flex justify-between items-center border-b border-b-white/30 py-1">
+                <div>Tree Depth (D)</div>
+                <input
+                  type="number"
+                  className="w-[100px] text-black p-1"
+                  defaultValue="3"
                 />
               </div>
               <div className="w-full flex justify-between items-center py-1">
