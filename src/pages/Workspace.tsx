@@ -299,6 +299,16 @@ const Workspace = () => {
   // ---
 
   const analyzeData = async (fileName: string) => {
+    const selectedFeatures = Object.entries(columnNumericStatus)
+      .filter(([_, value]) => value.isChecked && value.isNumeric)
+      .map(([key]) => key);
+
+    // Ensure there are selected features before proceeding
+    if (selectedFeatures.length === 0) {
+      alert('Please select at least one numeric column to analyze.');
+      return;
+    }
+
     console.log('Starting analysis for:', fileName);
 
     const startTime = Date.now(); // Start tracking time
@@ -320,6 +330,7 @@ const Workspace = () => {
           fileName: fileName,
           workspacePath: workspacePath,
           headTailRows: headTailRows,
+          selectedFeatures: selectedFeatures,
           action: 'analyze',
         }),
       });
@@ -327,25 +338,25 @@ const Workspace = () => {
       if (!response.ok) {
         const responseBody = await response.text();
         throw new Error(
-          `Failed to process file: ${response.statusText} - ${responseBody}`,
+          `Failed to analyze file: ${response.statusText} - ${responseBody}`,
         );
       }
 
       const data = await response.json();
-      console.log('Data received:', data);
+      console.log('Analysis data received:', data);
       setSelectedFileData(JSON.stringify(data.data, null, 2));
 
-      const numericStatusUpdates: ColumnStatus = {};
-      Object.keys(data.is_numeric).forEach((column) => {
-        numericStatusUpdates[column] = {
-          isNumeric: data.is_numeric[column],
-          isChecked: true,
-        };
-      });
-      setColumnNumericStatus(numericStatusUpdates);
+      // const numericStatusUpdates: ColumnStatus = {};
+      // Object.keys(data.is_numeric).forEach((column) => {
+      //   numericStatusUpdates[column] = {
+      //     isNumeric: data.is_numeric[column],
+      //     isChecked: true,
+      //   };
+      // });
+      // setColumnNumericStatus(numericStatusUpdates);
 
-      setIsDataModalOpen(true);
-      setSelectedFileName(fileName);
+      // setIsDataModalOpen(true);
+      // setSelectedFileName(fileName);
 
       if (data.predictions) {
         setPredictions(data.predictions);
@@ -362,7 +373,7 @@ const Workspace = () => {
       // Reset the observationSelection state to its default value
       setObservationSelection('all');
     } catch (error) {
-      console.error('Error processing file:', error);
+      console.error('Error analyzing file:', error);
       alert(
         `Error: ${
           error instanceof Error ? error.message : 'An unknown error occurred'
