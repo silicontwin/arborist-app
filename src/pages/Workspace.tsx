@@ -346,18 +346,6 @@ const Workspace = () => {
       console.log('Analysis data received:', data);
       setSelectedFileData(JSON.stringify(data.data, null, 2));
 
-      // const numericStatusUpdates: ColumnStatus = {};
-      // Object.keys(data.is_numeric).forEach((column) => {
-      //   numericStatusUpdates[column] = {
-      //     isNumeric: data.is_numeric[column],
-      //     isChecked: true,
-      //   };
-      // });
-      // setColumnNumericStatus(numericStatusUpdates);
-
-      // setIsDataModalOpen(true);
-      // setSelectedFileName(fileName);
-
       if (data.predictions) {
         setPredictions(data.predictions);
       }
