@@ -41,15 +41,15 @@ const Workspace = () => {
     useState<boolean>(false);
 
   // Memoize the selected features computation
-  const selectedFeatures = useMemo(() => {
+  const selectedColumns = useMemo(() => {
     return Object.entries(columnNumericStatus)
       .filter(([_, value]) => value.isChecked && value.isNumeric)
       .map(([key]) => key);
   }, [columnNumericStatus]);
 
   useEffect(() => {
-    console.log('Selected features:', selectedFeatures);
-  }, [selectedFeatures]);
+    console.log('Selected features:', selectedColumns);
+  }, [selectedColumns]);
 
   useEffect(() => {
     // Fetch API status when component mounts
@@ -306,12 +306,12 @@ const Workspace = () => {
   // ---
 
   const analyzeData = async (fileName: string) => {
-    const selectedFeatures = Object.entries(columnNumericStatus)
+    const selectedColumns = Object.entries(columnNumericStatus)
       .filter(([_, value]) => value.isChecked && value.isNumeric)
       .map(([key]) => key);
 
     // Ensure there are selected features before proceeding
-    if (selectedFeatures.length === 0) {
+    if (selectedColumns.length === 0) {
       alert('Please select at least one numeric column to analyze.');
       return;
     }
@@ -337,7 +337,7 @@ const Workspace = () => {
           fileName: fileName,
           workspacePath: workspacePath,
           headTailRows: headTailRows,
-          selectedFeatures: selectedFeatures,
+          selectedColumns: selectedColumns,
           action: 'analyze',
         }),
       });
