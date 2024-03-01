@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { FileDetails } from '../types/fileDetails';
 import { FaRegFolderOpen } from 'react-icons/fa';
 import { MdOutlineInsertDriveFile } from 'react-icons/md';
@@ -40,13 +40,16 @@ const Workspace = () => {
   const [isModelParamsVisible, setIsModelParamsVisible] =
     useState<boolean>(false);
 
-  useEffect(() => {
-    const selectedFeatures = Object.entries(columnNumericStatus)
+  // Memoize the selected features computation
+  const selectedFeatures = useMemo(() => {
+    return Object.entries(columnNumericStatus)
       .filter(([_, value]) => value.isChecked && value.isNumeric)
       .map(([key]) => key);
-
-    console.log('Selected features:', selectedFeatures);
   }, [columnNumericStatus]);
+
+  useEffect(() => {
+    console.log('Selected features:', selectedFeatures);
+  }, [selectedFeatures]);
 
   useEffect(() => {
     // Fetch API status when component mounts
