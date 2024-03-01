@@ -228,17 +228,13 @@ const Workspace = () => {
           },
         };
 
-        // Find the first checked column to set as the selected feature
+        // Find the first checked and numeric column to set as the selected feature
         const firstCheckedColumn = Object.keys(updatedStatus).find(
-          (key) => updatedStatus[key].isChecked,
+          (key) => updatedStatus[key].isChecked && updatedStatus[key].isNumeric,
         );
 
         // Update the selected feature state
-        if (firstCheckedColumn) {
-          setSelectedFeature(firstCheckedColumn);
-        } else {
-          setSelectedFeature(''); // Reset if no columns are checked
-        }
+        setSelectedFeature(firstCheckedColumn || '');
 
         return updatedStatus;
       });
@@ -252,7 +248,10 @@ const Workspace = () => {
               <th
                 key={index}
                 className={`border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
-                  !columnNumericStatus[column]?.isChecked ? 'text-gray-400' : ''
+                  !columnNumericStatus[column]?.isChecked ||
+                  !columnNumericStatus[column]?.isNumeric
+                    ? 'text-gray-400'
+                    : 'text-black'
                 }`}
               >
                 {columnNumericStatus[column]?.isNumeric ? (
@@ -287,7 +286,12 @@ const Workspace = () => {
               {columns.map((column, colIndex) => (
                 <td
                   key={colIndex}
-                  className="border py-2 px-4 text-left whitespace-nowrap"
+                  className={`border py-2 px-4 text-left whitespace-nowrap ${
+                    !columnNumericStatus[column]?.isChecked ||
+                    !columnNumericStatus[column]?.isNumeric
+                      ? 'text-gray-400'
+                      : 'text-black'
+                  }`}
                 >
                   {item[column]}
                 </td>
