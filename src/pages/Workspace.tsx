@@ -363,6 +363,12 @@ const Workspace = () => {
       console.log('Analysis data received:', data);
       setSelectedFileData(JSON.stringify(data.data, null, 2));
 
+      // Update the columnNumericStatus state to include the predictions column
+      setColumnNumericStatus((prev) => ({
+        ...prev,
+        predictions: { isNumeric: true, isChecked: true },
+      }));
+
       if (data.predictions) {
         setPredictions(data.predictions);
       }
