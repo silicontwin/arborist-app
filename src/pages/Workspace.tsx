@@ -252,7 +252,7 @@ const Workspace = () => {
               <th
                 key={index}
                 className={`border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
-                  column === 'predictions' ||
+                  column === 'Posterior Average (y hat)' ||
                   (columnNumericStatus[column]?.isChecked &&
                     columnNumericStatus[column]?.isNumeric)
                     ? 'text-black'
@@ -363,14 +363,14 @@ const Workspace = () => {
       console.log('Analysis data received:', data);
       setSelectedFileData(JSON.stringify(data.data, null, 2));
 
-      // Update the columnNumericStatus state to include the predictions column
+      // Update the columnNumericStatus state to include the Posterior Average (y hat) column
       setColumnNumericStatus((prev) => ({
         ...prev,
-        predictions: { isNumeric: true, isChecked: true },
+        'Posterior Average (y hat)': { isNumeric: true, isChecked: true },
       }));
 
-      if (data.predictions) {
-        setPredictions(data.predictions);
+      if (data['Posterior Average (y hat)']) {
+        setPredictions(data['Posterior Average (y hat)']);
       }
 
       // Complete the timing process
