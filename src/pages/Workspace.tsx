@@ -252,8 +252,9 @@ const Workspace = () => {
               <th
                 key={index}
                 className={`border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
-                  columnNumericStatus[column]?.isChecked &&
-                  columnNumericStatus[column]?.isNumeric
+                  column === 'predictions' ||
+                  (columnNumericStatus[column]?.isChecked &&
+                    columnNumericStatus[column]?.isNumeric)
                     ? 'text-black'
                     : 'text-gray-400'
                 }`}
