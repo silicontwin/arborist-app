@@ -20,6 +20,7 @@ const Workspace = () => {
   const [selectedFileData, setSelectedFileData] = useState('');
   const [selectedFileName, setSelectedFileName] = useState('');
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
+  const [action, setAction] = useState('summarize');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [predictions, setPredictions] = useState(null);
   const [analysisStartTime, setAnalysisStartTime] = useState<number | null>(
@@ -150,6 +151,9 @@ const Workspace = () => {
         setIntervalId(null);
       }
 
+      // Reset action to 'summarize' every time a new file is opened
+      setAction('summarize');
+
       const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
         headers: {
@@ -248,13 +252,14 @@ const Workspace = () => {
               <th
                 key={index}
                 className={`border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
-                  !columnNumericStatus[column]?.isChecked ||
-                  !columnNumericStatus[column]?.isNumeric
-                    ? 'text-gray-400'
-                    : 'text-black'
+                  columnNumericStatus[column]?.isChecked &&
+                  columnNumericStatus[column]?.isNumeric
+                    ? 'text-black'
+                    : 'text-gray-400'
                 }`}
               >
-                {columnNumericStatus[column]?.isNumeric ? (
+                {action !== 'analyze' &&
+                columnNumericStatus[column]?.isNumeric ? (
                   <label className="flex flex-row justify-start items-center space-x-1 cursor-pointer">
                     <input
                       type="checkbox"
@@ -265,7 +270,7 @@ const Workspace = () => {
                     <span>{column}</span>
                   </label>
                 ) : (
-                  <span className="text-gray-400">{column}</span>
+                  <span>{column}</span>
                 )}
               </th>
             ))}
@@ -301,6 +306,10 @@ const Workspace = () => {
         </tbody>
       </table>
     );
+  };
+
+  const switchAction = (newAction: 'summarize' | 'analyze') => {
+    setAction(newAction);
   };
 
   // ---
@@ -616,7 +625,10 @@ const Workspace = () => {
                       />
 
                       <button
-                        onClick={() => analyzeData(selectedFileName)}
+                        onClick={() => {
+                          analyzeData(selectedFileName);
+                          switchAction('analyze');
+                        }}
                         className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
                       >
                         Analyze
