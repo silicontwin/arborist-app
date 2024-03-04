@@ -37,6 +37,9 @@ const Workspace = () => {
     {},
   );
   const [selectedFeature, setSelectedFeature] = useState<string>('');
+  const [selectedOutcome, setSelectedOutcome] =
+    useState<string>('Please select');
+  const [availableFeatures, setAvailableFeatures] = useState<string[]>([]);
   const [headTailRows, setHeadTailRows] = useState<number>(100);
   const [isModelParamsVisible, setIsModelParamsVisible] =
     useState<boolean>(false);
@@ -154,6 +157,9 @@ const Workspace = () => {
       // Reset action to 'summarize' every time a new file is opened
       setAction('summarize');
 
+      // Reset selected outcome
+      setSelectedOutcome('Please select');
+
       const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
         headers: {
@@ -180,8 +186,9 @@ const Workspace = () => {
         Object.keys(data.is_numeric).forEach((column) => {
           numericStatusUpdates[column] = {
             isNumeric: data.is_numeric[column],
-            isChecked: true,
-          }; // Default numeric columns to checked
+            // Set isChecked to true for all numeric columns
+            isChecked: data.is_numeric[column],
+          };
         });
         setColumnNumericStatus(numericStatusUpdates);
       } else {
@@ -193,6 +200,12 @@ const Workspace = () => {
 
       // Reset the observationSelection state to its default value
       setObservationSelection('all');
+
+      // Update available features to include all numeric columns
+      const numericColumns = Object.keys(data.is_numeric).filter(
+        (column) => data.is_numeric[column],
+      );
+      setAvailableFeatures(numericColumns);
     } catch (error) {
       console.error('Error processing file:', error);
       alert(
@@ -223,25 +236,18 @@ const Workspace = () => {
     const columns = Object.keys(jsonData[0]);
 
     const handleCheckboxChange = (columnName: string) => {
-      setColumnNumericStatus((prevState) => {
-        const updatedStatus = {
+      if (
+        columnNumericStatus[columnName]?.isNumeric &&
+        columnName !== selectedOutcome
+      ) {
+        setColumnNumericStatus((prevState) => ({
           ...prevState,
           [columnName]: {
             ...prevState[columnName],
             isChecked: !prevState[columnName].isChecked,
           },
-        };
-
-        // Find the first checked and numeric column to set as the selected feature
-        const firstCheckedColumn = Object.keys(updatedStatus).find(
-          (key) => updatedStatus[key].isChecked && updatedStatus[key].isNumeric,
-        );
-
-        // Update the selected feature state
-        setSelectedFeature(firstCheckedColumn || '');
-
-        return updatedStatus;
-      });
+        }));
+      }
     };
 
     return (
@@ -251,27 +257,34 @@ const Workspace = () => {
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`border py-2 px-4 bg-white font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
-                  column === 'Posterior Average (y hat)' ||
-                  (columnNumericStatus[column]?.isChecked &&
-                    columnNumericStatus[column]?.isNumeric)
-                    ? 'text-black'
-                    : 'text-gray-400'
+                className={`border py-2 px-4 font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
+                  column === selectedOutcome
+                    ? 'bg-blue-500 text-white'
+                    : 'bg-white text-gray-700'
                 }`}
               >
-                {action !== 'analyze' &&
-                columnNumericStatus[column]?.isNumeric ? (
+                {columnNumericStatus[column]?.isNumeric ? (
                   <label className="flex flex-row justify-start items-center space-x-1 cursor-pointer">
                     <input
                       type="checkbox"
-                      checked={columnNumericStatus[column]?.isChecked}
+                      checked={
+                        column === selectedOutcome ||
+                        columnNumericStatus[column]?.isChecked
+                      }
                       onChange={() => handleCheckboxChange(column)}
                       className="form-checkbox"
+                      disabled={column === selectedOutcome}
                     />
-                    <span>{column}</span>
+                    <span
+                      className={
+                        column === selectedOutcome ? 'text-white' : 'text-black'
+                      }
+                    >
+                      {column}
+                    </span>
                   </label>
                 ) : (
-                  <span>{column}</span>
+                  <span className="text-gray-400">{column}</span>
                 )}
               </th>
             ))}
@@ -293,8 +306,10 @@ const Workspace = () => {
                 <td
                   key={colIndex}
                   className={`border py-2 px-4 text-left whitespace-nowrap ${
-                    !columnNumericStatus[column]?.isChecked ||
-                    !columnNumericStatus[column]?.isNumeric
+                    column === selectedOutcome
+                      ? 'bg-blue-500 text-white'
+                      : !columnNumericStatus[column]?.isChecked ||
+                        !columnNumericStatus[column]?.isNumeric
                       ? 'text-gray-400'
                       : 'text-black'
                   }`}
@@ -466,19 +481,47 @@ const Workspace = () => {
     setSelectedModel(event.target.value);
   };
 
-  const getFeatureOptions = () => {
-    // Filter columns that are numeric and checked
-    const checkedColumns = Object.entries(columnNumericStatus)
-      .filter(([columnName, status]) => status.isNumeric && status.isChecked)
-      .map(([columnName]) => columnName);
+  // useEffect to update available features when columnNumericStatus changes or a file is selected
+  useEffect(() => {
+    const features = Object.entries(columnNumericStatus)
+      .filter(([_, value]) => value.isNumeric && value.isChecked)
+      .map(([key]) => key);
 
-    // Generate <option> elements for these columns
-    return checkedColumns.map((columnName) => (
-      <option key={columnName} value={columnName}>
-        {columnName}
-      </option>
-    ));
+    setAvailableFeatures(features);
+  }, [columnNumericStatus, selectedFileName]);
+
+  // Reset selected features and outcome when a new file is selected
+  useEffect(() => {
+    setSelectedOutcome('Please select');
+    setSelectedFeature('');
+  }, [selectedFileName]);
+
+  const handleOutcomeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+    const newOutcome = event.target.value;
+    setSelectedOutcome(newOutcome); // This should update the dropdown display
+
+    // Update the columnNumericStatus, ensuring to preserve the isChecked state
+    setColumnNumericStatus((prev) => ({
+      ...Object.keys(prev).reduce((acc, key) => {
+        acc[key] = {
+          isNumeric: prev[key].isNumeric,
+          isChecked:
+            prev[key].isNumeric && (prev[key].isChecked || key === newOutcome),
+        };
+        return acc;
+      }, {} as ColumnStatus),
+    }));
   };
+
+  // Function to get options for the features dropdown, excluding the selected outcome
+  const getFeatureOptions = () =>
+    availableFeatures
+      .filter((feature) => feature !== selectedOutcome)
+      .map((feature) => (
+        <option key={feature} value={feature}>
+          {feature}
+        </option>
+      ));
 
   const toggleModelParamsVisibility = () => {
     setIsModelParamsVisible((prev) => !prev);
@@ -563,7 +606,25 @@ const Workspace = () => {
                 )}
 
                 {apiStatus === 'Online' && !predictions && (
-                  <div className="flex justify-start items-center space-x-8">
+                  <div className="flex justify-start items-center space-x-4">
+                    <div className="flex justify-start items-center space-x-1">
+                      <div>Outcome (y):</div>
+                      <select
+                        className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                        value={selectedOutcome}
+                        onChange={handleOutcomeChange}
+                      >
+                        <option value="Please select">Please select</option>
+                        {Object.entries(columnNumericStatus)
+                          .filter(([_, value]) => value.isNumeric)
+                          .map(([key]) => (
+                            <option key={key} value={key}>
+                              {key}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+
                     <div className="flex justify-start items-center space-x-1">
                       <div>Features (X):</div>
                       <div>
