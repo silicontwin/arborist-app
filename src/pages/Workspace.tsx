@@ -565,7 +565,7 @@ const Workspace = () => {
                 {apiStatus === 'Online' && !predictions && (
                   <div className="flex justify-start items-center space-x-8">
                     <div className="flex justify-start items-center space-x-1">
-                      <div>Features:</div>
+                      <div>Features (X):</div>
                       <div>
                         <select
                           className="rounded-md px-1.5 py-1 text-sm font-bold border"
