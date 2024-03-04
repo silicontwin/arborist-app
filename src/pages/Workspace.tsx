@@ -576,41 +576,6 @@ const Workspace = () => {
                         </select>
                       </div>
                     </div>
-                    {/* <div className="flex justify-start items-center space-x-1">
-                      <div>Observations:</div>
-                      <div>
-                        <select
-                          className="rounded-md px-1.5 py-1 text-sm font-bold border"
-                          value={observationSelection}
-                          onChange={(e) =>
-                            setObservationSelection(e.target.value)
-                          }
-                        >
-                          <option value="all">All</option>
-                          <option value="some">Some</option>
-                        </select>
-                      </div>
-                      {observationSelection === 'some' && (
-                        <>
-                          <div>
-                            From:{' '}
-                            <input
-                              type="number"
-                              className="w-24 rounded-md px-1.5 py-1 text-sm font-bold border"
-                              placeholder="Row #"
-                            />
-                          </div>
-                          <div>
-                            To:{' '}
-                            <input
-                              type="number"
-                              className="w-24 rounded-md px-1.5 py-1 text-sm font-bold border"
-                              placeholder="Row #"
-                            />
-                          </div>
-                        </>
-                      )}
-                    </div> */}
 
                     <div className="flex justify-start items-center">
                       <div className="flex flex-row justify-start items-center space-x-2">
