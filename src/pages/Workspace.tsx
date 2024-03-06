@@ -578,7 +578,7 @@ const Workspace = () => {
                         </span>
                       ) : (
                         totalElapsedTime && (
-                          <span>Total analysis time: {totalElapsedTime}</span>
+                          <span>Total training time: {totalElapsedTime}</span>
                         )
                       )}
                     </div>
