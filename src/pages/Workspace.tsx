@@ -646,9 +646,10 @@ const Workspace = () => {
                           value={selectedModel}
                           onChange={handleChange}
                         >
-                          <option value="bcf">BCF</option>
                           <option value="bart">BART</option>
                           <option value="xbart">XBART</option>
+                          <option value="bcf">BCF</option>
+                          <option value="xbcf">XBCF</option>
                         </select>
                       </div>
 
