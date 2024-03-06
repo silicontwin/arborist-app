@@ -665,7 +665,7 @@ const Workspace = () => {
                         }}
                         className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
                       >
-                        Analyze
+                        Train Model
                       </button>
                     </div>
                   </div>
