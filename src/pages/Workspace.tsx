@@ -724,7 +724,7 @@ const Workspace = () => {
 
       <div
         id="dropzone"
-        className="bg-gray-100 fixed bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col justify-center items-center border w-[380px] h-[90px] rounded-full z-10"
+        className="bg-red-600 text-white fixed bottom-10 left-1/2 transform -translate-x-1/2 flex flex-col justify-center items-center border w-[380px] h-[90px] rounded-full z-10 shadow-lg"
         onDragOver={handleDragOver}
         onDrop={handleDrop}
       >
