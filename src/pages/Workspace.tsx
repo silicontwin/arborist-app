@@ -574,7 +574,7 @@ const Workspace = () => {
                     <div id="analyzeTime">
                       {isAnalyzing ? (
                         <span>
-                          Analyzing: {displayElapsedTime()} have elapsed
+                          Training: {displayElapsedTime()} have elapsed
                         </span>
                       ) : (
                         totalElapsedTime && (
