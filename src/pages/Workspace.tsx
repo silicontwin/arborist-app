@@ -40,7 +40,7 @@ const Workspace = () => {
   const [selectedOutcome, setSelectedOutcome] =
     useState<string>('Please select');
   const [availableFeatures, setAvailableFeatures] = useState<string[]>([]);
-  const [headTailRows, setHeadTailRows] = useState<number>(100);
+  const [headTailRows, setHeadTailRows] = useState<number>(20);
   const [isModelParamsVisible, setIsModelParamsVisible] =
     useState<boolean>(false);
 
