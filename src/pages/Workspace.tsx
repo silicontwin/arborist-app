@@ -378,10 +378,18 @@ const Workspace = () => {
       console.log('Analysis data received:', data);
       setSelectedFileData(JSON.stringify(data.data, null, 2));
 
-      // Update the columnNumericStatus state to include the Posterior Average (y hat) column
+      // Update the columnNumericStatus state to include the specified columns as numeric
       setColumnNumericStatus((prev) => ({
         ...prev,
         'Posterior Average (y hat)': { isNumeric: true, isChecked: true },
+        '2.75th percentile': {
+          isNumeric: true,
+          isChecked: true,
+        },
+        '97.5th percentile': {
+          isNumeric: true,
+          isChecked: true,
+        },
       }));
 
       if (data['Posterior Average (y hat)']) {
