@@ -611,79 +611,81 @@ const Workspace = () => {
                   </div>
                 )}
 
-                {apiStatus === 'Online' && !predictions && (
-                  <div className="flex justify-start items-center space-x-4">
-                    <div className="flex justify-start items-center space-x-1">
-                      <div>Outcome (y):</div>
-                      <select
-                        className="rounded-md px-1.5 py-1 text-sm font-bold border"
-                        value={selectedOutcome}
-                        onChange={handleOutcomeChange}
-                      >
-                        <option value="Please select">Please select</option>
-                        {Object.entries(columnNumericStatus)
-                          .filter(([_, value]) => value.isNumeric)
-                          .map(([key]) => (
-                            <option key={key} value={key}>
-                              {key}
-                            </option>
-                          ))}
-                      </select>
-                    </div>
-
-                    <div className="flex justify-start items-center space-x-1">
-                      <div>Features (X):</div>
-                      <div>
+                {apiStatus === 'Online' &&
+                  !isAnalyzing &&
+                  !totalElapsedTime && (
+                    <div className="flex justify-start items-center space-x-4">
+                      <div className="flex justify-start items-center space-x-1">
+                        <div>Outcome (y):</div>
                         <select
                           className="rounded-md px-1.5 py-1 text-sm font-bold border"
-                          value={selectedFeature}
-                          onChange={(e) => setSelectedFeature(e.target.value)}
+                          value={selectedOutcome}
+                          onChange={handleOutcomeChange}
                         >
-                          {getFeatureOptions()}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="flex justify-start items-center">
-                      <div className="flex flex-row justify-start items-center space-x-2">
-                        <div className="">Model:</div>
-                        <select
-                          className="rounded-md px-1.5 py-1 text-sm font-bold border"
-                          value={selectedModel}
-                          onChange={handleChange}
-                        >
-                          <option value="bart">BART</option>
-                          <option value="xbart">XBART</option>
-                          <option value="bcf">BCF</option>
-                          <option value="xbcf">XBCF</option>
+                          <option value="Please select">Please select</option>
+                          {Object.entries(columnNumericStatus)
+                            .filter(([_, value]) => value.isNumeric)
+                            .map(([key]) => (
+                              <option key={key} value={key}>
+                                {key}
+                              </option>
+                            ))}
                         </select>
                       </div>
 
-                      <VscSettings
-                        className="w-[24px] h-[24px] mx-2 text-blue-600 cursor-pointer"
-                        onClick={toggleModelParamsVisibility}
-                      />
+                      <div className="flex justify-start items-center space-x-1">
+                        <div>Features (X):</div>
+                        <div>
+                          <select
+                            className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                            value={selectedFeature}
+                            onChange={(e) => setSelectedFeature(e.target.value)}
+                          >
+                            {getFeatureOptions()}
+                          </select>
+                        </div>
+                      </div>
 
-                      <button
-                        onClick={() => {
-                          analyzeData(selectedFileName);
-                          switchAction('analyze');
-                        }}
-                        className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
-                      >
-                        Train Model
-                      </button>
+                      <div className="flex justify-start items-center">
+                        <div className="flex flex-row justify-start items-center space-x-2">
+                          <div className="">Model:</div>
+                          <select
+                            className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                            value={selectedModel}
+                            onChange={handleChange}
+                          >
+                            <option value="bart">BART</option>
+                            <option value="xbart">XBART</option>
+                            <option value="bcf">BCF</option>
+                            <option value="xbcf">XBCF</option>
+                          </select>
+                        </div>
+
+                        <VscSettings
+                          className="w-[24px] h-[24px] mx-2 text-blue-600 cursor-pointer"
+                          onClick={toggleModelParamsVisibility}
+                        />
+
+                        <button
+                          onClick={() => {
+                            analyzeData(selectedFileName);
+                            switchAction('analyze');
+                          }}
+                          className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
+                        >
+                          Train Model
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {predictions && (
+                {!isAnalyzing && totalElapsedTime && (
                   <div className="flex space-x-4">
                     <button
                       onClick={downloadCSV}
                       className="rounded-md px-1.5 py-1 text-sm font-bold border bg-blue-600 text-white"
                     >
-                      Download Analysis
+                      Save Trained Model
                     </button>
 
                     <button
