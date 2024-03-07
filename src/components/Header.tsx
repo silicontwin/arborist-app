@@ -43,7 +43,7 @@ const Header = () => {
         >
           <div className="flex flex-row justify-start items-center space-x-1">
             <FaRegFolderOpen className="w-[20px] h-[20px]" />
-            <div>Workspace</div>
+            <div>Datasets</div>
           </div>
         </Link>
 
