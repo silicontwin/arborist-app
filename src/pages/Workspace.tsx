@@ -536,8 +536,12 @@ const Workspace = () => {
               <FaRegFolderOpen className="w-[26px] h-[26px]" />
 
               {!isDataModalOpen ? (
-                <div className="flex justify-start items-center space-x-4">
-                  <div className="text-[1.4em]">Workspace</div>
+                <div className="flex flex-row justify-start items-center space-x-4">
+                  <div className="h-full flex flex-row justify-start items-center space-x-1 text-[1.4em]">
+                    <div>Workspace</div>
+                    <div className="text-gray-400">/</div>
+                    <div>Datasets</div>
+                  </div>
                   <div className="flex justify-start items-center space-x-1">
                     <div>Head/tail rows:</div>
                     <select
@@ -557,9 +561,11 @@ const Workspace = () => {
                 </div>
               ) : (
                 <div className="flex flex-row justify-between items-center">
-                  <div className="flex flex-row justify-start items-center space-x-3">
+                  <div className="flex flex-row justify-start items-center space-x-4">
                     <div className="h-full flex flex-row justify-start items-center space-x-1 text-[1.4em]">
                       <div>Workspace</div>
+                      <div className="text-gray-400">/</div>
+                      <div>Datasets</div>
                       <div className="text-gray-400">/</div>
                       <div>{selectedFileName}</div>
                     </div>
