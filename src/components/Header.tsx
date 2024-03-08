@@ -6,6 +6,7 @@ import { FaRegFolderOpen } from 'react-icons/fa';
 import { AiOutlineBoxPlot } from 'react-icons/ai';
 import { HiMiniRocketLaunch } from 'react-icons/hi2';
 import { HiOutlineCollection } from 'react-icons/hi';
+import { TbArrowsMaximize, TbArrowsDiagonalMinimize2 } from 'react-icons/tb';
 
 const Header = () => {
   // Define the styles for the draggable area
@@ -68,6 +69,9 @@ const Header = () => {
             <div>Plots</div>
           </div>
         </Link>
+
+        <TbArrowsMaximize className="w-[20px] h-[20px]" />
+        <TbArrowsDiagonalMinimize2 className="w-[20px] h-[20px]" />
 
         {/* <Link
           to="/upload"
