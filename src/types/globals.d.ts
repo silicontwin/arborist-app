@@ -14,5 +14,7 @@ interface Window {
     listFiles: (directoryPath: string) => Promise<FileDetails[]>;
     getDesktopPath: () => Promise<string>;
     getDataPath: () => Promise<string>;
+    maximizeWindow: () => Promise<void>;
+    minimizeWindow: () => Promise<void>;
   };
 }
