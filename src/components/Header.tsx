@@ -1,10 +1,9 @@
 // /src/components/Header.tsx
 import React from 'react';
-import { Link, Router } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useLocation } from 'react-router-dom';
 import { FaRegFolderOpen } from 'react-icons/fa';
 import { AiOutlineBoxPlot } from 'react-icons/ai';
-import { HiMiniRocketLaunch } from 'react-icons/hi2';
 import { HiOutlineCollection } from 'react-icons/hi';
 import { TbArrowsMaximize, TbArrowsDiagonalMinimize2 } from 'react-icons/tb';
 
@@ -18,8 +17,13 @@ const Header = () => {
   // Get the current location object
   const location = useLocation();
 
-  // Log the current path
-  // console.log('Current path:', location.pathname);
+  const handleMaximizeClick = () => {
+    window.electron.maximizeWindow();
+  };
+
+  const handleMinimizeClick = () => {
+    window.electron.minimizeWindow();
+  };
 
   return (
     <div
@@ -36,7 +40,6 @@ const Header = () => {
       </div>
 
       <div className="h-full flex flex-row justify-start items-center space-x-5 font-semibold">
-        {/* Add noDragStyle to interactive elements */}
         <Link
           to="/"
           style={noDragStyle}
@@ -70,27 +73,14 @@ const Header = () => {
           </div>
         </Link>
 
-        <TbArrowsMaximize className="w-[20px] h-[20px]" />
-        <TbArrowsDiagonalMinimize2 className="w-[20px] h-[20px]" />
-
-        {/* <Link
-          to="/upload"
-          style={noDragStyle}
-          className={`${location.pathname === '/upload' ? 'text-red-600' : ''}`}
-        >
-          Upload
-        </Link> */}
-
-        {/* <Link
-          to="/about"
-          style={noDragStyle}
-          className={`${location.pathname === '/about' ? 'text-red-600' : ''}`}
-        >
-          <div className="flex flex-row justify-start items-center space-x-1">
-            <HiMiniRocketLaunch className="w-[18px] h-[18px]" />
-            <div>About</div>
+        <div style={noDragStyle} className="flex items-center space-x-2">
+          <div onClick={handleMaximizeClick} className="cursor-pointer">
+            <TbArrowsMaximize className="w-[20px] h-[20px]" />
           </div>
-        </Link> */}
+          <div onClick={handleMinimizeClick} className="cursor-pointer">
+            <TbArrowsDiagonalMinimize2 className="w-[20px] h-[20px]" />
+          </div>
+        </div>
       </div>
     </div>
   );
