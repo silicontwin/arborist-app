@@ -257,7 +257,7 @@ const Workspace = () => {
             {columns.map((column, index) => (
               <th
                 key={index}
-                className={`border py-2 px-4 font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
+                className={`sticky top-0 z-10 border py-2 px-4 font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
                   column === selectedOutcome
                     ? 'bg-blue-500 text-white'
                     : 'bg-white text-gray-700'
