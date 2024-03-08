@@ -1,5 +1,5 @@
 // /src/index.ts
-import { app, BrowserWindow, ipcMain, dialog } from 'electron';
+import { app, BrowserWindow, ipcMain, dialog, Notification } from 'electron';
 import axios from 'axios';
 import path from 'node:path';
 import isDev from 'electron-is-dev';
@@ -263,6 +263,19 @@ ipcMain.handle('minimize-window', () => {
     mainWindow.minimize();
   }
 });
+
+// -----------------------------------------------------------------------------
+
+ipcMain.handle('show-notification', (event, { title, body }) => {
+  const notification = new Notification({
+    title: title,
+    body: body,
+    // sound: 'default'
+  });
+
+  notification.show();
+});
+
 
 
 // -----------------------------------------------------------------------------
