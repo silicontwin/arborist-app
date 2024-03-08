@@ -265,16 +265,18 @@ const Workspace = () => {
               >
                 {columnNumericStatus[column]?.isNumeric ? (
                   <label className="flex flex-row justify-start items-center space-x-1 cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={
-                        column === selectedOutcome ||
-                        columnNumericStatus[column]?.isChecked
-                      }
-                      onChange={() => handleCheckboxChange(column)}
-                      className="form-checkbox"
-                      disabled={column === selectedOutcome}
-                    />
+                    {!isAnalyzing && !totalElapsedTime && (
+                      <input
+                        type="checkbox"
+                        checked={
+                          column === selectedOutcome ||
+                          columnNumericStatus[column]?.isChecked
+                        }
+                        onChange={() => handleCheckboxChange(column)}
+                        className="form-checkbox"
+                        disabled={column === selectedOutcome}
+                      />
+                    )}
                     <span
                       className={
                         column === selectedOutcome ? 'text-white' : 'text-black'
