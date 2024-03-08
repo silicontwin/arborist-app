@@ -17,6 +17,7 @@ type InvokeFunction = {
   (channel: 'read-file', filePath: string): Promise<string>;
   (channel: 'maximize-window'): Promise<void>;
   (channel: 'minimize-window'): Promise<void>;
+  (channel: 'show-notification', args: { title: string; body: string }): Promise<void>;
 
 };
 
@@ -36,6 +37,8 @@ const electronAPI = {
   fetchPlot: () => ipcRenderer.invoke('fetch-plot'),
   maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
   minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
+  showNotification: (title: string, body: string) =>
+  ipcRenderer.invoke('show-notification', { title, body }),
 };
 
 contextBridge.exposeInMainWorld('electron', electronAPI);
