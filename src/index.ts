@@ -13,6 +13,7 @@ declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 let serverProcess: ChildProcess | string | null = null;
+let mainWindow: BrowserWindow | null = null;
 
 // Function to check if the server is ready
 const isServerReady = async (
@@ -95,7 +96,7 @@ if (require('electron-squirrel-startup')) {
 
 const createWindow = (): void => {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
+   mainWindow = new BrowserWindow({
     width: 1800,
     height: 1000,
     frame: false,
@@ -244,6 +245,25 @@ ipcMain.handle('fetch-plot', async () => {
     return null;
   }
 });
+
+// -----------------------------------------------------------------------------
+
+ipcMain.handle('maximize-window', () => {
+  if (mainWindow) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.handle('minimize-window', () => {
+  if (mainWindow) {
+    mainWindow.minimize();
+  }
+});
+
 
 // -----------------------------------------------------------------------------
 
