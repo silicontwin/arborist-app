@@ -72,14 +72,14 @@ const Header = () => {
             <div>Plots</div>
           </div>
         </Link>
+      </div>
 
-        <div style={noDragStyle} className="flex items-center space-x-2">
-          <div onClick={handleMaximizeClick} className="cursor-pointer">
-            <TbArrowsMaximize className="w-[20px] h-[20px]" />
-          </div>
-          <div onClick={handleMinimizeClick} className="cursor-pointer">
-            <TbArrowsDiagonalMinimize2 className="w-[20px] h-[20px]" />
-          </div>
+      <div style={noDragStyle} className="flex items-center space-x-2">
+        <div onClick={handleMaximizeClick} className="cursor-pointer">
+          <TbArrowsMaximize className="w-[20px] h-[20px]" />
+        </div>
+        <div onClick={handleMinimizeClick} className="cursor-pointer">
+          <TbArrowsDiagonalMinimize2 className="w-[20px] h-[20px]" />
         </div>
       </div>
     </div>
