@@ -15,12 +15,16 @@ type InvokeFunction = {
   (channel: 'get-desktop-path'): Promise<string>;
   (channel: 'get-data-path'): Promise<string>;
   (channel: 'read-file', filePath: string): Promise<string>;
+  (channel: 'maximize-window'): Promise<void>;
+  (channel: 'minimize-window'): Promise<void>;
+
 };
 
 const electronAPI = {
   fetchData: () => ipcRenderer.invoke('fetch-data'),
-  invoke: ((channel: string, ...args: any[]) =>
-    ipcRenderer.invoke(channel, ...args)) as InvokeFunction,
+  // invoke: ((channel: string, ...args: any[]) =>
+  //   ipcRenderer.invoke(channel, ...args)) as InvokeFunction,
+    invoke: (channel: string, ...args: any[]) => ipcRenderer.invoke(channel, ...args),
   listFiles: (directoryPath: string): Promise<FileDetails[]> =>
     ipcRenderer.invoke('list-files', directoryPath),
   uploadFile: (filePath: string, destination: string) =>
@@ -30,6 +34,8 @@ const electronAPI = {
   getDataPath: () => ipcRenderer.invoke('get-data-path'),
   readFile: (filePath: string) => ipcRenderer.invoke('read-file', filePath),
   fetchPlot: () => ipcRenderer.invoke('fetch-plot'),
+  maximizeWindow: () => ipcRenderer.invoke('maximize-window'),
+  minimizeWindow: () => ipcRenderer.invoke('minimize-window'),
 };
 
 contextBridge.exposeInMainWorld('electron', electronAPI);
