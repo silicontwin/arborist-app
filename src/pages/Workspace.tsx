@@ -434,6 +434,10 @@ const Workspace = () => {
 
       // Reset the observationSelection state to its default value
       setObservationSelection('all');
+
+      // Reset selected outcome
+      // setSelectedOutcome('Please select');
+      setIsAnalysisComplete(true);
     } catch (error) {
       console.error('Error analyzing file:', error);
       alert(
