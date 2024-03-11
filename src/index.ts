@@ -96,7 +96,7 @@ if (require('electron-squirrel-startup')) {
 
 const createWindow = (): void => {
   // Create the browser window.
-   mainWindow = new BrowserWindow({
+  mainWindow = new BrowserWindow({
     width: 1800,
     height: 1000,
     frame: false,
@@ -275,8 +275,6 @@ ipcMain.handle('show-notification', (event, { title, body }) => {
 
   notification.show();
 });
-
-
 
 // -----------------------------------------------------------------------------
 
