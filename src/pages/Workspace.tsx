@@ -4,6 +4,7 @@ import { FaRegFolderOpen } from 'react-icons/fa';
 import { MdOutlineInsertDriveFile } from 'react-icons/md';
 import { TbDragDrop } from 'react-icons/tb';
 import { VscSettings } from 'react-icons/vsc';
+import { BiSolidError } from 'react-icons/bi';
 
 interface DataItem {
   [key: string]: any;
@@ -43,6 +44,7 @@ const Workspace = () => {
   const [headTailRows, setHeadTailRows] = useState<number>(20);
   const [isModelParamsVisible, setIsModelParamsVisible] =
     useState<boolean>(false);
+  const [observationsRemoved, setObservationsRemoved] = useState<number>(0);
 
   // Memoize the selected features computation
   const selectedColumns = useMemo(() => {
@@ -179,6 +181,7 @@ const Workspace = () => {
 
       const data = await response.json();
       setSelectedFileData(JSON.stringify(data.data, null, 2));
+      setObservationsRemoved(data.wrangle.observationsRemoved);
 
       // Ensure data.is_numeric exists and is an object before trying to use Object.keys
       if (data.is_numeric && typeof data.is_numeric === 'object') {
@@ -586,6 +589,13 @@ const Workspace = () => {
                     >
                       Close
                     </button>
+
+                    {isDataModalOpen && observationsRemoved > 0 && (
+                      <div className="bg-orange-400 flex justify-center items-center space-x-1 rounded-md px-1.5 py-0.5 text-sm text-white font-bold">
+                        <BiSolidError />
+                        <div>{observationsRemoved}</div>
+                      </div>
+                    )}
 
                     <div id="analyzeTime">
                       {isAnalyzing ? (
