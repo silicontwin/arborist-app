@@ -732,7 +732,11 @@ const Workspace = () => {
 
                         <button
                           onClick={() => {
-                            analyzeData(selectedFileName);
+                            analyzeData(
+                              selectedFileName,
+                              selectedColumns,
+                              selectedOutcome,
+                            );
                             switchAction('analyze');
                           }}
                           className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
