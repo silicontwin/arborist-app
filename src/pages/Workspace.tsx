@@ -530,27 +530,44 @@ const Workspace = () => {
     setAvailableFeatures(features);
   }, [columnNumericStatus, selectedFileName]);
 
-  // Reset selected features and outcome when a new file is selected
+  // // Reset selected features and outcome when a new file is selected
+  // useEffect(() => {
+  //   setSelectedOutcome('Please select');
+  //   setSelectedFeature('');
+  // }, [selectedFileName]);
+
   useEffect(() => {
-    setSelectedOutcome('Please select');
-    setSelectedFeature('');
-  }, [selectedFileName]);
+    if (isAnalysisComplete) {
+      setSelectedOutcome('Please select');
+      setSelectedFeature('');
+      setIsAnalysisComplete(false); // Reset the flag for the next analysis
+    }
+  }, [selectedFileName, isAnalysisComplete]);
+
+  // const handleOutcomeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
+  //   const newOutcome = event.target.value;
+  //   setSelectedOutcome(newOutcome);
+
+  //   setColumnNumericStatus((prev) => {
+  //     const newState = { ...prev };
+  //     if (selectedOutcome && newState[selectedOutcome]) {
+  //       newState[selectedOutcome].isChecked = false;
+  //     }
+  //     return newState;
+  //   });
+  // };
 
   const handleOutcomeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newOutcome = event.target.value;
-    setSelectedOutcome(newOutcome); // This should update the dropdown display
+    setSelectedOutcome(newOutcome);
 
-    // Update the columnNumericStatus, ensuring to preserve the isChecked state
-    setColumnNumericStatus((prev) => ({
-      ...Object.keys(prev).reduce((acc, key) => {
-        acc[key] = {
-          isNumeric: prev[key].isNumeric,
-          isChecked:
-            prev[key].isNumeric && (prev[key].isChecked || key === newOutcome),
-        };
-        return acc;
-      }, {} as ColumnStatus),
-    }));
+    setColumnNumericStatus((prev) => {
+      const newState = { ...prev };
+      if (newOutcome && newState[selectedOutcome]) {
+        newState[selectedOutcome].isChecked = false;
+      }
+      return newState;
+    });
   };
 
   // Function to get options for the features dropdown, excluding the selected outcome
