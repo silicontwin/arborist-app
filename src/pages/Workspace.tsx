@@ -345,10 +345,14 @@ const Workspace = () => {
 
   // ---
 
-  const analyzeData = async (fileName: string) => {
-    const selectedColumns = Object.entries(columnNumericStatus)
-      .filter(([_, value]) => value.isChecked && value.isNumeric)
-      .map(([key]) => key);
+  const analyzeData = async (
+    fileName: string,
+    selectedColumns: any,
+    outcomeVariable: any,
+  ) => {
+    // const selectedColumns = Object.entries(columnNumericStatus)
+    //   .filter(([_, value]) => value.isChecked && value.isNumeric)
+    //   .map(([key]) => key);
 
     // Ensure there are selected features before proceeding
     if (selectedColumns.length === 0) {
@@ -356,7 +360,12 @@ const Workspace = () => {
       return;
     }
 
-    console.log('Starting analysis for:', fileName);
+    console.log(
+      'Starting analysis for:',
+      fileName,
+      'with columns:',
+      selectedColumns,
+    );
 
     const startTime = Date.now(); // Start tracking time
     setIsAnalyzing(true);
@@ -374,10 +383,11 @@ const Workspace = () => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          fileName: fileName,
-          workspacePath: workspacePath,
-          headTailRows: headTailRows,
-          selectedColumns: selectedColumns,
+          fileName,
+          workspacePath,
+          headTailRows,
+          selectedColumns,
+          outcomeVariable,
           action: 'analyze',
         }),
       });
@@ -389,8 +399,11 @@ const Workspace = () => {
         );
       }
 
+      console.log('Selected Outcome before fetch:', selectedOutcome);
+
       const data = await response.json();
       console.log('Analysis data received:', data);
+
       setSelectedFileData(JSON.stringify(data.data, null, 2));
 
       // Update the columnNumericStatus state to include the specified columns as numeric
