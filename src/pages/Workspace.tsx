@@ -410,7 +410,7 @@ const Workspace = () => {
       setColumnNumericStatus((prev) => ({
         ...prev,
         'Posterior Average (y hat)': { isNumeric: true, isChecked: true },
-        '2.75th percentile': {
+        '2.5th percentile': {
           isNumeric: true,
           isChecked: true,
         },
