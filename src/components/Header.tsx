@@ -6,6 +6,7 @@ import { FaRegFolderOpen } from 'react-icons/fa';
 import { AiOutlineBoxPlot } from 'react-icons/ai';
 import { HiOutlineCollection } from 'react-icons/hi';
 import { TbArrowsMaximize, TbArrowsDiagonalMinimize2 } from 'react-icons/tb';
+import logo from '../images/assets/logo.png'; // Adjust the path as necessary
 
 const Header = () => {
   // Define the styles for the draggable area
@@ -30,9 +31,9 @@ const Header = () => {
       style={dragStyle}
       className="bg-gray-100 border-b h-[50px] flex flex-row justify-between w-full px-4"
     >
-      <div className="h-full flex flex-row justify-center items-center space-x-3">
-        <div className="font-bold text-[1.2em] text-blue-700">Arborist</div>
-        <div className="font-light text-[0.825em] opacity-40 pt-[2px] flex flex-row space-x-2">
+      <div className="h-full flex flex-row justify-center items-center">
+        <img src={logo} alt="Arborist" className="w-[316.67px] h-[50px]" />
+        <div className="font-light text-[0.825em] text-blue-700 opacity-40 pt-[2px] flex flex-row space-x-2">
           <div>v.0.2</div>
           <div>prototype</div>
           <div>not for use with real data</div>
