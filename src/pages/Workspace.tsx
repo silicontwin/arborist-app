@@ -710,6 +710,27 @@ const Workspace = () => {
                         </div>
                       </div>
 
+                      {(selectedModel === 'bcf' ||
+                        selectedModel === 'xbcf') && (
+                        <div className="flex justify-start items-center space-x-1">
+                          <div>Treatment (Z):</div>
+                          <select
+                            className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                            value={selectedOutcome}
+                            onChange={handleOutcomeChange}
+                          >
+                            <option value="Please select">Please select</option>
+                            {Object.entries(columnNumericStatus)
+                              .filter(([_, value]) => value.isNumeric)
+                              .map(([key]) => (
+                                <option key={key} value={key}>
+                                  {key}
+                                </option>
+                              ))}
+                          </select>
+                        </div>
+                      )}
+
                       <div className="flex justify-start items-center">
                         <div className="flex flex-row justify-start items-center space-x-2">
                           <div className="">Model:</div>
@@ -720,6 +741,9 @@ const Workspace = () => {
                           >
                             <option value="bart">BART</option>
                             <option value="xbart">XBART</option>
+                            <option value="bart-warm-start">
+                              BART (Warm-start)
+                            </option>
                             <option value="bcf">BCF</option>
                             <option value="xbcf">XBCF</option>
                           </select>
