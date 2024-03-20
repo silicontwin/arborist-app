@@ -33,7 +33,7 @@ const Workspace = () => {
   const [totalElapsedTime, setTotalElapsedTime] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState('Starting server');
   const [observationSelection, setObservationSelection] = useState('all');
-  const [selectedModel, setSelectedModel] = useState('xbart');
+  const [selectedModel, setSelectedModel] = useState('bart');
   const [columnNumericStatus, setColumnNumericStatus] = useState<ColumnStatus>(
     {},
   );
