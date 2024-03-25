@@ -6,7 +6,7 @@ import { FaRegFolderOpen } from 'react-icons/fa';
 import { AiOutlineBoxPlot } from 'react-icons/ai';
 import { HiOutlineCollection } from 'react-icons/hi';
 import { TbArrowsMaximize, TbArrowsDiagonalMinimize2 } from 'react-icons/tb';
-import logo from '../images/assets/logo.png'; // Adjust the path as necessary
+import logo from '../images/assets/logo.png';
 
 const Header = () => {
   // Define the styles for the draggable area
