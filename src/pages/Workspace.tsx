@@ -14,6 +14,10 @@ interface ColumnStatus {
   [key: string]: { isNumeric: boolean; isChecked: boolean };
 }
 
+interface StateTypes {
+  selectedTreatment: string;
+}
+
 const Workspace = () => {
   const [files, setFiles] = useState<FileDetails[]>([]);
   const [workspacePath, setWorkspacePath] = useState('');
@@ -40,6 +44,8 @@ const Workspace = () => {
   const [selectedFeature, setSelectedFeature] = useState<string>('');
   const [selectedOutcome, setSelectedOutcome] =
     useState<string>('Please select');
+  const [selectedTreatment, setSelectedTreatment] =
+    useState<StateTypes['selectedTreatment']>('');
   const [availableFeatures, setAvailableFeatures] = useState<string[]>([]);
   const [headTailRows, setHeadTailRows] = useState<number>(20);
   const [isModelParamsVisible, setIsModelParamsVisible] =
@@ -557,23 +563,37 @@ const Workspace = () => {
   //   });
   // };
 
+  const getDropdownOptions = (excludeOptions: string[]) => {
+    return Object.entries(columnNumericStatus)
+      .filter(
+        ([key, value]) => value.isNumeric && !excludeOptions.includes(key),
+      )
+      .map(([key]) => (
+        <option key={key} value={key}>
+          {key}
+        </option>
+      ));
+  };
+
   const handleOutcomeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
     const newOutcome = event.target.value;
     setSelectedOutcome(newOutcome);
+  };
 
-    setColumnNumericStatus((prev) => {
-      const newState = { ...prev };
-      if (newOutcome && newState[selectedOutcome]) {
-        newState[selectedOutcome].isChecked = false;
-      }
-      return newState;
-    });
+  const handleTreatmentChange = (
+    event: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    const newTreatment = event.target.value;
+    setSelectedTreatment(newTreatment);
   };
 
   // Function to get options for the features dropdown, excluding the selected outcome
   const getFeatureOptions = () =>
     availableFeatures
-      .filter((feature) => feature !== selectedOutcome)
+      .filter(
+        (feature) =>
+          feature !== selectedOutcome && feature !== selectedTreatment,
+      )
       .map((feature) => (
         <option key={feature} value={feature}>
           {feature}
@@ -687,13 +707,10 @@ const Workspace = () => {
                           onChange={handleOutcomeChange}
                         >
                           <option value="Please select">Please select</option>
-                          {Object.entries(columnNumericStatus)
-                            .filter(([_, value]) => value.isNumeric)
-                            .map(([key]) => (
-                              <option key={key} value={key}>
-                                {key}
-                              </option>
-                            ))}
+                          {getDropdownOptions([
+                            selectedTreatment,
+                            selectedFeature,
+                          ])}
                         </select>
                       </div>
 
@@ -716,17 +733,14 @@ const Workspace = () => {
                           <div>Treatment (Z):</div>
                           <select
                             className="rounded-md px-1.5 py-1 text-sm font-bold border"
-                            value={selectedOutcome}
-                            onChange={handleOutcomeChange}
+                            value={selectedTreatment}
+                            onChange={handleTreatmentChange}
                           >
                             <option value="Please select">Please select</option>
-                            {Object.entries(columnNumericStatus)
-                              .filter(([_, value]) => value.isNumeric)
-                              .map(([key]) => (
-                                <option key={key} value={key}>
-                                  {key}
-                                </option>
-                              ))}
+                            {getDropdownOptions([
+                              selectedOutcome,
+                              selectedFeature,
+                            ])}
                           </select>
                         </div>
                       )}
