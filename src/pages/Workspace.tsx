@@ -53,15 +53,6 @@ const Workspace = () => {
   const [observationsRemoved, setObservationsRemoved] = useState<number>(0);
   const [isAnalysisComplete, setIsAnalysisComplete] = useState(false);
 
-  // Memoize the selected features computation
-  // const selectedColumns = useMemo(() => {
-  //   return Object.entries(columnNumericStatus)
-  //     .filter(
-  //       ([key, value]) =>
-  //         value.isChecked && value.isNumeric && key !== selectedOutcome,
-  //     )
-  //     .map(([key]) => key);
-  // }, [columnNumericStatus, selectedOutcome]);
   const selectedColumns = useMemo(() => {
     return Object.entries(columnNumericStatus)
       .filter(([_, value]) => value.isChecked && value.isNumeric)
