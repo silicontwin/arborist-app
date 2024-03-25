@@ -9,13 +9,8 @@ import { TbArrowsMaximize, TbArrowsDiagonalMinimize2 } from 'react-icons/tb';
 import logo from '../images/assets/logo.png';
 
 const Header = () => {
-  // Define the styles for the draggable area
   const dragStyle: React.CSSProperties = { WebkitAppRegion: 'drag' };
-
-  // Define the styles for the non-draggable elements (like buttons and links)
   const noDragStyle: React.CSSProperties = { WebkitAppRegion: 'no-drag' };
-
-  // Get the current location object
   const location = useLocation();
 
   const handleMaximizeClick = () => {
@@ -29,53 +24,54 @@ const Header = () => {
   return (
     <div
       style={dragStyle}
-      className="bg-gray-100 border-b h-[50px] flex flex-row justify-between w-full px-4"
+      className="bg-gray-100 border-b h-[50px] flex justify-between items-center w-full px-4"
     >
-      <div className="h-full flex flex-row justify-center items-center">
+      <div className="flex items-center justify-start flex-1">
         <img src={logo} alt="Arborist" className="w-[316.67px] h-[50px]" />
-        <div className="font-light text-[0.825em] text-blue-700 opacity-40 pt-[2px] flex flex-row space-x-2">
+        <div className="font-light text-[0.825em] text-blue-700 opacity-40 pt-[2px] flex space-x-2">
           <div>v.0.2</div>
           <div>prototype</div>
           <div>not for use with real data</div>
         </div>
       </div>
 
-      <div className="h-full flex flex-row justify-start items-center space-x-5 font-semibold">
+      <div className="h-full flex-1 flex justify-center items-center font-semibold">
         <Link
           to="/"
           style={noDragStyle}
-          className={`${location.pathname === '/' ? 'text-red-600' : ''}`}
+          className={`h-full flex items-center space-x-1 px-4 border-x ${
+            location.pathname === '/' ? 'bg-white text-red-600' : ''
+          }`}
         >
-          <div className="flex flex-row justify-start items-center space-x-1">
-            <FaRegFolderOpen className="w-[20px] h-[20px]" />
-            <div>Datasets</div>
-          </div>
+          <FaRegFolderOpen className="w-[20px] h-[20px]" />
+          <div>Datasets</div>
         </Link>
-
         <Link
           to="/models"
           style={noDragStyle}
-          className={`${location.pathname === '/models' ? 'text-red-600' : ''}`}
+          className={`h-full flex items-center space-x-1 px-4 ${
+            location.pathname === '/models' ? 'bg-white text-red-600' : ''
+          }`}
         >
-          <div className="flex flex-row justify-start items-center space-x-1">
-            <HiOutlineCollection className="w-[20px] h-[20px]" />
-            <div>Models</div>
-          </div>
+          <HiOutlineCollection className="w-[20px] h-[20px]" />
+          <div>Models</div>
         </Link>
-
         <Link
           to="/plots"
           style={noDragStyle}
-          className={`${location.pathname === '/plots' ? 'text-red-600' : ''}`}
+          className={`h-full flex items-center space-x-1 px-4 border-x ${
+            location.pathname === '/plots' ? 'bg-white text-red-600' : ''
+          }`}
         >
-          <div className="flex flex-row justify-start items-center space-x-1">
-            <AiOutlineBoxPlot className="w-[24px] h-[24px]" />
-            <div>Plots</div>
-          </div>
+          <AiOutlineBoxPlot className="w-[24px] h-[24px]" />
+          <div>Plots</div>
         </Link>
       </div>
 
-      <div style={noDragStyle} className="flex items-center space-x-2">
+      <div
+        style={noDragStyle}
+        className="flex items-center space-x-2 flex-1 justify-end"
+      >
         <div onClick={handleMaximizeClick} className="cursor-pointer">
           <TbArrowsMaximize className="w-[20px] h-[20px]" />
         </div>
