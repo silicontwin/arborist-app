@@ -245,19 +245,29 @@ const Workspace = () => {
 
     const columns = Object.keys(jsonData[0]);
 
+    // const handleCheckboxChange = (columnName: string) => {
+    //   if (
+    //     columnNumericStatus[columnName]?.isNumeric &&
+    //     columnName !== selectedOutcome
+    //   ) {
+    //     setColumnNumericStatus((prevState) => ({
+    //       ...prevState,
+    //       [columnName]: {
+    //         ...prevState[columnName],
+    //         isChecked: !prevState[columnName].isChecked,
+    //       },
+    //     }));
+    //   }
+    // };
+
     const handleCheckboxChange = (columnName: string) => {
-      if (
-        columnNumericStatus[columnName]?.isNumeric &&
-        columnName !== selectedOutcome
-      ) {
-        setColumnNumericStatus((prevState) => ({
-          ...prevState,
-          [columnName]: {
-            ...prevState[columnName],
-            isChecked: !prevState[columnName].isChecked,
-          },
-        }));
-      }
+      setColumnNumericStatus((prevState) => ({
+        ...prevState,
+        [columnName]: {
+          ...prevState[columnName],
+          isChecked: !prevState[columnName].isChecked,
+        },
+      }));
     };
 
     return (
@@ -519,13 +529,73 @@ const Workspace = () => {
   };
 
   // useEffect to update available features when columnNumericStatus changes or a file is selected
+  // useEffect(() => {
+  //   const features = Object.entries(columnNumericStatus)
+  //     .filter(([_, value]) => value.isNumeric && value.isChecked)
+  //     .map(([key]) => key);
+
+  //   setAvailableFeatures(features);
+
+  //   // Validate the current selections for outcome, feature, and treatment
+  //   if (!features.includes(selectedOutcome)) {
+  //     setSelectedOutcome('Please select');
+  //   }
+  //   if (!features.includes(selectedFeature)) {
+  //     setSelectedFeature('');
+  //   }
+  //   if (!features.includes(selectedTreatment)) {
+  //     setSelectedTreatment('');
+  //   }
+  // }, [
+  //   columnNumericStatus,
+  //   selectedOutcome,
+  //   selectedFeature,
+  //   selectedTreatment,
+  // ]);
+
+  const dropdownOptions = useMemo(() => {
+    return Object.entries(columnNumericStatus)
+      .filter(([_, value]) => value.isNumeric && value.isChecked)
+      .map(([key]) => key);
+  }, [columnNumericStatus]);
+
   useEffect(() => {
-    const features = Object.entries(columnNumericStatus)
+    const numericAndChecked = Object.entries(columnNumericStatus)
       .filter(([_, value]) => value.isNumeric && value.isChecked)
       .map(([key]) => key);
 
-    setAvailableFeatures(features);
-  }, [columnNumericStatus, selectedFileName]);
+    // Filter out the selected outcome and treatment from the available features
+    const filteredFeatures = numericAndChecked.filter(
+      (feature) => feature !== selectedOutcome && feature !== selectedTreatment,
+    );
+
+    setAvailableFeatures(filteredFeatures);
+
+    // Automatically deselect outcome or treatment if it becomes unchecked or non-numeric
+    if (!numericAndChecked.includes(selectedOutcome)) {
+      setSelectedOutcome('Please select');
+    }
+    if (!numericAndChecked.includes(selectedTreatment)) {
+      setSelectedTreatment('Please select');
+    }
+  }, [
+    columnNumericStatus,
+    selectedOutcome,
+    selectedTreatment,
+    selectedFeature,
+  ]);
+
+  // useEffect(() => {
+  //   if (!dropdownOptions.includes(selectedOutcome)) {
+  //     setSelectedOutcome('Please select');
+  //   }
+  //   if (!dropdownOptions.includes(selectedFeature)) {
+  //     setSelectedFeature('');
+  //   }
+  //   if (!dropdownOptions.includes(selectedTreatment)) {
+  //     setSelectedTreatment('Please select');
+  //   }
+  // }, [dropdownOptions, selectedOutcome, selectedFeature, selectedTreatment]);
 
   // // Reset selected features and outcome when a new file is selected
   // useEffect(() => {
@@ -698,28 +768,37 @@ const Workspace = () => {
                           onChange={handleOutcomeChange}
                         >
                           <option value="Please select">Please select</option>
-                          {getDropdownOptions([
-                            selectedTreatment,
-                            selectedFeature,
-                          ])}
+                          {dropdownOptions
+                            .filter(
+                              (option) =>
+                                ![selectedFeature, selectedTreatment].includes(
+                                  option,
+                                ),
+                            )
+                            .map((option) => (
+                              <option key={option} value={option}>
+                                {option}
+                              </option>
+                            ))}
                         </select>
                       </div>
 
                       <div className="flex justify-start items-center space-x-1">
                         <div>Features (X):</div>
-                        <div>
-                          <select
-                            className="rounded-md px-1.5 py-1 text-sm font-bold border"
-                            value={selectedFeature}
-                            onChange={(e) => setSelectedFeature(e.target.value)}
-                          >
-                            {getFeatureOptions()}
-                          </select>
-                        </div>
+                        <select
+                          className="rounded-md px-1.5 py-1 text-sm font-bold border"
+                          value={selectedFeature}
+                          onChange={(e) => setSelectedFeature(e.target.value)}
+                        >
+                          {availableFeatures.map((feature) => (
+                            <option key={feature} value={feature}>
+                              {feature}
+                            </option>
+                          ))}
+                        </select>
                       </div>
 
-                      {(selectedModel === 'bcf' ||
-                        selectedModel === 'xbcf') && (
+                      {['bcf', 'xbcf'].includes(selectedModel) && (
                         <div className="flex justify-start items-center space-x-1">
                           <div>Treatment (Z):</div>
                           <select
@@ -728,10 +807,18 @@ const Workspace = () => {
                             onChange={handleTreatmentChange}
                           >
                             <option value="Please select">Please select</option>
-                            {getDropdownOptions([
-                              selectedOutcome,
-                              selectedFeature,
-                            ])}
+                            {dropdownOptions
+                              .filter(
+                                (option) =>
+                                  ![selectedOutcome, selectedFeature].includes(
+                                    option,
+                                  ),
+                              )
+                              .map((option) => (
+                                <option key={option} value={option}>
+                                  {option}
+                                </option>
+                              ))}
                           </select>
                         </div>
                       )}
