@@ -245,21 +245,6 @@ const Workspace = () => {
 
     const columns = Object.keys(jsonData[0]);
 
-    // const handleCheckboxChange = (columnName: string) => {
-    //   if (
-    //     columnNumericStatus[columnName]?.isNumeric &&
-    //     columnName !== selectedOutcome
-    //   ) {
-    //     setColumnNumericStatus((prevState) => ({
-    //       ...prevState,
-    //       [columnName]: {
-    //         ...prevState[columnName],
-    //         isChecked: !prevState[columnName].isChecked,
-    //       },
-    //     }));
-    //   }
-    // };
-
     const handleCheckboxChange = (columnName: string) => {
       setColumnNumericStatus((prevState) => ({
         ...prevState,
@@ -528,31 +513,6 @@ const Workspace = () => {
     setSelectedModel(event.target.value);
   };
 
-  // useEffect to update available features when columnNumericStatus changes or a file is selected
-  // useEffect(() => {
-  //   const features = Object.entries(columnNumericStatus)
-  //     .filter(([_, value]) => value.isNumeric && value.isChecked)
-  //     .map(([key]) => key);
-
-  //   setAvailableFeatures(features);
-
-  //   // Validate the current selections for outcome, feature, and treatment
-  //   if (!features.includes(selectedOutcome)) {
-  //     setSelectedOutcome('Please select');
-  //   }
-  //   if (!features.includes(selectedFeature)) {
-  //     setSelectedFeature('');
-  //   }
-  //   if (!features.includes(selectedTreatment)) {
-  //     setSelectedTreatment('');
-  //   }
-  // }, [
-  //   columnNumericStatus,
-  //   selectedOutcome,
-  //   selectedFeature,
-  //   selectedTreatment,
-  // ]);
-
   const dropdownOptions = useMemo(() => {
     return Object.entries(columnNumericStatus)
       .filter(([_, value]) => value.isNumeric && value.isChecked)
@@ -585,24 +545,6 @@ const Workspace = () => {
     selectedFeature,
   ]);
 
-  // useEffect(() => {
-  //   if (!dropdownOptions.includes(selectedOutcome)) {
-  //     setSelectedOutcome('Please select');
-  //   }
-  //   if (!dropdownOptions.includes(selectedFeature)) {
-  //     setSelectedFeature('');
-  //   }
-  //   if (!dropdownOptions.includes(selectedTreatment)) {
-  //     setSelectedTreatment('Please select');
-  //   }
-  // }, [dropdownOptions, selectedOutcome, selectedFeature, selectedTreatment]);
-
-  // // Reset selected features and outcome when a new file is selected
-  // useEffect(() => {
-  //   setSelectedOutcome('Please select');
-  //   setSelectedFeature('');
-  // }, [selectedFileName]);
-
   useEffect(() => {
     if (isAnalysisComplete) {
       setSelectedOutcome('Please select');
@@ -610,19 +552,6 @@ const Workspace = () => {
       setIsAnalysisComplete(false); // Reset the flag for the next analysis
     }
   }, [selectedFileName, isAnalysisComplete]);
-
-  // const handleOutcomeChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-  //   const newOutcome = event.target.value;
-  //   setSelectedOutcome(newOutcome);
-
-  //   setColumnNumericStatus((prev) => {
-  //     const newState = { ...prev };
-  //     if (selectedOutcome && newState[selectedOutcome]) {
-  //       newState[selectedOutcome].isChecked = false;
-  //     }
-  //     return newState;
-  //   });
-  // };
 
   const getDropdownOptions = (excludeOptions: string[]) => {
     return Object.entries(columnNumericStatus)
