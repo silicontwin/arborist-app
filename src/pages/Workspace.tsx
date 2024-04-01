@@ -894,18 +894,6 @@ const Workspace = () => {
         {apiStatus}
       </div>
 
-      <button
-        className="absolute bottom-0 right-0 text-[0.725em] z-10 text-center px-2 py-1 rounded-r-md"
-        onClick={() =>
-          window.electron.invoke('show-notification', {
-            title: 'Model Training Complete',
-            body: 'Save your model to generate predictions!',
-          })
-        }
-      >
-        Show Notification
-      </button>
-
       {isModelParamsVisible && (
         <div
           id="modelParams"
