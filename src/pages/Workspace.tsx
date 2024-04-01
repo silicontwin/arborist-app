@@ -442,14 +442,28 @@ const Workspace = () => {
     }
   };
 
-  // Clear interval when component is unmounted or when analysis is not in progress
   useEffect(() => {
+    // Clear interval when component is unmounted or when analysis is not in progress
     return () => {
       if (intervalId) {
         clearInterval(intervalId);
       }
     };
   }, [intervalId]);
+
+  useEffect(() => {
+    // Trigger a notification after training is complete
+    if (isAnalysisComplete && totalElapsedTime) {
+      window.electron
+        .invoke('show-notification', {
+          title: 'Model Training Complete',
+          body: 'Save your model to generate predictions!',
+        })
+        .catch((error) => {
+          console.error('Error showing notification:', error);
+        });
+    }
+  }, [isAnalysisComplete, totalElapsedTime]);
 
   // Function to display elapsed time in seconds to the nearest hundredth
   const displayElapsedTime = () => {
@@ -803,7 +817,7 @@ const Workspace = () => {
 
                     <button
                       onClick={downloadCSV}
-                      className="rounded-md px-1.5 py-1 text-sm font-bold border bg-blue-600 text-white"
+                      className="rounded-md px-1.5 py-1 text-sm font-bold border bg-gray-400 text-white"
                     >
                       Download Posterior Matrices
                     </button>
