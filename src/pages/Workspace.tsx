@@ -659,7 +659,10 @@ const Workspace = () => {
                     </button>
 
                     {isDataModalOpen && observationsRemoved > 0 && (
-                      <div className="bg-orange-400 flex justify-center items-center space-x-1 rounded-md px-1.5 py-0.5 text-sm text-white font-bold">
+                      <div
+                        className="bg-orange-400 flex justify-center items-center space-x-1 rounded-md px-1.5 py-0.5 text-sm text-white font-bold cursor-pointer"
+                        title={`${observationsRemoved} observations have been removed due to missing data`}
+                      >
                         <BiSolidError />
                         <div>{observationsRemoved}</div>
                       </div>
