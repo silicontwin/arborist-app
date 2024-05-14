@@ -375,6 +375,15 @@ const Workspace = () => {
     setIntervalId(id);
 
     try {
+      console.log('Sending request to /summarize endpoint with data:', {
+        fileName,
+        workspacePath,
+        headTailRows,
+        selectedColumns,
+        outcomeVariable,
+        action: 'analyze',
+      });
+
       const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
         headers: {
@@ -389,6 +398,9 @@ const Workspace = () => {
           action: 'analyze',
         }),
       });
+
+      console.log('Response status:', response.status);
+      console.log('Response headers:', response.headers);
 
       if (!response.ok) {
         const responseBody = await response.text();
