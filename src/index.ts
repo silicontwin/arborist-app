@@ -18,8 +18,8 @@ let mainWindow: BrowserWindow | null = null;
 // Function to check if the server is ready
 const isServerReady = async (
   url: string,
-  retries: number = 30,
-  delay: number = 1000,
+  retries: number = 60,
+  delay: number = 2000,
 ): Promise<boolean> => {
   // console.log(`Checking if server is ready at ${url}`);
 
@@ -124,6 +124,7 @@ ipcMain.handle('get-file-storage-path', async () => {
 // Used for fetching data from the FastAPI server
 ipcMain.handle('fetch-data', async () => {
   // console.log('IPC fetch-data called');
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // Delay before checking server readiness
   const serverReady = await isServerReady('http://127.0.0.1:8000/status');
   if (!serverReady) {
     console.error('FastAPI server is not ready');
