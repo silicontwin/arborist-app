@@ -352,6 +352,12 @@ const Workspace = () => {
       return;
     }
 
+    // Ensure a valid outcome variable is selected
+    if (outcomeVariable === 'Please select') {
+      alert('Select an Outcome (y) variable.');
+      return;
+    }
+
     console.log(
       'Starting analysis for:',
       fileName,
