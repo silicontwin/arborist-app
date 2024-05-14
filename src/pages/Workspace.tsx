@@ -671,7 +671,7 @@ const Workspace = () => {
 
                     <button
                       onClick={() => setIsDataModalOpen(false)}
-                      className="bg-gray-100 border rounded-md px-1.5 py-0.5 text-sm font-bold"
+                      className="rounded-md px-1.5 py-0.5 text-sm font-bold bg-red-600 text-white"
                     >
                       Close
                     </button>
@@ -819,7 +819,7 @@ const Workspace = () => {
                             );
                             switchAction('analyze');
                           }}
-                          className="rounded-md px-1.5 py-1 text-sm font-bold bg-red-600 text-white"
+                          className="rounded-md px-1.5 py-0.5 text-sm font-bold bg-red-600 text-white"
                         >
                           Train Model
                         </button>
@@ -831,14 +831,14 @@ const Workspace = () => {
                   <div className="flex space-x-4">
                     <button
                       onClick={downloadCSV}
-                      className="rounded-md px-1.5 py-1 text-sm font-bold border bg-blue-600 text-white"
+                      className="rounded-md px-1.5 py-0.5 text-sm font-bold border bg-blue-600 text-white"
                     >
                       Save Trained Model
                     </button>
 
                     <button
                       onClick={downloadCSV}
-                      className="rounded-md px-1.5 py-1 text-sm font-bold border bg-gray-400 text-white"
+                      className="rounded-md px-1.5 py-0.5 text-sm font-bold border bg-gray-400 text-white"
                     >
                       Download Posterior Matrices
                     </button>
