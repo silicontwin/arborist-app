@@ -27,7 +27,11 @@ const Header = () => {
       className="bg-gray-100 border-b h-[50px] flex justify-between items-center w-full px-4"
     >
       <div className="flex items-center justify-start flex-1">
-        <img src={logo} alt="Arborist" className="w-[316.67px] h-[50px]" />
+        <img
+          src={logo}
+          alt="Arborist"
+          className="w-[316.67px] h-[50px] mb-[1px]"
+        />
         <div className="font-light text-[0.825em] text-blue-700 opacity-40 pt-[2px] flex space-x-2">
           <div>v.0.2</div>
           <div>prototype</div>
