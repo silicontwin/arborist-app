@@ -149,6 +149,17 @@ const Workspace = () => {
     }
   };
 
+  const resetStates = () => {
+    setSelectedOutcome('Please select');
+    setSelectedFeature('');
+    setSelectedTreatment('');
+    setColumnNumericStatus({});
+    setAvailableFeatures([]);
+    setPredictions(null);
+    setTotalElapsedTime(null);
+    setIsAnalysisComplete(false);
+  };
+
   const handleFileDoubleClick = async (fileName: string) => {
     try {
       // Reset analysis time and related states before starting a new analysis
@@ -164,6 +175,9 @@ const Workspace = () => {
 
       // Reset action to 'summarize' every time a new file is opened
       setAction('summarize');
+
+      // Reset states when opening a new dataset
+      resetStates();
 
       const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
@@ -668,7 +682,10 @@ const Workspace = () => {
                     </div>
 
                     <button
-                      onClick={() => setIsDataModalOpen(false)}
+                      onClick={() => {
+                        setIsDataModalOpen(false);
+                        resetStates();
+                      }}
                       className="rounded-md px-1.5 py-0.5 text-sm font-bold bg-red-600 text-white"
                     >
                       Close
