@@ -275,8 +275,8 @@ const Workspace = () => {
               <th
                 key={index}
                 className={`sticky top-0 z-10 border py-2 px-4 font-bold text-left uppercase text-[.925em] whitespace-nowrap ${
-                  column === selectedOutcome
-                    ? 'bg-blue-500 text-white'
+                  isPredictionColumn(column) || column === selectedOutcome
+                    ? 'bg-blue-200'
                     : 'bg-white text-gray-700'
                 }`}
               >
@@ -295,9 +295,11 @@ const Workspace = () => {
                       />
                     )}
                     <span
-                      className={
-                        column === selectedOutcome ? 'text-white' : 'text-black'
-                      }
+                    // className={
+                    //   isPredictionColumn(column) || column === selectedOutcome
+                    //     ? 'text-blue-500'
+                    //     : 'text-black'
+                    // }
                     >
                       {column}
                     </span>
@@ -325,8 +327,10 @@ const Workspace = () => {
                 <td
                   key={colIndex}
                   className={`border py-2 px-4 text-left whitespace-nowrap ${
-                    column === selectedOutcome
-                      ? 'bg-blue-500 text-white'
+                    isPredictionColumn(column)
+                      ? 'bg-blue-500 bg-opacity-10 text-black'
+                      : column === selectedOutcome
+                      ? 'bg-blue-500 bg-opacity-10 text-black'
                       : !columnNumericStatus[column]?.isChecked ||
                         !columnNumericStatus[column]?.isNumeric
                       ? 'text-gray-400'
@@ -547,8 +551,12 @@ const Workspace = () => {
   // ---
 
   // Determine if the cell is in the predictions column
-  const isPredictionColumn = (cellIndex: number) => {
-    return predictions != null && cellIndex === 0;
+  const isPredictionColumn = (columnName: string) => {
+    return [
+      'Posterior Average (y hat)',
+      '2.5th percentile',
+      '97.5th percentile',
+    ].includes(columnName);
   };
 
   // ---
