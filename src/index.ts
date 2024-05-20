@@ -80,14 +80,18 @@ const startServer = (): void => {
     const stdout = serverProcess.stdout as NodeJS.ReadableStream;
     const stderr = serverProcess.stderr as NodeJS.ReadableStream;
 
+    // API console output
     stdout.on('data', (data) => {
-      console.log(`Server stdout: ${data}`);
+      // Remove extra line breaks and print trimmed output
+      console.log(data.toString().trim());
     });
 
     // console.log('FastAPI server should be running...');
 
+    // API error output
     stderr.on('data', (data) => {
-      console.error(`Server stderr: ${data}`);
+      // Remove extra line breaks and print trimmed output
+      console.error(data.toString().trim());
     });
 
     serverProcess.on('close', (code) => {
