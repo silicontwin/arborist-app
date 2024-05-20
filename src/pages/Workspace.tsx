@@ -165,9 +165,6 @@ const Workspace = () => {
       // Reset action to 'summarize' every time a new file is opened
       setAction('summarize');
 
-      // // Reset selected outcome
-      // setSelectedOutcome('Please select');
-
       const response = await fetch('http://localhost:8000/summarize', {
         method: 'POST',
         headers: {
@@ -177,7 +174,8 @@ const Workspace = () => {
           fileName: fileName,
           workspacePath: workspacePath,
           headTailRows: headTailRows,
-          outcomeVariable: '',
+          selectedColumns: selectedColumns,
+          outcomeVariable: selectedOutcome,
           action: 'summarize',
         }),
       });
