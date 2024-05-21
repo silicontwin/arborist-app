@@ -36,7 +36,7 @@ const Workspace = () => {
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [totalElapsedTime, setTotalElapsedTime] = useState<string | null>(null);
   const [apiStatus, setApiStatus] = useState(
-    'Spinning up secure local server . . .',
+    'Spinning up secure local server, this normally takes between 10-30 seconds . . .',
   );
   const [observationSelection, setObservationSelection] = useState('all');
   const [selectedModel, setSelectedModel] = useState('bart');
