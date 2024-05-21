@@ -32,17 +32,19 @@ const Header = () => {
           alt="Arborist"
           className="w-[316.67px] h-[50px] mb-[1px]"
         />
-        <div className="font-light text-[0.825em] text-blue-700 opacity-40 pt-[2px] flex space-x-2">
-          <div>v.0.2</div>
+        <div className="w-[580px] font-light text-[0.825em] text-blue-700 opacity-40 pt-[2px] flex space-x-2">
+          <div>V 0.2</div>
           <div>prototype</div>
           <div>not for use with real data</div>
         </div>
       </div>
 
-      <div className="h-full flex-1 flex justify-center items-center font-semibold">
+      <div
+        className="h-full flex-1 flex justify-center items-center font-semibold"
+        style={noDragStyle}
+      >
         <Link
           to="/"
-          style={noDragStyle}
           className={`h-full flex items-center space-x-1 px-4 border-x ${
             location.pathname === '/' ? 'bg-white text-red-600' : ''
           }`}
@@ -52,7 +54,6 @@ const Header = () => {
         </Link>
         <Link
           to="/models"
-          style={noDragStyle}
           className={`h-full flex items-center space-x-1 px-4 ${
             location.pathname === '/models' ? 'bg-white text-red-600' : ''
           }`}
@@ -62,7 +63,6 @@ const Header = () => {
         </Link>
         <Link
           to="/plots"
-          style={noDragStyle}
           className={`h-full flex items-center space-x-1 px-4 border-x ${
             location.pathname === '/plots' ? 'bg-white text-red-600' : ''
           }`}
@@ -73,13 +73,21 @@ const Header = () => {
       </div>
 
       <div
-        style={noDragStyle}
+        style={dragStyle}
         className="flex items-center space-x-2 flex-1 justify-end"
       >
-        <div onClick={handleMaximizeClick} className="cursor-pointer">
+        <div
+          onClick={handleMaximizeClick}
+          className="cursor-pointer"
+          style={noDragStyle}
+        >
           <TbArrowsMaximize className="w-[20px] h-[20px]" />
         </div>
-        <div onClick={handleMinimizeClick} className="cursor-pointer">
+        <div
+          onClick={handleMinimizeClick}
+          className="cursor-pointer"
+          style={noDragStyle}
+        >
           <TbArrowsDiagonalMinimize2 className="w-[20px] h-[20px]" />
         </div>
       </div>
