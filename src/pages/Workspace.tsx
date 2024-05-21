@@ -35,7 +35,9 @@ const Workspace = () => {
   const [elapsedTime, setElapsedTime] = useState<number | null>(null);
   const [intervalId, setIntervalId] = useState<NodeJS.Timeout | null>(null);
   const [totalElapsedTime, setTotalElapsedTime] = useState<string | null>(null);
-  const [apiStatus, setApiStatus] = useState('Starting server');
+  const [apiStatus, setApiStatus] = useState(
+    'Spinning up secure local server . . .',
+  );
   const [observationSelection, setObservationSelection] = useState('all');
   const [selectedModel, setSelectedModel] = useState('bart');
   const [columnNumericStatus, setColumnNumericStatus] = useState<ColumnStatus>(
@@ -934,8 +936,8 @@ const Workspace = () => {
         </div>
       </div>
 
-      <div className="absolute bottom-0 left-0 text-[0.725em] text-gray-400 z-10 text-center px-2 py-1 rounded-r-md">
-        {apiStatus}
+      <div className="absolute bottom-[6px] text-[1em] z-10 text-gray-400 font-light text-center px-2 py-1 rounded-r-md left-0 right-0 mx-auto">
+        {apiStatus === 'Online' ? 'Secure local server ready' : apiStatus}
       </div>
 
       {isModelParamsVisible && (
