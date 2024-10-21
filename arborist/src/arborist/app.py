@@ -8,6 +8,7 @@ import csv
 from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, QHeaderView
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
 from PySide6.QtWidgets import QFileSystemModel
+from PySide6.QtGui import QScreen
 
 
 class CSVTableModel(QAbstractTableModel):
@@ -50,23 +51,26 @@ class Arborist(QMainWindow):
         self.setWindowTitle("Arborist")
 
         # Set the default geometry to 1600x900
-        self.setGeometry(100, 100, 1600, 900)
+        self.resize(1600, 900)
 
         # Allow resizing smaller and larger than the default size
         self.setMinimumSize(800, 600)
+
+        # Center the window on the screen
+        self.center_window()
 
         # Create a splitter to divide the file browser and file viewer
         splitter = QSplitter(Qt.Horizontal)
 
         # File browser (left panel)
         self.file_model = QFileSystemModel()
-        
+
         # Get the user's desktop directory
         desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
 
         # Set the root path to the desktop
         self.file_model.setRootPath(desktop_path)
-        
+
         self.tree = QTreeView()
         self.tree.setModel(self.file_model)
 
@@ -75,7 +79,7 @@ class Arborist(QMainWindow):
 
         # Adjust file browser column widths
         self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
-        
+
         # Minimum width for columns
         self.tree.header().setMinimumSectionSize(100)
 
@@ -98,6 +102,21 @@ class Arborist(QMainWindow):
 
         # Set the initial splitter sizes
         splitter.setSizes([300, 1300])
+
+    def center_window(self):
+        # Get the screen geometry to center the window
+        screen = self.screen()  # Get the current screen
+        screen_geometry = screen.availableGeometry()  # Get available screen size (excluding taskbars, etc.)
+        window_geometry = self.frameGeometry()
+
+        # Calculate the center point of the screen
+        center_point = screen_geometry.center()
+
+        # Move the center of the window to the screen's center point
+        window_geometry.moveCenter(center_point)
+
+        # Move the window's top-left corner to the calculated center
+        self.move(window_geometry.topLeft())
 
     def on_file_double_click(self, index):
         # Get the file path from the model index
