@@ -17,7 +17,7 @@ class Arborist(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("Arborist - File Browser")
+        self.setWindowTitle("Arborist")
 
         # Create a splitter to divide the file browser and file viewer
         splitter = QSplitter(Qt.Horizontal)
