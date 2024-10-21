@@ -5,9 +5,9 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 import sys
 import os
 import csv
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, QHeaderView
+from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, 
+                               QHeaderView, QFileSystemModel, QTabWidget, QPushButton, QHBoxLayout)
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
-from PySide6.QtWidgets import QFileSystemModel
 from operator import itemgetter  # For sorting the data
 
 
@@ -75,8 +75,13 @@ class Arborist(QMainWindow):
         # Center the window on the screen
         self.center_window()
 
-        # Create a splitter to divide the file browser and file viewer
-        splitter = QSplitter(Qt.Horizontal)
+        # Create a tab widget for switching between the file browser and dataset viewer
+        self.tabs = QTabWidget()
+
+        # Create the file browser tab
+        file_browser_tab = QWidget()
+        file_browser_layout = QVBoxLayout()
+        self.splitter = QSplitter(Qt.Horizontal)
 
         # File browser (left panel)
         self.file_model = QFileSystemModel()
@@ -102,25 +107,53 @@ class Arborist(QMainWindow):
         # Double click to open the file
         self.tree.doubleClicked.connect(self.on_file_double_click)
 
-        splitter.addWidget(self.tree)
+        self.splitter.addWidget(self.tree)
 
         # File viewer (right panel)
         self.file_viewer = QTableView(self)
-        splitter.addWidget(self.file_viewer)
+        self.splitter.addWidget(self.file_viewer)
 
         # Enable sorting by column headers
         self.file_viewer.setSortingEnabled(True)
 
-        # Set up layout
+        # Split for the file browser and viewer
+        self.splitter.setSizes([300, 1300])
+
+        # Add a button to open the dataset in the second tab (analytics view)
+        self.open_button = QPushButton("Open in Analytics View")
+        self.open_button.setVisible(False)  # Initially hide the button
+        self.open_button.clicked.connect(self.open_in_analytics_view)
+
+        file_browser_layout.addWidget(self.splitter)
+        file_browser_layout.addWidget(self.open_button)
+
+        file_browser_tab.setLayout(file_browser_layout)
+
+        # Add the tabs to the main layout
+        self.tabs.addTab(file_browser_tab, "File Browser")
+
+        # Create the analytics view tab
+        self.analytics_tab = QWidget()
+        self.analytics_tab_layout = QVBoxLayout()
+        self.analytics_viewer = QTableView()
+        self.analytics_tab_layout.addWidget(self.analytics_viewer)
+
+        # Add a placeholder toolbar
+        self.toolbar = QWidget()
+        self.toolbar_layout = QHBoxLayout()
+        self.toolbar.setLayout(self.toolbar_layout)
+        self.analytics_tab_layout.addWidget(self.toolbar)
+
+        self.analytics_tab.setLayout(self.analytics_tab_layout)
+        self.tabs.addTab(self.analytics_tab, "Analytics View")
+
+        # Set up the layout for the main window
         main_layout = QVBoxLayout()
-        main_layout.addWidget(splitter)
+        main_layout.addWidget(self.tabs)
 
         container = QWidget()
         container.setLayout(main_layout)
         self.setCentralWidget(container)
-
-        # Set the initial splitter sizes
-        splitter.setSizes([300, 1300])
 
     def center_window(self):
         # Get the screen geometry to center the window
@@ -141,13 +174,15 @@ class Arborist(QMainWindow):
         # Get the file path from the model index
         file_path = self.file_model.filePath(index)
 
-        # Load the file and display its contents
+        # Load the file and display its contents in the file viewer
         if file_path.endswith('.csv'):
-            self.load_csv_file(file_path)
+            self.load_csv_file(file_path, self.file_viewer)
+            self.open_button.setVisible(True)  # Show the 'Open' button after a dataset is loaded
         else:
             self.file_viewer.setModel(None)  # Clear the table if non-CSV file
+            self.open_button.setVisible(False)  # Hide the 'Open' button if no dataset is loaded
 
-    def load_csv_file(self, file_path):
+    def load_csv_file(self, file_path, table_view):
         try:
             with open(file_path, newline='') as file:
                 reader = csv.reader(file)
@@ -160,14 +195,24 @@ class Arborist(QMainWindow):
 
                 # Use the custom model to set the data and headers
                 model = CSVTableModel(table_data, headers)
-                self.file_viewer.setModel(model)
+                table_view.setModel(model)
 
                 # Automatically adjust the column width to fit the content and header
-                self.file_viewer.resizeColumnsToContents()
+                table_view.resizeColumnsToContents()
 
         except Exception as e:
             print(f"Error loading file: {e}")
-            self.file_viewer.setModel(None)
+            table_view.setModel(None)
+
+    def open_in_analytics_view(self):
+        # Load the current file from the file_viewer into the analytics viewer
+        model = self.file_viewer.model()
+        if model:
+            self.analytics_viewer.setModel(model)
+            self.analytics_viewer.resizeColumnsToContents()
+
+            # Switch to the analytics tab
+            self.tabs.setCurrentIndex(1)
 
 
 def main():
