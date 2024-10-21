@@ -140,7 +140,7 @@ class Arborist(QMainWindow):
         self.splitter.setSizes([300, 1300])
 
         # Add a button to open the dataset in the second tab (analytics view)
-        self.open_button = QPushButton("Open in Analytics View")
+        self.open_button = QPushButton("Analyze Dataset")
         self.open_button.setVisible(False)  # Initially hide the button
         self.open_button.clicked.connect(self.open_in_analytics_view)
 
@@ -189,7 +189,7 @@ class Arborist(QMainWindow):
         self.analytics_tab_layout.addWidget(self.toolbar)
 
         self.analytics_tab.setLayout(self.analytics_tab_layout)
-        self.tabs.addTab(self.analytics_tab, "Analytics View")
+        self.tabs.addTab(self.analytics_tab, "Analyze")
 
     def center_window(self):
         # Get the screen geometry to center the window
