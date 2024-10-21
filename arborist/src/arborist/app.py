@@ -150,7 +150,7 @@ class Arborist(QMainWindow):
         file_browser_tab.setLayout(file_browser_layout)
 
         # Add the tabs to the main layout
-        self.tabs.addTab(file_browser_tab, "File Browser")
+        self.tabs.addTab(file_browser_tab, "Browse")
 
         # Create the analytics view tab
         self.create_analytics_view_tab()
