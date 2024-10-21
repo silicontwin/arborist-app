@@ -2,30 +2,80 @@
 The cross-platform app for efficiently performing Bayesian causal inference and supervised learning tasks using tree-based models, including BCF, BART, and XBART.
 """
 
-import importlib.metadata
 import sys
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTreeView, QTextEdit, QWidget, QSplitter
+from PySide6.QtCore import Qt
+from PySide6.QtGui import QStandardItemModel, QStandardItem
+from PySide6.QtWidgets import QFileSystemModel
 
-from PySide6 import QtWidgets
-from arborist.src.layout import Ui_MainWindow
 
-class Arborist(QtWidgets.QMainWindow):
+class Arborist(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.ui = Ui_MainWindow()
-        self.ui.setupUi(self)
 
         self.init_ui()
 
     def init_ui(self):
-        self.setWindowTitle("arborist")
-        self.show()
+        self.setWindowTitle("Arborist - File Browser")
+
+        # Create a splitter to divide the file browser and file viewer
+        splitter = QSplitter(Qt.Horizontal)
+
+        # File browser (left panel)
+        self.file_model = QFileSystemModel()
+        self.file_model.setRootPath("")  # Set to the root path
+        
+        self.tree = QTreeView()
+        self.tree.setModel(self.file_model)
+        self.tree.setRootIndex(self.file_model.index(""))  # Set to a directory
+
+        # Double click to open the file
+        self.tree.doubleClicked.connect(self.on_file_double_click)
+
+        splitter.addWidget(self.tree)
+
+        # File viewer (right panel)
+        self.file_viewer = QTextEdit(self)
+        self.file_viewer.setReadOnly(True)
+
+        splitter.addWidget(self.file_viewer)
+
+        # Set up layout
+        main_layout = QVBoxLayout()
+        main_layout.addWidget(splitter)
+
+        container = QWidget()
+        container.setLayout(main_layout)
+        self.setCentralWidget(container)
+
+        # Set the initial splitter sizes
+        splitter.setSizes([300, 700])
+
+    def on_file_double_click(self, index):
+        # Get the file path from the model index
+        file_path = self.file_model.filePath(index)
+
+        # Load the file and display its contents
+        self.load_file(file_path)
+
+    def load_file(self, file_path):
+        try:
+            # Open the file and read its contents
+            with open(file_path, 'r') as file:
+                content = file.read()
+
+            # Display the content in the file viewer
+            self.file_viewer.setText(content)
+        except Exception as e:
+            self.file_viewer.setText(f"Error loading file: {e}")
+
 
 def main():
-    app_module = sys.modules["__main__"].__package__
-    metadata = importlib.metadata.metadata(app_module)
-
-    QtWidgets.QApplication.setApplicationName(metadata["Formal-Name"])
-
-    app = QtWidgets.QApplication(sys.argv)
+    app = QApplication(sys.argv)
     main_window = Arborist()
+    main_window.show()
     sys.exit(app.exec())
+
+
+if __name__ == "__main__":
+    main()
