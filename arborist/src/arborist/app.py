@@ -8,7 +8,7 @@ import csv
 from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, QHeaderView
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
 from PySide6.QtWidgets import QFileSystemModel
-from PySide6.QtGui import QScreen
+from operator import itemgetter  # For sorting the data
 
 
 class CSVTableModel(QAbstractTableModel):
@@ -16,6 +16,7 @@ class CSVTableModel(QAbstractTableModel):
         super().__init__()
         self._data = data
         self._headers = headers
+        self._sort_order = Qt.AscendingOrder  # Default sort order
 
     def rowCount(self, parent=QModelIndex()):
         # Return the number of rows
@@ -39,6 +40,21 @@ class CSVTableModel(QAbstractTableModel):
             else:
                 return str(section + 1)  # Row numbers
         return None
+
+    def sort(self, column, order):
+        """Sort the data by the given column index and order."""
+        self.layoutAboutToBeChanged.emit()
+
+        # Sort data using the column index
+        try:
+            self._data.sort(key=itemgetter(column), reverse=(order == Qt.DescendingOrder))
+        except Exception as e:
+            print(f"Error sorting data: {e}")
+
+        self.layoutChanged.emit()
+
+        # Save the sort order (ascending or descending)
+        self._sort_order = order
 
 
 class Arborist(QMainWindow):
@@ -91,6 +107,9 @@ class Arborist(QMainWindow):
         # File viewer (right panel)
         self.file_viewer = QTableView(self)
         splitter.addWidget(self.file_viewer)
+
+        # Enable sorting by column headers
+        self.file_viewer.setSortingEnabled(True)
 
         # Set up layout
         main_layout = QVBoxLayout()
