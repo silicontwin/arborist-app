@@ -49,6 +49,12 @@ class Arborist(QMainWindow):
     def init_ui(self):
         self.setWindowTitle("Arborist")
 
+        # Set the default geometry to 1600x900
+        self.setGeometry(100, 100, 1600, 900)
+
+        # Allow resizing smaller and larger than the default size
+        self.setMinimumSize(800, 600)
+
         # Create a splitter to divide the file browser and file viewer
         splitter = QSplitter(Qt.Horizontal)
 
@@ -91,7 +97,7 @@ class Arborist(QMainWindow):
         self.setCentralWidget(container)
 
         # Set the initial splitter sizes
-        splitter.setSizes([300, 700])
+        splitter.setSizes([300, 1300])
 
     def on_file_double_click(self, index):
         # Get the file path from the model index
