@@ -7,7 +7,7 @@ import os
 import csv
 from operator import itemgetter  # For sorting the data
 from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, 
-                               QHeaderView, QTabWidget, QPushButton, QHBoxLayout, QFileSystemModel)
+                               QHeaderView, QTabWidget, QPushButton, QHBoxLayout, QFileSystemModel, QLabel)
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
 
 
@@ -172,12 +172,17 @@ class Arborist(QMainWindow):
         self.analytics_tab_layout.setContentsMargins(0, 0, 0, 0)
         self.analytics_tab_layout.setSpacing(0)
 
+        # No dataset message
+        self.no_dataset_label = QLabel('Please select a dataset from the "Browse" tab')
+        self.no_dataset_label.setAlignment(Qt.AlignCenter)
+
         self.analytics_viewer = QTableView()
 
         # Enable sorting for analytics view
         self.analytics_viewer.setSortingEnabled(True)
 
-        # Set the viewer to stretch to fill the tab
+        # Add both the label and the viewer to the layout (only one will be visible at a time)
+        self.analytics_tab_layout.addWidget(self.no_dataset_label)
         self.analytics_tab_layout.addWidget(self.analytics_viewer)
 
         # Add a placeholder toolbar at the top (minimized height)
@@ -190,6 +195,10 @@ class Arborist(QMainWindow):
 
         self.analytics_tab.setLayout(self.analytics_tab_layout)
         self.tabs.addTab(self.analytics_tab, "Analyze")
+
+        # Initially, only show the message label, not the dataset viewer
+        self.no_dataset_label.setVisible(True)
+        self.analytics_viewer.setVisible(False)
 
     def center_window(self):
         # Get the screen geometry to center the window
@@ -244,12 +253,20 @@ class Arborist(QMainWindow):
     def open_in_analytics_view(self):
         # Load the current file from the file_viewer into the analytics viewer
         model = self.file_viewer.model()
+
         if model:
+            # Show the dataset and hide the message
             self.analytics_viewer.setModel(model)
             self.analytics_viewer.resizeColumnsToContents()
+            self.no_dataset_label.setVisible(False)
+            self.analytics_viewer.setVisible(True)
+        else:
+            # Show the message and hide the dataset viewer
+            self.no_dataset_label.setVisible(True)
+            self.analytics_viewer.setVisible(False)
 
-            # Switch to the analytics tab
-            self.tabs.setCurrentIndex(1)
+        # Switch to the analytics tab
+        self.tabs.setCurrentIndex(1)
 
 
 def main():
