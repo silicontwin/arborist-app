@@ -10,4 +10,5 @@
 
 # Development
 - Activate venv: `source venv/bin/activate`
-- Build the `pyside6-uic arborist/src/layout.ui -o arborist/src/layout.py`:
+- CHange to the directory of the project: `arborist/src/arborist`
+- Build the `pyside6-uic layout.ui -o layout.py`:
