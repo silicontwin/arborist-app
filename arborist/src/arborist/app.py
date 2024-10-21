@@ -136,6 +136,10 @@ class Arborist(QMainWindow):
         self.analytics_tab = QWidget()
         self.analytics_tab_layout = QVBoxLayout()
         self.analytics_viewer = QTableView()
+        
+        # Enable sorting for analytics view
+        self.analytics_viewer.setSortingEnabled(True)
+
         self.analytics_tab_layout.addWidget(self.analytics_viewer)
 
         # Add a placeholder toolbar
