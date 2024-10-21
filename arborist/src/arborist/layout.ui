@@ -6,20 +6,25 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>600</height>
+    <width>1600</width>
+    <height>900</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>Arborist</string>
   </property>
-  
+  <property name="minimumSize">
+   <size>
+    <width>800</width>
+    <height>600</height>
+   </size>
+  </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QSplitter" name="splitter">
       <property name="orientation">
-       <enum>Qt::Horizontal</enum>
+       <enum>Qt::Orientation::Horizontal</enum>
       </property>
       <widget class="QTreeView" name="treeView">
        <property name="minimumSize">
@@ -29,7 +34,6 @@
         </size>
        </property>
       </widget>
-      
       <widget class="QTextEdit" name="textEdit">
        <property name="readOnly">
         <bool>true</bool>
@@ -39,20 +43,17 @@
     </item>
    </layout>
   </widget>
-  
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
+     <width>1600</width>
      <height>24</height>
     </rect>
    </property>
   </widget>
-
   <widget class="QStatusBar" name="statusbar"/>
-  
  </widget>
  <resources/>
  <connections/>
