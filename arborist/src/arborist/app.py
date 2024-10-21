@@ -5,10 +5,10 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 import sys
 import os
 import csv
-from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, 
-                               QHeaderView, QFileSystemModel, QTabWidget, QPushButton, QHBoxLayout)
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
 from operator import itemgetter  # For sorting the data
+from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, 
+                               QHeaderView, QTabWidget, QPushButton, QHBoxLayout, QFileSystemModel)
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
 
 
 class CSVTableModel(QAbstractTableModel):
@@ -46,15 +46,31 @@ class CSVTableModel(QAbstractTableModel):
         self.layoutAboutToBeChanged.emit()
 
         # Sort data using the column index
-        try:
-            self._data.sort(key=itemgetter(column), reverse=(order == Qt.DescendingOrder))
-        except Exception as e:
-            print(f"Error sorting data: {e}")
+        self._data.sort(key=itemgetter(column), reverse=(order == Qt.DescendingOrder))
 
         self.layoutChanged.emit()
 
         # Save the sort order (ascending or descending)
         self._sort_order = order
+
+
+class DatasetFileFilterProxyModel(QSortFilterProxyModel):
+    """Filter proxy model to filter files by dataset extensions."""
+    def __init__(self, dataset_extensions, parent=None):
+        super().__init__(parent)
+        self.dataset_extensions = dataset_extensions
+
+    def filterAcceptsRow(self, sourceRow, sourceParent):
+        index = self.sourceModel().index(sourceRow, 0, sourceParent)
+        file_name = self.sourceModel().fileName(index)
+
+        if self.sourceModel().isDir(index):
+            # Always accept directories
+            return True
+
+        # Accept files that have one of the dataset extensions
+        _, ext = os.path.splitext(file_name)
+        return ext.lower() in self.dataset_extensions
 
 
 class Arborist(QMainWindow):
@@ -83,7 +99,7 @@ class Arborist(QMainWindow):
         file_browser_layout = QVBoxLayout()
         self.splitter = QSplitter(Qt.Horizontal)
 
-        # File browser (left panel)
+        # File browser (left panel) with dataset filtering
         self.file_model = QFileSystemModel()
 
         # Get the user's desktop directory
@@ -92,11 +108,15 @@ class Arborist(QMainWindow):
         # Set the root path to the desktop
         self.file_model.setRootPath(desktop_path)
 
+        # Create a proxy model to filter by dataset extensions
+        self.proxy_model = DatasetFileFilterProxyModel({'.csv', '.sav', '.dta'})
+        self.proxy_model.setSourceModel(self.file_model)
+
         self.tree = QTreeView()
-        self.tree.setModel(self.file_model)
+        self.tree.setModel(self.proxy_model)
 
         # Set the root index to the desktop directory
-        self.tree.setRootIndex(self.file_model.index(desktop_path))
+        self.tree.setRootIndex(self.proxy_model.mapFromSource(self.file_model.index(desktop_path)))
 
         # Adjust file browser column widths
         self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -136,7 +156,7 @@ class Arborist(QMainWindow):
         self.analytics_tab = QWidget()
         self.analytics_tab_layout = QVBoxLayout()
         self.analytics_viewer = QTableView()
-        
+
         # Enable sorting for analytics view
         self.analytics_viewer.setSortingEnabled(True)
 
@@ -176,10 +196,11 @@ class Arborist(QMainWindow):
 
     def on_file_double_click(self, index):
         # Get the file path from the model index
-        file_path = self.file_model.filePath(index)
+        source_index = self.proxy_model.mapToSource(index)
+        file_path = self.file_model.filePath(source_index)
 
         # Load the file and display its contents in the file viewer
-        if file_path.endswith('.csv'):
+        if file_path.endswith(('.csv', '.sav', '.dta')):
             self.load_csv_file(file_path, self.file_viewer)
             self.open_button.setVisible(True)  # Show the 'Open' button after a dataset is loaded
         else:
