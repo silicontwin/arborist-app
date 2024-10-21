@@ -3,6 +3,7 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 """
 
 import sys
+import os
 from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTreeView, QTextEdit, QWidget, QSplitter
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QStandardItemModel, QStandardItem
@@ -23,11 +24,18 @@ class Arborist(QMainWindow):
 
         # File browser (left panel)
         self.file_model = QFileSystemModel()
-        self.file_model.setRootPath("")  # Set to the root path
+        
+        # Get the user's desktop directory
+        desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
+
+        # Set the root path to the desktop
+        self.file_model.setRootPath(desktop_path)
         
         self.tree = QTreeView()
         self.tree.setModel(self.file_model)
-        self.tree.setRootIndex(self.file_model.index(""))  # Set to a directory
+
+        # Set the root index to the desktop directory
+        self.tree.setRootIndex(self.file_model.index(desktop_path))
 
         # Double click to open the file
         self.tree.doubleClicked.connect(self.on_file_double_click)
