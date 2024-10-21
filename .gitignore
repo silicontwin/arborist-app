@@ -1,0 +1,63 @@
+# Python virtual environment
+venv/
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.pdb
+*.egg-info/
+.eggs/
+
+# Briefcase build files
+build/
+dist/
+*.app
+*.exe
+*.dmg
+*.pkg
+*.msi
+*.deb
+*.rpm
+*.tar.gz
+*.snap
+*.flatpakref
+*.apk
+*.ipa
+
+# Briefcase platform-specific folders
+*/platforms/
+*/support/
+*/windows/
+*/macOS/
+*/linux/
+*/ios/
+*/android/
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore IDE/editor-specific files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Ignore packaging files
+*.egg
+*.egg-info/
+.installed.cfg
+*.wheel
+
+# Ignore logs and temporary files
+*.log
+*.tmp
+*.bak
+*.old
+
+# Ignore Briefcase-related cache files
+*.lock
+cache/
+target/
+
+# Ignore virtualenv folder
+venv/
