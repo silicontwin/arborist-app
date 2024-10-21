@@ -4,10 +4,39 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 
 import sys
 import os
-from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTreeView, QTextEdit, QWidget, QSplitter
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QStandardItemModel, QStandardItem
+import csv
+from PySide6.QtWidgets import QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex
 from PySide6.QtWidgets import QFileSystemModel
+
+
+class CSVTableModel(QAbstractTableModel):
+    def __init__(self, data):
+        super().__init__()
+        self._data = data
+
+    def rowCount(self, parent=QModelIndex()):
+        # Return the number of rows
+        return len(self._data)
+
+    def columnCount(self, parent=QModelIndex()):
+        # Return the number of columns
+        return len(self._data[0]) if self._data else 0
+
+    def data(self, index, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            # Return the data for display purposes
+            return self._data[index.row()][index.column()]
+        return None
+
+    def headerData(self, section, orientation, role=Qt.DisplayRole):
+        if role == Qt.DisplayRole:
+            # Handle headers
+            if orientation == Qt.Horizontal:
+                return self._data[0][section]  # First row as header
+            else:
+                return str(section + 1)  # Row numbers
+        return None
 
 
 class Arborist(QMainWindow):
@@ -43,9 +72,7 @@ class Arborist(QMainWindow):
         splitter.addWidget(self.tree)
 
         # File viewer (right panel)
-        self.file_viewer = QTextEdit(self)
-        self.file_viewer.setReadOnly(True)
-
+        self.file_viewer = QTableView(self)
         splitter.addWidget(self.file_viewer)
 
         # Set up layout
@@ -64,18 +91,24 @@ class Arborist(QMainWindow):
         file_path = self.file_model.filePath(index)
 
         # Load the file and display its contents
-        self.load_file(file_path)
+        if file_path.endswith('.csv'):
+            self.load_csv_file(file_path)
+        else:
+            self.file_viewer.setModel(None)  # Clear the table if non-CSV file
 
-    def load_file(self, file_path):
+    def load_csv_file(self, file_path):
         try:
-            # Open the file and read its contents
-            with open(file_path, 'r') as file:
-                content = file.read()
+            with open(file_path, newline='') as file:
+                reader = csv.reader(file)
+                data = list(reader)
 
-            # Display the content in the file viewer
-            self.file_viewer.setText(content)
+            # Use the custom model to set the data
+            model = CSVTableModel(data)
+            self.file_viewer.setModel(model)
+
         except Exception as e:
-            self.file_viewer.setText(f"Error loading file: {e}")
+            print(f"Error loading file: {e}")
+            self.file_viewer.setModel(None)
 
 
 def main():
