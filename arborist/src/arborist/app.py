@@ -153,23 +153,7 @@ class Arborist(QMainWindow):
         self.tabs.addTab(file_browser_tab, "File Browser")
 
         # Create the analytics view tab
-        self.analytics_tab = QWidget()
-        self.analytics_tab_layout = QVBoxLayout()
-        self.analytics_viewer = QTableView()
-
-        # Enable sorting for analytics view
-        self.analytics_viewer.setSortingEnabled(True)
-
-        self.analytics_tab_layout.addWidget(self.analytics_viewer)
-
-        # Add a placeholder toolbar
-        self.toolbar = QWidget()
-        self.toolbar_layout = QHBoxLayout()
-        self.toolbar.setLayout(self.toolbar_layout)
-        self.analytics_tab_layout.addWidget(self.toolbar)
-
-        self.analytics_tab.setLayout(self.analytics_tab_layout)
-        self.tabs.addTab(self.analytics_tab, "Analytics View")
+        self.create_analytics_view_tab()
 
         # Set up the layout for the main window
         main_layout = QVBoxLayout()
@@ -178,6 +162,34 @@ class Arborist(QMainWindow):
         container = QWidget()
         container.setLayout(main_layout)
         self.setCentralWidget(container)
+
+    def create_analytics_view_tab(self):
+        # Create the analytics view tab
+        self.analytics_tab = QWidget()
+        self.analytics_tab_layout = QVBoxLayout()
+
+        # Set margin and spacing to 0
+        self.analytics_tab_layout.setContentsMargins(0, 0, 0, 0)
+        self.analytics_tab_layout.setSpacing(0)
+
+        self.analytics_viewer = QTableView()
+
+        # Enable sorting for analytics view
+        self.analytics_viewer.setSortingEnabled(True)
+
+        # Set the viewer to stretch to fill the tab
+        self.analytics_tab_layout.addWidget(self.analytics_viewer)
+
+        # Add a placeholder toolbar at the top (minimized height)
+        self.toolbar = QWidget()
+        self.toolbar_layout = QHBoxLayout()
+        self.toolbar.setLayout(self.toolbar_layout)
+        self.toolbar.setFixedHeight(0)  # Minimize the height of the toolbar
+
+        self.analytics_tab_layout.addWidget(self.toolbar)
+
+        self.analytics_tab.setLayout(self.analytics_tab_layout)
+        self.tabs.addTab(self.analytics_tab, "Analytics View")
 
     def center_window(self):
         # Get the screen geometry to center the window
