@@ -11,9 +11,10 @@ from PySide6.QtWidgets import QFileSystemModel
 
 
 class CSVTableModel(QAbstractTableModel):
-    def __init__(self, data):
+    def __init__(self, data, headers):
         super().__init__()
         self._data = data
+        self._headers = headers
 
     def rowCount(self, parent=QModelIndex()):
         # Return the number of rows
@@ -21,7 +22,7 @@ class CSVTableModel(QAbstractTableModel):
 
     def columnCount(self, parent=QModelIndex()):
         # Return the number of columns
-        return len(self._data[0]) if self._data else 0
+        return len(self._headers)
 
     def data(self, index, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
@@ -33,7 +34,7 @@ class CSVTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             # Handle headers
             if orientation == Qt.Horizontal:
-                return self._data[0][section]  # First row as header
+                return self._headers[section]  # Horizontal headers
             else:
                 return str(section + 1)  # Row numbers
         return None
@@ -102,9 +103,17 @@ class Arborist(QMainWindow):
                 reader = csv.reader(file)
                 data = list(reader)
 
-            # Use the custom model to set the data
-            model = CSVTableModel(data)
-            self.file_viewer.setModel(model)
+            if len(data) > 0:
+                # Separate the first row as headers and the rest as data
+                headers = data[0]
+                table_data = data[1:]
+
+                # Use the custom model to set the data and headers
+                model = CSVTableModel(table_data, headers)
+                self.file_viewer.setModel(model)
+
+                # Automatically adjust the column width to fit the content and header
+                self.file_viewer.resizeColumnsToContents()
 
         except Exception as e:
             print(f"Error loading file: {e}")
