@@ -206,8 +206,8 @@ class Arborist(QMainWindow):
         self.file_viewer = self.browse_ui.file_viewer
         self.file_viewer.setSortingEnabled(True)
 
-        # Set splitter sizes to 300 for the file browser, 1300 for the file viewer
-        self.browse_ui.splitter.setSizes([300, 1300])
+        # Set splitter sizes to 600 for the file browser, 1000 for the file viewer
+        self.browse_ui.splitter.setSizes([600, 1000])
 
         # "Analyze Dataset" button setup
         self.open_button = self.browse_ui.analyze_button
