@@ -525,7 +525,7 @@ class Arborist(QMainWindow):
 
             # Get predictions
             y_pred_samples = bart_model.predict(covariates=X)
-            y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
+            # y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
 
             # Compute posterior summaries over the samples (axis=1)
             posterior_mean = np.mean(y_pred_samples, axis=1)
