@@ -11,4 +11,7 @@
 # Development
 - Activate venv: `source venv/bin/activate`
 - CHange to the directory of the project: `arborist/src/arborist`
-- Build the `pyside6-uic layout.ui -o layout.py`:
+- Build the layouts:
+  -  `pyside6-uic layout.ui -o layout.py`:
+  -  `pyside6-uic browse.ui -o browse.py`:
+  -  `pyside6-uic analyze.ui -o analyze.py`:
