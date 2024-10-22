@@ -195,11 +195,14 @@ class Arborist(QMainWindow):
         self.tree.setModel(self.proxy_model)
 
         # Set the root index to the desktop directory
-        self.tree.setRootIndex(self.proxy_model.mapFromSource(self.file_model.index(desktop_path)))
+        self.current_directory = desktop_path  # Store the current directory path
+        source_index = self.file_model.index(desktop_path)
+        self.current_root_index = self.proxy_model.mapFromSource(source_index)
+        self.tree.setRootIndex(self.current_root_index)
         self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)  # Auto-adjust column width
         self.tree.header().setMinimumSectionSize(100)
 
-        # Double click to open the file
+        # Double click to open the file or enter directory
         self.tree.doubleClicked.connect(self.on_file_double_click)
 
         # Set up the file viewer
@@ -213,6 +216,20 @@ class Arborist(QMainWindow):
         self.open_button = self.browse_ui.analyze_button
         self.open_button.setVisible(False)  # Initially hidden until a dataset is selected
         self.open_button.clicked.connect(self.open_in_analytics_view)
+
+        # Back and Forward buttons
+        self.back_button = self.browse_ui.back_button
+        self.forward_button = self.browse_ui.forward_button
+        self.back_button.clicked.connect(self.navigate_back)
+        self.forward_button.clicked.connect(self.navigate_forward)
+
+        # Keep track of navigation history using directory paths
+        self.history = [self.current_directory]
+        self.history_index = 0
+
+        # Initialize navigation buttons
+        self.back_button.setEnabled(False)
+        self.forward_button.setEnabled(False)
 
     def load_analyze_tab_ui(self):
         """Load and set up the analyze tab UI (for the dataset analysis)."""
@@ -250,17 +267,82 @@ class Arborist(QMainWindow):
         self.move(window_geometry.topLeft())
 
     def on_file_double_click(self, index):
-        """Handle double-click events on files in the tree view."""
+        """Handle double-click events on files and directories in the tree view."""
         source_index = self.proxy_model.mapToSource(index)
         file_path = self.file_model.filePath(source_index)
 
-        # Only allow files with dataset extensions to be opened
-        if file_path.endswith((".csv", ".sav", ".dta")):
+        if self.file_model.isDir(source_index):
+            # It's a directory, navigate into it by setting the root index
+            self.navigate_to_directory(file_path)
+        elif file_path.endswith((".csv", ".sav", ".dta")):
+            # Open the file
             self.load_csv_file(file_path, self.file_viewer)
             self.open_button.setVisible(True)  # Show the 'Open' button after a dataset is loaded
         else:
-            self.file_viewer.setModel(None)  # Clear the table if non-CSV file
+            self.file_viewer.setModel(None)  # Clear the table if non-dataset file
             self.open_button.setVisible(False)  # Hide the 'Open' button if no dataset is loaded
+
+    def navigate_to_directory(self, directory_path):
+        """Navigate to the directory represented by the given path."""
+        # Update navigation history
+        if self.history_index < len(self.history) - 1:
+            # If we have moved back in history and then navigate to a new directory
+            self.history = self.history[:self.history_index + 1]
+        self.history.append(directory_path)
+        self.history_index += 1
+
+        # Update current directory
+        self.current_directory = directory_path
+
+        # Get the index for the directory
+        source_index = self.file_model.index(directory_path)
+        proxy_index = self.proxy_model.mapFromSource(source_index)
+
+        # Set the root index to the new directory
+        self.tree.setRootIndex(proxy_index)
+        self.current_root_index = proxy_index
+
+        # Update navigation buttons
+        self.back_button.setEnabled(self.history_index > 0)
+        self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
+
+    def navigate_back(self):
+        """Navigate back in the directory history."""
+        if self.history_index > 0:
+            self.history_index -= 1
+            directory_path = self.history[self.history_index]
+            self.current_directory = directory_path
+
+            # Get the index for the directory
+            source_index = self.file_model.index(directory_path)
+            proxy_index = self.proxy_model.mapFromSource(source_index)
+
+            # Set the root index
+            self.tree.setRootIndex(proxy_index)
+            self.current_root_index = proxy_index
+
+            # Update navigation buttons
+            self.back_button.setEnabled(self.history_index > 0)
+            self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
+
+    def navigate_forward(self):
+        """Navigate forward in the directory history."""
+        if self.history_index < len(self.history) - 1:
+            self.history_index += 1
+            directory_path = self.history[self.history_index]
+            self.current_directory = directory_path
+
+            # Get the index for the directory
+            source_index = self.file_model.index(directory_path)
+            proxy_index = self.proxy_model.mapFromSource(source_index)
+
+            # Set the root index
+            self.tree.setRootIndex(proxy_index)
+            self.current_root_index = proxy_index
+
+            # Update navigation buttons
+            self.back_button.setEnabled(self.history_index > 0)
+            self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
 
     def load_csv_file(self, file_path, table_view):
         """Load the selected CSV file and display its contents in chunks."""
