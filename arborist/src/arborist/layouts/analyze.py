@@ -15,18 +15,40 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QLabel,
-    QSizePolicy, QTableView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
+    QHeaderView, QLabel, QSizePolicy, QTableView,
+    QVBoxLayout, QWidget)
 
 class Ui_AnalyzeTab(object):
     def setupUi(self, AnalyzeTab):
         if not AnalyzeTab.objectName():
             AnalyzeTab.setObjectName(u"AnalyzeTab")
+        AnalyzeTab.resize(1600, 900)
+        AnalyzeTab.setBaseSize(QSize(1600, 900))
         self.verticalLayout = QVBoxLayout(AnalyzeTab)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.frame = QFrame(AnalyzeTab)
+        self.frame.setObjectName(u"frame")
+        self.frame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout = QHBoxLayout(self.frame)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.label = QLabel(self.frame)
+        self.label.setObjectName(u"label")
+
+        self.horizontalLayout.addWidget(self.label)
+
+        self.comboBox = QComboBox(self.frame)
+        self.comboBox.setObjectName(u"comboBox")
+
+        self.horizontalLayout.addWidget(self.comboBox)
+
+
+        self.verticalLayout.addWidget(self.frame)
+
         self.no_dataset_label = QLabel(AnalyzeTab)
         self.no_dataset_label.setObjectName(u"no_dataset_label")
-        self.no_dataset_label.setAlignment(Qt.AlignCenter)
+        self.no_dataset_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout.addWidget(self.no_dataset_label)
 
@@ -50,6 +72,7 @@ class Ui_AnalyzeTab(object):
     # setupUi
 
     def retranslateUi(self, AnalyzeTab):
+        self.label.setText(QCoreApplication.translate("AnalyzeTab", u"Outcome Variable (y):", None))
         self.no_dataset_label.setText(QCoreApplication.translate("AnalyzeTab", u"Please select a dataset from the \"Browse\" tab", None))
         pass
     # retranslateUi
