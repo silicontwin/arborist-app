@@ -196,7 +196,7 @@ class Arborist(QMainWindow):
 
         # Set the root index to the desktop directory
         self.tree.setRootIndex(self.proxy_model.mapFromSource(self.file_model.index(desktop_path)))
-        # self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)  # Auto-adjust column width
+        self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)  # Auto-adjust column width
         self.tree.header().setMinimumSectionSize(100)
 
         # Double click to open the file
