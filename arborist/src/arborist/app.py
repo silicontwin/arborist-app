@@ -9,6 +9,7 @@ import numpy as np
 import itertools
 import pyarrow.dataset as ds
 import pyarrow as pa
+from sklearn.preprocessing import OneHotEncoder
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -482,6 +483,14 @@ class Arborist(QMainWindow):
 
             # Convert to pandas DataFrame
             df = table.to_pandas()
+
+            # One-hot encode non-numeric columns
+            categorical_columns = df.select_dtypes(include=['object', 'category']).columns
+            if len(categorical_columns) > 0:
+                ohe = OneHotEncoder(sparse_output=False, drop='first')
+                ohe_df = pd.DataFrame(ohe.fit_transform(df[categorical_columns]), 
+                                      columns=ohe.get_feature_names_out(categorical_columns))
+                df = pd.concat([df.drop(categorical_columns, axis=1), ohe_df], axis=1)
 
             # Proceed with data cleaning and model training
             df_cleaned = df.dropna()
