@@ -189,6 +189,24 @@ class Arborist(QMainWindow):
         # Set the central widget for the main window
         self.setCentralWidget(self.tabs)
 
+        # Connect signal to track tab changes
+        self.tabs.currentChanged.connect(self.check_model_frame_visibility)
+
+        # Connect signal for model selection change
+        self.analyze_ui.modelComboBox.currentIndexChanged.connect(self.check_model_frame_visibility)
+
+    def check_model_frame_visibility(self):
+        """Show or hide the treatmentFrame based on the selected tab and model."""
+        # Check if the current tab is "Analyze"
+        is_analyze_tab = self.tabs.currentIndex() == 1
+
+        # Check if the selected model is BCF or XBCF
+        selected_model = self.analyze_ui.modelComboBox.currentText()
+        is_bcf_xbcf_model = selected_model in ["BCF", "XBCF"]
+
+        # Show or hide the treatment frame
+        self.analyze_ui.treatmentFrame.setVisible(is_analyze_tab and is_bcf_xbcf_model)
+
     def load_browse_tab_ui(self):
         """Load and set up the browse tab UI (for the file browser)."""
         # Initialize the generated UI class for the Browse tab
@@ -252,6 +270,9 @@ class Arborist(QMainWindow):
         self.analyze_tab = QWidget()
         self.analyze_ui = Ui_AnalyzeTab()
         self.analyze_ui.setupUi(self.analyze_tab)
+
+        # Initially hide the treatment frame
+        self.analyze_ui.treatmentFrame.setVisible(False)
 
         # No dataset label and analytics viewer
         self.no_dataset_label = self.analyze_ui.no_dataset_label
