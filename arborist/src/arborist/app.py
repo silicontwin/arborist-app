@@ -27,21 +27,27 @@ from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProx
 from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.analyze import Ui_AnalyzeTab
+from stochtree import BCFModel, BARTModel
 
 CHUNK_SIZE = 10000  # Number of rows to load per chunk
 
 # Lazy loading for handling large datasets in chunks with sorting enabled
 class PandasTableModel(QAbstractTableModel):
-    def __init__(self, chunk_iter, headers):
+    def __init__(self, data, headers):
         super().__init__()
-        self.chunk_iter = chunk_iter
         self.headers = headers
-        self._data = pd.DataFrame()  # Store all loaded data
         self._sort_order = Qt.AscendingOrder  # Default sort order
         self._sort_column = None  # No sort initially
         self.selected_column = None  # Outcome variable column to highlight
-        self.has_more_chunks = True
-        self.load_next_chunk()  # Load the first chunk
+
+        if isinstance(data, pd.DataFrame):
+            self._data = data
+            self.has_more_chunks = False
+        else:
+            self.chunk_iter = data
+            self._data = pd.DataFrame()  # Store all loaded data
+            self.has_more_chunks = True
+            self.load_next_chunk()  # Load the first chunk
 
     def rowCount(self, parent=QModelIndex()):
         # Return the number of rows in the current data
@@ -54,12 +60,18 @@ class PandasTableModel(QAbstractTableModel):
     def data(self, index, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
             # Return data from the loaded dataset
-            return str(self._data.iloc[index.row(), index.column()])
+            value = self._data.iloc[index.row(), index.column()]
+            if pd.isnull(value):
+                return ''
+            return str(value)
 
-        # Highlight the selected outcome variable column
-        if role == Qt.BackgroundRole and self.selected_column is not None:
-            if index.column() == self.selected_column:
-                return QColor("#FFFFCB")
+        # Highlight the selected outcome variable column and prediction columns
+        if role == Qt.BackgroundRole:
+            column_name = self.headers[index.column()]
+            if self.selected_column is not None and index.column() == self.selected_column:
+                return QColor("#FFFFCB")  # Light yellow
+            elif column_name in ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile']:
+                return QColor("#CBFFFF")  # Light blue color
 
         return None
 
@@ -245,13 +257,20 @@ class Arborist(QMainWindow):
         self.analytics_viewer = self.analyze_ui.analytics_viewer
 
         # Outcome variable dropdown
-        self.outcome_combo = self.analyze_ui.comboBox
+        self.outcome_combo = self.analyze_ui.outcomeComboBox
+
+        # Treatment variable dropdown
+        self.treatment_combo = self.analyze_ui.treatmentComboBox
+
+        # Train Model button
+        self.train_button = self.analyze_ui.trainButton
+        self.train_button.clicked.connect(self.train_model)
 
         # Initially, show only the "No dataset" label, not the dataset viewer
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
 
-        # Outcome variable selection
+        # Outcome and treatment variable selection
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
 
     def center_window(self):
@@ -395,28 +414,27 @@ class Arborist(QMainWindow):
     def open_in_analytics_view(self):
         """Open the dataset in the analytics view (second tab)."""
         if hasattr(self, 'current_file_path'):
-            # Reload the dataset with initial chunk for the analytics view
+            # Load the entire dataset into a DataFrame using pyarrow
             try:
-                chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
-                first_chunk = next(chunk_iter)
-                headers = first_chunk.columns.tolist()
-                # Re-create chunk_iter including the first chunk
-                chunk_iter = itertools.chain([first_chunk], chunk_iter)
-                model = PandasTableModel(chunk_iter, headers)
+                # Use pyarrow to load the dataset
+                dataset = ds.dataset(self.current_file_path, format='csv')
+                table = dataset.to_table()
+                self.dataframe = table.to_pandas()
+                headers = self.dataframe.columns.tolist()
+
+                # Create a model from the DataFrame
+                model = PandasTableModel(self.dataframe, headers)
                 self.analytics_viewer.setModel(model)
                 self.analytics_viewer.resizeColumnsToContents()
 
                 # Enable sorting
                 self.analytics_viewer.setSortingEnabled(True)
 
-                # Connect scroll event for lazy loading in the analytics tab
-                self.analytics_viewer.verticalScrollBar().valueChanged.connect(
-                    lambda value: self.on_scroll(value, self.analytics_viewer)
-                )
-
-                # Clear the outcome variable dropdown and add the column names
+                # Clear the outcome and treatment variable dropdowns and add the column names
                 self.outcome_combo.clear()
                 self.outcome_combo.addItems(headers)
+                self.treatment_combo.clear()
+                self.treatment_combo.addItems(headers)
 
                 self.no_dataset_label.setVisible(False)
                 self.analytics_viewer.setVisible(True)
