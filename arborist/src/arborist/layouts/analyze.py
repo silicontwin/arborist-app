@@ -53,13 +53,38 @@ class Ui_AnalyzeTab(object):
         self.frame_3.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame_3.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_3 = QHBoxLayout(self.frame_3)
-        self.horizontalLayout_3.setSpacing(10)
+        self.horizontalLayout_3.setSpacing(0)
         self.horizontalLayout_3.setObjectName(u"horizontalLayout_3")
         self.horizontalLayout_3.setContentsMargins(0, 0, 0, 0)
+        self.frame_5 = QFrame(self.frame_3)
+        self.frame_5.setObjectName(u"frame_5")
+        self.frame_5.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_5.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_5 = QHBoxLayout(self.frame_5)
+        self.horizontalLayout_5.setSpacing(10)
+        self.horizontalLayout_5.setObjectName(u"horizontalLayout_5")
+        self.horizontalLayout_5.setContentsMargins(0, 0, 0, 0)
+        self.modelLabel = QLabel(self.frame_5)
+        self.modelLabel.setObjectName(u"modelLabel")
+
+        self.horizontalLayout_5.addWidget(self.modelLabel)
+
+        self.modelComboBox = QComboBox(self.frame_5)
+        self.modelComboBox.addItem("")
+        self.modelComboBox.addItem("")
+        self.modelComboBox.addItem("")
+        self.modelComboBox.addItem("")
+        self.modelComboBox.setObjectName(u"modelComboBox")
+
+        self.horizontalLayout_5.addWidget(self.modelComboBox)
+
+
+        self.horizontalLayout_3.addWidget(self.frame_5)
+
         self.frame = QFrame(self.frame_3)
         self.frame.setObjectName(u"frame")
-        sizePolicy.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
-        self.frame.setSizePolicy(sizePolicy)
+        sizePolicy1.setHeightForWidth(self.frame.sizePolicy().hasHeightForWidth())
+        self.frame.setSizePolicy(sizePolicy1)
         self.frame.setStyleSheet(u"")
         self.frame.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame.setFrameShadow(QFrame.Shadow.Raised)
@@ -99,6 +124,11 @@ class Ui_AnalyzeTab(object):
 
         self.frame_4 = QFrame(self.frame_3)
         self.frame_4.setObjectName(u"frame_4")
+        sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
+        sizePolicy2.setHorizontalStretch(0)
+        sizePolicy2.setVerticalStretch(0)
+        sizePolicy2.setHeightForWidth(self.frame_4.sizePolicy().hasHeightForWidth())
+        self.frame_4.setSizePolicy(sizePolicy2)
         self.frame_4.setFrameShape(QFrame.Shape.StyledPanel)
         self.frame_4.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_4 = QHBoxLayout(self.frame_4)
@@ -151,6 +181,12 @@ class Ui_AnalyzeTab(object):
     # setupUi
 
     def retranslateUi(self, AnalyzeTab):
+        self.modelLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Model:", None))
+        self.modelComboBox.setItemText(0, QCoreApplication.translate("AnalyzeTab", u"BART", None))
+        self.modelComboBox.setItemText(1, QCoreApplication.translate("AnalyzeTab", u"XBART", None))
+        self.modelComboBox.setItemText(2, QCoreApplication.translate("AnalyzeTab", u"BCF", None))
+        self.modelComboBox.setItemText(3, QCoreApplication.translate("AnalyzeTab", u"XBCF", None))
+
         self.label.setText(QCoreApplication.translate("AnalyzeTab", u"Outcome Variable (y):", None))
         self.treatmentLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Treatment Variable (Z):", None))
         self.trainButton.setText(QCoreApplication.translate("AnalyzeTab", u"Train Model", None))
