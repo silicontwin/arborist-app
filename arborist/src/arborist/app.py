@@ -6,39 +6,40 @@ import sys
 import os
 import csv
 from operator import itemgetter  # For sorting the data
-from PySide6.QtWidgets import (QApplication, QMainWindow, QVBoxLayout, QTreeView, QTableView, QWidget, QSplitter, 
-                               QHeaderView, QTabWidget, QPushButton, QHBoxLayout, QFileSystemModel, QLabel)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeView, QTableView, QFileSystemModel, QLabel, QPushButton, QTabWidget, QWidget, QSplitter, QHeaderView)
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
+from arborist.layouts.browse import Ui_BrowseTab
+from arborist.layouts.analyze import Ui_AnalyzeTab
 
-
+# CSVTableModel for handling the CSV data and sorting
 class CSVTableModel(QAbstractTableModel):
     def __init__(self, data, headers):
         super().__init__()
         self._data = data
         self._headers = headers
-        self._sort_order = Qt.AscendingOrder  # Default sort order
 
     def rowCount(self, parent=QModelIndex()):
-        # Return the number of rows
+        # Return the number of rows in the data
         return len(self._data)
 
     def columnCount(self, parent=QModelIndex()):
-        # Return the number of columns
+        # Return the number of columns in the headers
         return len(self._headers)
 
     def data(self, index, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
-            # Return the data for display purposes
+            # Return the data at the current index
             return self._data[index.row()][index.column()]
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
-            # Handle headers
             if orientation == Qt.Horizontal:
-                return self._headers[section]  # Horizontal headers
+                # Return the column header
+                return self._headers[section]
             else:
-                return str(section + 1)  # Row numbers
+                # Return the row number
+                return str(section + 1)
         return None
 
     def sort(self, column, order):
@@ -47,15 +48,10 @@ class CSVTableModel(QAbstractTableModel):
 
         # Sort data using the column index
         self._data.sort(key=itemgetter(column), reverse=(order == Qt.DescendingOrder))
-
         self.layoutChanged.emit()
 
-        # Save the sort order (ascending or descending)
-        self._sort_order = order
-
-
+# FilterProxyModel to filter out non-dataset files like .csv, .sav, .dta
 class DatasetFileFilterProxyModel(QSortFilterProxyModel):
-    """Filter proxy model to filter files by dataset extensions."""
     def __init__(self, dataset_extensions, parent=None):
         super().__init__(parent)
         self.dataset_extensions = dataset_extensions
@@ -77,15 +73,16 @@ class Arborist(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        # Initialize UI components
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle("Arborist")
-
-        # Set the default geometry to 1600x900
+        
+        # Set the default window size
         self.resize(1600, 900)
 
-        # Allow resizing smaller and larger than the default size
+        # Allow resizing the window between 800x600 and full screen
         self.setMinimumSize(800, 600)
 
         # Center the window on the screen
@@ -94,116 +91,76 @@ class Arborist(QMainWindow):
         # Create a tab widget for switching between the file browser and dataset viewer
         self.tabs = QTabWidget()
 
-        # Create the file browser tab
-        file_browser_tab = QWidget()
-        file_browser_layout = QVBoxLayout()
-        self.splitter = QSplitter(Qt.Horizontal)
+        # Load the UI for both tabs (Browse and Analyze)
+        self.load_browse_tab_ui()
+        self.load_analyze_tab_ui()
 
-        # File browser (left panel) with dataset filtering
+        # Add the tabs to the main layout
+        self.tabs.addTab(self.browse_tab, "Browse")
+        self.tabs.addTab(self.analyze_tab, "Analyze")
+
+        # Set the central widget for the main window
+        self.setCentralWidget(self.tabs)
+
+    def load_browse_tab_ui(self):
+        """Load and set up the browse tab UI (for the file browser)."""
+        # Initialize the generated UI class for the Browse tab
+        self.browse_tab = QWidget()
+        self.browse_ui = Ui_BrowseTab()
+        self.browse_ui.setupUi(self.browse_tab)  # Setup the UI on the QWidget
+
+        # Set up the file system model and tree view with dataset filtering
         self.file_model = QFileSystemModel()
-
-        # Get the user's desktop directory
         desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
-
-        # Set the root path to the desktop
         self.file_model.setRootPath(desktop_path)
 
-        # Create a proxy model to filter by dataset extensions
-        self.proxy_model = DatasetFileFilterProxyModel({'.csv', '.sav', '.dta'})
+        # Create a proxy model to filter by dataset extensions (.csv, .sav, .dta)
+        dataset_extensions = {'.csv', '.sav', '.dta'}
+        self.proxy_model = DatasetFileFilterProxyModel(dataset_extensions)
         self.proxy_model.setSourceModel(self.file_model)
 
-        self.tree = QTreeView()
+        # Set up the tree view to use the filtered model
+        self.tree = self.browse_ui.treeView
         self.tree.setModel(self.proxy_model)
 
         # Set the root index to the desktop directory
         self.tree.setRootIndex(self.proxy_model.mapFromSource(self.file_model.index(desktop_path)))
-
-        # Adjust file browser column widths
-        self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
-
-        # Minimum width for columns
+        # self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)  # Auto-adjust column width
         self.tree.header().setMinimumSectionSize(100)
 
         # Double click to open the file
         self.tree.doubleClicked.connect(self.on_file_double_click)
 
-        self.splitter.addWidget(self.tree)
-
-        # File viewer (right panel)
-        self.file_viewer = QTableView(self)
-        self.splitter.addWidget(self.file_viewer)
-
-        # Enable sorting by column headers
+        # Set up the file viewer
+        self.file_viewer = self.browse_ui.file_viewer
         self.file_viewer.setSortingEnabled(True)
 
-        # Split for the file browser and viewer
-        self.splitter.setSizes([300, 1300])
+        # Set splitter sizes to 300 for the file browser, 1300 for the file viewer
+        self.browse_ui.splitter.setSizes([300, 1300])
 
-        # Add a button to open the dataset in the second tab (analytics view)
-        self.open_button = QPushButton("Analyze Dataset")
-        self.open_button.setVisible(False)  # Initially hide the button
+        # "Analyze Dataset" button setup
+        self.open_button = self.browse_ui.analyze_button
+        self.open_button.setVisible(False)  # Initially hidden until a dataset is selected
         self.open_button.clicked.connect(self.open_in_analytics_view)
 
-        file_browser_layout.addWidget(self.splitter)
-        file_browser_layout.addWidget(self.open_button)
+    def load_analyze_tab_ui(self):
+        """Load and set up the analyze tab UI (for the dataset analysis)."""
+        self.analyze_tab = QWidget()
+        self.analyze_ui = Ui_AnalyzeTab()
+        self.analyze_ui.setupUi(self.analyze_tab)
 
-        file_browser_tab.setLayout(file_browser_layout)
+        # No dataset label and analytics viewer
+        self.no_dataset_label = self.analyze_ui.no_dataset_label
+        self.analytics_viewer = self.analyze_ui.analytics_viewer
 
-        # Add the tabs to the main layout
-        self.tabs.addTab(file_browser_tab, "Browse")
-
-        # Create the analytics view tab
-        self.create_analytics_view_tab()
-
-        # Set up the layout for the main window
-        main_layout = QVBoxLayout()
-        main_layout.addWidget(self.tabs)
-
-        container = QWidget()
-        container.setLayout(main_layout)
-        self.setCentralWidget(container)
-
-    def create_analytics_view_tab(self):
-        # Create the analytics view tab
-        self.analytics_tab = QWidget()
-        self.analytics_tab_layout = QVBoxLayout()
-
-        # Set margin and spacing to 0
-        self.analytics_tab_layout.setContentsMargins(0, 0, 0, 0)
-        self.analytics_tab_layout.setSpacing(0)
-
-        # No dataset message
-        self.no_dataset_label = QLabel('Please select a dataset from the "Browse" tab')
-        self.no_dataset_label.setAlignment(Qt.AlignCenter)
-
-        self.analytics_viewer = QTableView()
-
-        # Enable sorting for analytics view
-        self.analytics_viewer.setSortingEnabled(True)
-
-        # Add both the label and the viewer to the layout (only one will be visible at a time)
-        self.analytics_tab_layout.addWidget(self.no_dataset_label)
-        self.analytics_tab_layout.addWidget(self.analytics_viewer)
-
-        # Add a placeholder toolbar at the top (minimized height)
-        self.toolbar = QWidget()
-        self.toolbar_layout = QHBoxLayout()
-        self.toolbar.setLayout(self.toolbar_layout)
-        self.toolbar.setFixedHeight(0)  # Minimize the height of the toolbar
-
-        self.analytics_tab_layout.addWidget(self.toolbar)
-
-        self.analytics_tab.setLayout(self.analytics_tab_layout)
-        self.tabs.addTab(self.analytics_tab, "Analyze")
-
-        # Initially, only show the message label, not the dataset viewer
+        # Initially, show only the "No dataset" label, not the dataset viewer
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
 
     def center_window(self):
-        # Get the screen geometry to center the window
+        """Center the window on the screen."""
         screen = self.screen()  # Get the current screen
-        screen_geometry = screen.availableGeometry()  # Get available screen size (excluding taskbars, etc.)
+        screen_geometry = screen.availableGeometry()
         window_geometry = self.frameGeometry()
 
         # Calculate the center point of the screen
@@ -216,11 +173,11 @@ class Arborist(QMainWindow):
         self.move(window_geometry.topLeft())
 
     def on_file_double_click(self, index):
-        # Get the file path from the model index
+        """Handle double-click events on files in the tree view."""
         source_index = self.proxy_model.mapToSource(index)
         file_path = self.file_model.filePath(source_index)
 
-        # Load the file and display its contents in the file viewer
+        # Only allow files with dataset extensions to be opened
         if file_path.endswith(('.csv', '.sav', '.dta')):
             self.load_csv_file(file_path, self.file_viewer)
             self.open_button.setVisible(True)  # Show the 'Open' button after a dataset is loaded
@@ -229,6 +186,7 @@ class Arborist(QMainWindow):
             self.open_button.setVisible(False)  # Hide the 'Open' button if no dataset is loaded
 
     def load_csv_file(self, file_path, table_view):
+        """Load the selected CSV file and display its contents."""
         try:
             with open(file_path, newline='') as file:
                 reader = csv.reader(file)
@@ -251,30 +209,29 @@ class Arborist(QMainWindow):
             table_view.setModel(None)
 
     def open_in_analytics_view(self):
-        # Load the current file from the file_viewer into the analytics viewer
+        """Open the dataset in the analytics view (second tab)."""
         model = self.file_viewer.model()
-
         if model:
-            # Show the dataset and hide the message
+            # Show the dataset in the analytics tab
             self.analytics_viewer.setModel(model)
             self.analytics_viewer.resizeColumnsToContents()
             self.no_dataset_label.setVisible(False)
             self.analytics_viewer.setVisible(True)
         else:
-            # Show the message and hide the dataset viewer
+            # Show the "No dataset" message if no dataset is loaded
             self.no_dataset_label.setVisible(True)
             self.analytics_viewer.setVisible(False)
 
         # Switch to the analytics tab
         self.tabs.setCurrentIndex(1)
 
-
+# Main function to start the application
 def main():
     app = QApplication(sys.argv)
     main_window = Arborist()
     main_window.show()
     sys.exit(app.exec())
 
-
+# Entry point of the script
 if __name__ == "__main__":
     main()
