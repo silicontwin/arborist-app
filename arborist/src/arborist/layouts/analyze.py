@@ -97,6 +97,31 @@ class Ui_AnalyzeTab(object):
 
         self.horizontalLayout_3.addWidget(self.trainButton)
 
+        self.frame_4 = QFrame(self.frame_3)
+        self.frame_4.setObjectName(u"frame_4")
+        self.frame_4.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_4.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_4 = QHBoxLayout(self.frame_4)
+        self.horizontalLayout_4.setSpacing(10)
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.trainingTimeLabel = QLabel(self.frame_4)
+        self.trainingTimeLabel.setObjectName(u"trainingTimeLabel")
+        sizePolicy.setHeightForWidth(self.trainingTimeLabel.sizePolicy().hasHeightForWidth())
+        self.trainingTimeLabel.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_4.addWidget(self.trainingTimeLabel)
+
+        self.trainingTimeValue = QLabel(self.frame_4)
+        self.trainingTimeValue.setObjectName(u"trainingTimeValue")
+        sizePolicy.setHeightForWidth(self.trainingTimeValue.sizePolicy().hasHeightForWidth())
+        self.trainingTimeValue.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_4.addWidget(self.trainingTimeValue)
+
+
+        self.horizontalLayout_3.addWidget(self.frame_4)
+
 
         self.verticalLayout.addWidget(self.frame_3)
 
@@ -129,6 +154,8 @@ class Ui_AnalyzeTab(object):
         self.label.setText(QCoreApplication.translate("AnalyzeTab", u"Outcome Variable (y):", None))
         self.treatmentLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Treatment Variable (Z):", None))
         self.trainButton.setText(QCoreApplication.translate("AnalyzeTab", u"Train Model", None))
+        self.trainingTimeLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Training time:", None))
+        self.trainingTimeValue.setText(QCoreApplication.translate("AnalyzeTab", u"0 seconds", None))
         self.no_dataset_label.setText(QCoreApplication.translate("AnalyzeTab", u"Please select a dataset from the \"Browse\" tab", None))
         pass
     # retranslateUi
