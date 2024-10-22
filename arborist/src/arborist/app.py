@@ -5,8 +5,9 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 import sys
 import os
 import pandas as pd
-from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeView, QTableView, QFileSystemModel, QLabel, QPushButton, QTabWidget, QWidget, QSplitter, QHeaderView)
+from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeView, QTableView, QFileSystemModel, QLabel, QPushButton, QTabWidget, QWidget, QSplitter, QHeaderView, QComboBox)
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
+from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.analyze import Ui_AnalyzeTab
 
@@ -21,6 +22,7 @@ class PandasTableModel(QAbstractTableModel):
         self._data = pd.DataFrame()  # Store all loaded data
         self._sort_order = Qt.AscendingOrder  # Default sort order
         self._sort_column = None  # No sort initially
+        self.selected_column = None  # Outcome variable column to highlight
         self.load_next_chunk()  # Load the first chunk
 
     def rowCount(self, parent=QModelIndex()):
@@ -35,6 +37,12 @@ class PandasTableModel(QAbstractTableModel):
         if role == Qt.DisplayRole:
             # Return data from the loaded dataset
             return str(self._data.iloc[index.row(), index.column()])
+
+        # Highlight the selected outcome variable column
+        if role == Qt.BackgroundRole and self.selected_column is not None:
+            if index.column() == self.selected_column:
+                return QColor("#FFFFCB")
+
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
@@ -83,6 +91,11 @@ class PandasTableModel(QAbstractTableModel):
         self._sort_column = column
 
         self.layoutChanged.emit()
+
+    def set_highlighted_column(self, column_index):
+            """Set the column to highlight in yellow."""
+            self.selected_column = column_index
+            self.layoutChanged.emit()
 
 
 # FilterProxyModel to filter out non-dataset files like .csv, .sav, .dta
@@ -195,6 +208,9 @@ class Arborist(QMainWindow):
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
 
+        # Initially, show only the "No dataset" label, not the dataset viewer
+        self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
+
     def center_window(self):
         """Center the window on the screen."""
         screen = self.screen()  # Get the current screen
@@ -254,6 +270,13 @@ class Arborist(QMainWindow):
             model = table_view.model()
             if model and model.can_fetch_more():  # If more chunks are available
                 model.fetchMore()
+
+    def highlight_selected_column(self):
+        """Highlight the selected column in the analytics viewer."""
+        selected_index = self.outcome_combo.currentIndex()
+        model = self.analytics_viewer.model()
+        if model:
+            model.set_highlighted_column(selected_index)
 
     def open_in_analytics_view(self):
         """Open the dataset in the analytics view (second tab)."""
