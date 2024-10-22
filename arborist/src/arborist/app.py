@@ -265,6 +265,7 @@ class Arborist(QMainWindow):
     def load_csv_file(self, file_path, table_view):
         """Load the selected CSV file and display its contents in chunks."""
         try:
+            self.current_file_path = file_path  # Store the current file path
             chunk_iter = pd.read_csv(file_path, chunksize=CHUNK_SIZE)  # Load in chunks
             first_chunk = next(chunk_iter)
             headers = first_chunk.columns.tolist()  # Extract headers from the first chunk
@@ -308,23 +309,37 @@ class Arborist(QMainWindow):
 
     def open_in_analytics_view(self):
         """Open the dataset in the analytics view (second tab)."""
-        model = self.file_viewer.model()
-        if model:
-            # Show the dataset in the analytics tab
-            self.analytics_viewer.setModel(model)
-            self.analytics_viewer.resizeColumnsToContents()
+        if hasattr(self, 'current_file_path'):
+            # Reload the dataset with initial chunk for the analytics view
+            try:
+                chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
+                first_chunk = next(chunk_iter)
+                headers = first_chunk.columns.tolist()
+                # Re-create chunk_iter including the first chunk
+                chunk_iter = itertools.chain([first_chunk], chunk_iter)
+                model = PandasTableModel(chunk_iter, headers)
+                self.analytics_viewer.setModel(model)
+                self.analytics_viewer.resizeColumnsToContents()
 
-            # Connect scroll event for lazy loading in the analytics tab
-            self.analytics_viewer.verticalScrollBar().valueChanged.connect(
-                lambda value: self.on_scroll(value, self.analytics_viewer)
-            )
+                # Enable sorting
+                self.analytics_viewer.setSortingEnabled(True)
 
-            # Clear the outcome variable dropdown and add the column names
-            self.outcome_combo.clear()
-            self.outcome_combo.addItems(model.headers)
+                # Connect scroll event for lazy loading in the analytics tab
+                self.analytics_viewer.verticalScrollBar().valueChanged.connect(
+                    lambda value: self.on_scroll(value, self.analytics_viewer)
+                )
 
-            self.no_dataset_label.setVisible(False)
-            self.analytics_viewer.setVisible(True)
+                # Clear the outcome variable dropdown and add the column names
+                self.outcome_combo.clear()
+                self.outcome_combo.addItems(headers)
+
+                self.no_dataset_label.setVisible(False)
+                self.analytics_viewer.setVisible(True)
+            except Exception as e:
+                print(f"Error loading file in analytics view: {e}")
+                self.analytics_viewer.setModel(None)
+                self.no_dataset_label.setVisible(True)
+                self.analytics_viewer.setVisible(False)
         else:
             # Show the "No dataset" message if no dataset is loaded
             self.no_dataset_label.setVisible(True)
