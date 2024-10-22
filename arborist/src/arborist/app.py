@@ -4,51 +4,86 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 
 import sys
 import os
-import csv
-from operator import itemgetter  # For sorting the data
+import pandas as pd
 from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeView, QTableView, QFileSystemModel, QLabel, QPushButton, QTabWidget, QWidget, QSplitter, QHeaderView)
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.analyze import Ui_AnalyzeTab
 
-# CSVTableModel for handling the CSV data and sorting
-class CSVTableModel(QAbstractTableModel):
-    def __init__(self, data, headers):
+CHUNK_SIZE = 10000  # Number of rows to load per chunk
+
+# Lazy loading for handling large datasets in chunks with sorting enabled
+class PandasTableModel(QAbstractTableModel):
+    def __init__(self, chunk_iter, headers):
         super().__init__()
-        self._data = data
-        self._headers = headers
+        self.chunk_iter = chunk_iter
+        self.headers = headers
+        self._data = pd.DataFrame()  # Store all loaded data
+        self._sort_order = Qt.AscendingOrder  # Default sort order
+        self._sort_column = None  # No sort initially
+        self.load_next_chunk()  # Load the first chunk
 
     def rowCount(self, parent=QModelIndex()):
-        # Return the number of rows in the data
+        # Return the number of rows in the current data
         return len(self._data)
 
     def columnCount(self, parent=QModelIndex()):
-        # Return the number of columns in the headers
-        return len(self._headers)
+        # Return the number of columns in the dataset
+        return len(self.headers)
 
     def data(self, index, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
-            # Return the data at the current index
-            return self._data[index.row()][index.column()]
+            # Return data from the loaded dataset
+            return str(self._data.iloc[index.row(), index.column()])
         return None
 
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
                 # Return the column header
-                return self._headers[section]
+                return self.headers[section]
             else:
                 # Return the row number
                 return str(section + 1)
         return None
 
+    def load_next_chunk(self):
+        """Load the next chunk of data and append it to the model."""
+        try:
+            chunk = next(self.chunk_iter)
+            old_row_count = self.rowCount()
+            self.beginInsertRows(QModelIndex(), old_row_count, old_row_count + len(chunk) - 1)
+            self._data = pd.concat([self._data, chunk], ignore_index=True)
+            self.endInsertRows()
+
+            # Apply sorting to new chunk if already sorted
+            if self._sort_column is not None:
+                self.sort(self._sort_column, self._sort_order)
+
+        except StopIteration:
+            print("No more chunks available.")
+
+    def can_fetch_more(self):
+        """Check if there are more chunks to fetch."""
+        return True  # Always try to fetch more until iteration ends
+
+    def fetchMore(self, parent=QModelIndex()):
+        """Fetch the next chunk of data."""
+        self.load_next_chunk()
+
     def sort(self, column, order):
         """Sort the data by the given column index and order."""
         self.layoutAboutToBeChanged.emit()
 
-        # Sort data using the column index
-        self._data.sort(key=itemgetter(column), reverse=(order == Qt.DescendingOrder))
+        # Sort loaded data
+        self._data.sort_values(by=self._data.columns[column], ascending=(order == Qt.AscendingOrder), inplace=True)
+        self._data.reset_index(drop=True, inplace=True)
+
+        self._sort_order = order
+        self._sort_column = column
+
         self.layoutChanged.emit()
+
 
 # FilterProxyModel to filter out non-dataset files like .csv, .sav, .dta
 class DatasetFileFilterProxyModel(QSortFilterProxyModel):
@@ -107,7 +142,7 @@ class Arborist(QMainWindow):
         # Initialize the generated UI class for the Browse tab
         self.browse_tab = QWidget()
         self.browse_ui = Ui_BrowseTab()
-        self.browse_ui.setupUi(self.browse_tab)  # Setup the UI on the QWidget
+        self.browse_ui.setupUi(self.browse_tab)
 
         # Set up the file system model and tree view with dataset filtering
         self.file_model = QFileSystemModel()
@@ -186,27 +221,33 @@ class Arborist(QMainWindow):
             self.open_button.setVisible(False)  # Hide the 'Open' button if no dataset is loaded
 
     def load_csv_file(self, file_path, table_view):
-        """Load the selected CSV file and display its contents."""
+        """Load the selected CSV file and display its contents in chunks."""
         try:
-            with open(file_path, newline='') as file:
-                reader = csv.reader(file)
-                data = list(reader)
+            chunk_iter = pd.read_csv(file_path, chunksize=CHUNK_SIZE)  # Load in chunks
+            headers = next(chunk_iter).columns.tolist()  # Extract headers from the first chunk
+            model = PandasTableModel(chunk_iter, headers)
+            table_view.setModel(model)
 
-            if len(data) > 0:
-                # Separate the first row as headers and the rest as data
-                headers = data[0]
-                table_data = data[1:]
+            # Enable sorting
+            table_view.setSortingEnabled(True)
 
-                # Use the custom model to set the data and headers
-                model = CSVTableModel(table_data, headers)
-                table_view.setModel(model)
+            # Automatically adjust the column width to fit the content and header
+            table_view.resizeColumnsToContents()
 
-                # Automatically adjust the column width to fit the content and header
-                table_view.resizeColumnsToContents()
+            # Connect the scroll event for lazy loading
+            table_view.verticalScrollBar().valueChanged.connect(lambda value: self.on_scroll(value, table_view))
 
         except Exception as e:
             print(f"Error loading file: {e}")
             table_view.setModel(None)
+
+    def on_scroll(self, value, table_view):
+        """Handle scrolling to load more data."""
+        # When scrolled to the bottom, fetch more data
+        if value == table_view.verticalScrollBar().maximum():
+            model = table_view.model()
+            if model and model.can_fetch_more():  # If more chunks are available
+                model.fetchMore()
 
     def open_in_analytics_view(self):
         """Open the dataset in the analytics view (second tab)."""
@@ -215,6 +256,10 @@ class Arborist(QMainWindow):
             # Show the dataset in the analytics tab
             self.analytics_viewer.setModel(model)
             self.analytics_viewer.resizeColumnsToContents()
+
+            # Connect scroll event for lazy loading in the analytics tab
+            self.analytics_viewer.verticalScrollBar().valueChanged.connect(lambda value: self.on_scroll(value, self.analytics_viewer))
+
             self.no_dataset_label.setVisible(False)
             self.analytics_viewer.setVisible(True)
         else:
@@ -225,12 +270,14 @@ class Arborist(QMainWindow):
         # Switch to the analytics tab
         self.tabs.setCurrentIndex(1)
 
+
 # Main function to start the application
 def main():
     app = QApplication(sys.argv)
     main_window = Arborist()
     main_window.show()
     sys.exit(app.exec())
+
 
 # Entry point of the script
 if __name__ == "__main__":
