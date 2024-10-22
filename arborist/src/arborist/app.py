@@ -5,7 +5,10 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 import sys
 import os
 import pandas as pd
+import numpy as np
 import itertools
+import pyarrow.dataset as ds
+import pyarrow as pa
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
