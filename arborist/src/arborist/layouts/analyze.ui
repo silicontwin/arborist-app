@@ -121,13 +121,23 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="comboBox"/>
+          <widget class="QComboBox" name="outcomeComboBox"/>
+         </item>
+         <item>
+          <widget class="QLabel" name="treatmentLabel">
+           <property name="text">
+            <string>Treatment Variable (Z):</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QComboBox" name="treatmentComboBox"/>
          </item>
         </layout>
        </widget>
       </item>
       <item>
-       <widget class="QPushButton" name="pushButton">
+       <widget class="QPushButton" name="trainButton">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
           <horstretch>0</horstretch>

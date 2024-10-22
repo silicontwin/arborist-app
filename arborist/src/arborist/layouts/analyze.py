@@ -72,20 +72,30 @@ class Ui_AnalyzeTab(object):
 
         self.horizontalLayout.addWidget(self.label)
 
-        self.comboBox = QComboBox(self.frame)
-        self.comboBox.setObjectName(u"comboBox")
+        self.outcomeComboBox = QComboBox(self.frame)
+        self.outcomeComboBox.setObjectName(u"outcomeComboBox")
 
-        self.horizontalLayout.addWidget(self.comboBox)
+        self.horizontalLayout.addWidget(self.outcomeComboBox)
+
+        self.treatmentLabel = QLabel(self.frame)
+        self.treatmentLabel.setObjectName(u"treatmentLabel")
+
+        self.horizontalLayout.addWidget(self.treatmentLabel)
+
+        self.treatmentComboBox = QComboBox(self.frame)
+        self.treatmentComboBox.setObjectName(u"treatmentComboBox")
+
+        self.horizontalLayout.addWidget(self.treatmentComboBox)
 
 
         self.horizontalLayout_3.addWidget(self.frame)
 
-        self.pushButton = QPushButton(self.frame_3)
-        self.pushButton.setObjectName(u"pushButton")
-        sizePolicy1.setHeightForWidth(self.pushButton.sizePolicy().hasHeightForWidth())
-        self.pushButton.setSizePolicy(sizePolicy1)
+        self.trainButton = QPushButton(self.frame_3)
+        self.trainButton.setObjectName(u"trainButton")
+        sizePolicy1.setHeightForWidth(self.trainButton.sizePolicy().hasHeightForWidth())
+        self.trainButton.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout_3.addWidget(self.pushButton)
+        self.horizontalLayout_3.addWidget(self.trainButton)
 
 
         self.verticalLayout.addWidget(self.frame_3)
@@ -117,7 +127,8 @@ class Ui_AnalyzeTab(object):
 
     def retranslateUi(self, AnalyzeTab):
         self.label.setText(QCoreApplication.translate("AnalyzeTab", u"Outcome Variable (y):", None))
-        self.pushButton.setText(QCoreApplication.translate("AnalyzeTab", u"Train Model", None))
+        self.treatmentLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Treatment Variable (Z):", None))
+        self.trainButton.setText(QCoreApplication.translate("AnalyzeTab", u"Train Model", None))
         self.no_dataset_label.setText(QCoreApplication.translate("AnalyzeTab", u"Please select a dataset from the \"Browse\" tab", None))
         pass
     # retranslateUi
