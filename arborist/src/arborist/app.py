@@ -430,6 +430,90 @@ class Arborist(QMainWindow):
         # Switch to the analytics tab
         self.tabs.setCurrentIndex(1)
 
+    def train_model(self):
+        """Train the model using the stochtree library and update the dataset."""
+        if not hasattr(self, 'dataframe'):
+            print("No dataset loaded.")
+            return
+
+        outcome_var = self.outcome_combo.currentText()
+
+        if not outcome_var:
+            print("Please select an outcome variable.")
+            return
+
+        try:
+            df_cleaned = self.dataframe.dropna()
+            initial_row_count = len(self.dataframe)
+            observations_removed = initial_row_count - len(df_cleaned)
+
+            # Ensure that outcome variable is in the data
+            if outcome_var not in df_cleaned.columns:
+                print(f"Outcome variable '{outcome_var}' not found in the data.")
+                return
+
+            # Use all other columns as features X
+            feature_columns = [col for col in df_cleaned.columns if col != outcome_var]
+
+            # Select features and outcome
+            X = df_cleaned[feature_columns].to_numpy()
+            y = df_cleaned[outcome_var].to_numpy()
+
+            # Ensure that y is numeric
+            if not np.issubdtype(y.dtype, np.number):
+                print(f"Outcome variable '{outcome_var}' is not numeric.")
+                return
+
+            # Standardize the outcome variable
+            y_mean = np.mean(y)
+            y_std = np.std(y)
+            y_standardized = (y - y_mean) / y_std
+
+            # Train the BART model
+            bart_model = BARTModel()
+
+            # Sample from the posterior
+            bart_model.sample(
+                X_train=X,
+                y_train=y_standardized,
+                X_test=X,
+                num_gfr=0,
+                num_burnin=100,
+                num_mcmc=100
+            )
+
+            # Get predictions
+            y_pred_samples = bart_model.predict(covariates=X)
+            y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
+
+            # Compute posterior summaries over the samples (axis=1)
+            posterior_mean = np.mean(y_pred_samples, axis=1)
+            percentile_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
+            percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
+
+            # Add predictions to the DataFrame
+            df_cleaned['Posterior Average (y hat)'] = posterior_mean
+            df_cleaned['2.5th percentile'] = percentile_2_5
+            df_cleaned['97.5th percentile'] = percentile_97_5
+
+            # Reorder the columns to show predictions first
+            cols = ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile'] + \
+                [col for col in df_cleaned.columns if col not in ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile']]
+            df_cleaned = df_cleaned[cols]
+
+            # Update the model and the view
+            headers = df_cleaned.columns.tolist()
+            self.dataframe = df_cleaned  # Update the dataframe with predictions
+            model = PandasTableModel(self.dataframe, headers)
+            self.analytics_viewer.setModel(model)
+            self.analytics_viewer.resizeColumnsToContents()
+
+            # Print the number of observations removed
+            print(f"Number of observations removed due to missing data: {observations_removed}")
+
+        except Exception as e:
+            print(f"Error during model training: {e}")
+
 
 # Main function to start the application
 def main():
