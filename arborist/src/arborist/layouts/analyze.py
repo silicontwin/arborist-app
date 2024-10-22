@@ -102,25 +102,78 @@ class Ui_AnalyzeTab(object):
 
         self.horizontalLayout.addWidget(self.outcomeComboBox)
 
-        self.treatmentLabel = QLabel(self.frame)
-        self.treatmentLabel.setObjectName(u"treatmentLabel")
-
-        self.horizontalLayout.addWidget(self.treatmentLabel)
-
-        self.treatmentComboBox = QComboBox(self.frame)
-        self.treatmentComboBox.setObjectName(u"treatmentComboBox")
-
-        self.horizontalLayout.addWidget(self.treatmentComboBox)
-
 
         self.horizontalLayout_3.addWidget(self.frame)
 
-        self.trainButton = QPushButton(self.frame_3)
+        self.treatmentFrame = QFrame(self.frame_3)
+        self.treatmentFrame.setObjectName(u"treatmentFrame")
+        sizePolicy1.setHeightForWidth(self.treatmentFrame.sizePolicy().hasHeightForWidth())
+        self.treatmentFrame.setSizePolicy(sizePolicy1)
+        self.treatmentFrame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.treatmentFrame.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_6 = QHBoxLayout(self.treatmentFrame)
+        self.horizontalLayout_6.setSpacing(10)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.horizontalLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.treatmentLabel = QLabel(self.treatmentFrame)
+        self.treatmentLabel.setObjectName(u"treatmentLabel")
+
+        self.horizontalLayout_6.addWidget(self.treatmentLabel)
+
+        self.treatmentComboBox = QComboBox(self.treatmentFrame)
+        self.treatmentComboBox.setObjectName(u"treatmentComboBox")
+
+        self.horizontalLayout_6.addWidget(self.treatmentComboBox)
+
+        self.frame_6 = QFrame(self.treatmentFrame)
+        self.frame_6.setObjectName(u"frame_6")
+        sizePolicy1.setHeightForWidth(self.frame_6.sizePolicy().hasHeightForWidth())
+        self.frame_6.setSizePolicy(sizePolicy1)
+        self.frame_6.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_6.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_7 = QHBoxLayout(self.frame_6)
+        self.horizontalLayout_7.setSpacing(10)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.horizontalLayout_7.setContentsMargins(0, 0, 0, 0)
+        self.trainButton = QPushButton(self.frame_6)
         self.trainButton.setObjectName(u"trainButton")
         sizePolicy1.setHeightForWidth(self.trainButton.sizePolicy().hasHeightForWidth())
         self.trainButton.setSizePolicy(sizePolicy1)
 
-        self.horizontalLayout_3.addWidget(self.trainButton)
+        self.horizontalLayout_7.addWidget(self.trainButton)
+
+        self.frame_7 = QFrame(self.frame_6)
+        self.frame_7.setObjectName(u"frame_7")
+        sizePolicy1.setHeightForWidth(self.frame_7.sizePolicy().hasHeightForWidth())
+        self.frame_7.setSizePolicy(sizePolicy1)
+        self.frame_7.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_7.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_8 = QHBoxLayout(self.frame_7)
+        self.horizontalLayout_8.setSpacing(10)
+        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
+        self.horizontalLayout_8.setContentsMargins(0, 0, 0, 0)
+        self.trainingTimeLabel = QLabel(self.frame_7)
+        self.trainingTimeLabel.setObjectName(u"trainingTimeLabel")
+        sizePolicy.setHeightForWidth(self.trainingTimeLabel.sizePolicy().hasHeightForWidth())
+        self.trainingTimeLabel.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_8.addWidget(self.trainingTimeLabel)
+
+        self.trainingTimeValue = QLabel(self.frame_7)
+        self.trainingTimeValue.setObjectName(u"trainingTimeValue")
+        sizePolicy.setHeightForWidth(self.trainingTimeValue.sizePolicy().hasHeightForWidth())
+        self.trainingTimeValue.setSizePolicy(sizePolicy)
+
+        self.horizontalLayout_8.addWidget(self.trainingTimeValue)
+
+
+        self.horizontalLayout_7.addWidget(self.frame_7)
+
+
+        self.horizontalLayout_6.addWidget(self.frame_6)
+
+
+        self.horizontalLayout_3.addWidget(self.treatmentFrame)
 
         self.frame_4 = QFrame(self.frame_3)
         self.frame_4.setObjectName(u"frame_4")
@@ -135,20 +188,6 @@ class Ui_AnalyzeTab(object):
         self.horizontalLayout_4.setSpacing(10)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
-        self.trainingTimeLabel = QLabel(self.frame_4)
-        self.trainingTimeLabel.setObjectName(u"trainingTimeLabel")
-        sizePolicy.setHeightForWidth(self.trainingTimeLabel.sizePolicy().hasHeightForWidth())
-        self.trainingTimeLabel.setSizePolicy(sizePolicy)
-
-        self.horizontalLayout_4.addWidget(self.trainingTimeLabel)
-
-        self.trainingTimeValue = QLabel(self.frame_4)
-        self.trainingTimeValue.setObjectName(u"trainingTimeValue")
-        sizePolicy.setHeightForWidth(self.trainingTimeValue.sizePolicy().hasHeightForWidth())
-        self.trainingTimeValue.setSizePolicy(sizePolicy)
-
-        self.horizontalLayout_4.addWidget(self.trainingTimeValue)
-
 
         self.horizontalLayout_3.addWidget(self.frame_4)
 
