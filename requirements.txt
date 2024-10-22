@@ -1,3 +1,4 @@
 briefcase
 pandas
 PySide6
+stochtree
