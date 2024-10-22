@@ -5,7 +5,21 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 import sys
 import os
 import pandas as pd
-from PySide6.QtWidgets import (QApplication, QMainWindow, QTreeView, QTableView, QFileSystemModel, QLabel, QPushButton, QTabWidget, QWidget, QSplitter, QHeaderView, QComboBox)
+import itertools
+from PySide6.QtWidgets import (
+    QApplication,
+    QMainWindow,
+    QTreeView,
+    QTableView,
+    QFileSystemModel,
+    QLabel,
+    QPushButton,
+    QTabWidget,
+    QWidget,
+    QSplitter,
+    QHeaderView,
+    QComboBox,
+)
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
 from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
@@ -23,6 +37,7 @@ class PandasTableModel(QAbstractTableModel):
         self._sort_order = Qt.AscendingOrder  # Default sort order
         self._sort_column = None  # No sort initially
         self.selected_column = None  # Outcome variable column to highlight
+        self.has_more_chunks = True
         self.load_next_chunk()  # Load the first chunk
 
     def rowCount(self, parent=QModelIndex()):
@@ -57,6 +72,8 @@ class PandasTableModel(QAbstractTableModel):
 
     def load_next_chunk(self):
         """Load the next chunk of data and append it to the model."""
+        if not self.has_more_chunks:
+            return
         try:
             chunk = next(self.chunk_iter)
             old_row_count = self.rowCount()
@@ -70,21 +87,27 @@ class PandasTableModel(QAbstractTableModel):
 
         except StopIteration:
             print("No more chunks available.")
+            self.has_more_chunks = False  # No more chunks to load
 
     def can_fetch_more(self):
         """Check if there are more chunks to fetch."""
-        return True  # Always try to fetch more until iteration ends
+        return self.has_more_chunks
 
     def fetchMore(self, parent=QModelIndex()):
         """Fetch the next chunk of data."""
-        self.load_next_chunk()
+        if self.has_more_chunks:
+            self.load_next_chunk()
 
     def sort(self, column, order):
         """Sort the data by the given column index and order."""
         self.layoutAboutToBeChanged.emit()
 
         # Sort loaded data
-        self._data.sort_values(by=self._data.columns[column], ascending=(order == Qt.AscendingOrder), inplace=True)
+        self._data.sort_values(
+            by=self._data.columns[column],
+            ascending=(order == Qt.AscendingOrder),
+            inplace=True,
+        )
         self._data.reset_index(drop=True, inplace=True)
 
         self._sort_order = order
@@ -93,9 +116,9 @@ class PandasTableModel(QAbstractTableModel):
         self.layoutChanged.emit()
 
     def set_highlighted_column(self, column_index):
-            """Set the column to highlight in yellow."""
-            self.selected_column = column_index
-            self.layoutChanged.emit()
+        """Set the column to highlight in yellow."""
+        self.selected_column = column_index
+        self.layoutChanged.emit()
 
 
 # FilterProxyModel to filter out non-dataset files like .csv, .sav, .dta
@@ -126,7 +149,7 @@ class Arborist(QMainWindow):
 
     def init_ui(self):
         self.setWindowTitle("Arborist")
-        
+
         # Set the default window size
         self.resize(1600, 900)
 
@@ -159,11 +182,11 @@ class Arborist(QMainWindow):
 
         # Set up the file system model and tree view with dataset filtering
         self.file_model = QFileSystemModel()
-        desktop_path = os.path.join(os.path.expanduser('~'), 'Desktop')
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
         self.file_model.setRootPath(desktop_path)
 
         # Create a proxy model to filter by dataset extensions (.csv, .sav, .dta)
-        dataset_extensions = {'.csv', '.sav', '.dta'}
+        dataset_extensions = {".csv", ".sav", ".dta"}
         self.proxy_model = DatasetFileFilterProxyModel(dataset_extensions)
         self.proxy_model.setSourceModel(self.file_model)
 
@@ -208,7 +231,7 @@ class Arborist(QMainWindow):
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
 
-        # Initially, show only the "No dataset" label, not the dataset viewer
+        # Outcome variable selection
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
 
     def center_window(self):
@@ -232,7 +255,7 @@ class Arborist(QMainWindow):
         file_path = self.file_model.filePath(source_index)
 
         # Only allow files with dataset extensions to be opened
-        if file_path.endswith(('.csv', '.sav', '.dta')):
+        if file_path.endswith((".csv", ".sav", ".dta")):
             self.load_csv_file(file_path, self.file_viewer)
             self.open_button.setVisible(True)  # Show the 'Open' button after a dataset is loaded
         else:
@@ -243,7 +266,10 @@ class Arborist(QMainWindow):
         """Load the selected CSV file and display its contents in chunks."""
         try:
             chunk_iter = pd.read_csv(file_path, chunksize=CHUNK_SIZE)  # Load in chunks
-            headers = next(chunk_iter).columns.tolist()  # Extract headers from the first chunk
+            first_chunk = next(chunk_iter)
+            headers = first_chunk.columns.tolist()  # Extract headers from the first chunk
+            # Re-create chunk_iter including the first chunk
+            chunk_iter = itertools.chain([first_chunk], chunk_iter)
             model = PandasTableModel(chunk_iter, headers)
             table_view.setModel(model)
 
@@ -257,7 +283,9 @@ class Arborist(QMainWindow):
             self.outcome_combo.addItems(headers)  # Add the column names to the dropdown
 
             # Connect the scroll event for lazy loading
-            table_view.verticalScrollBar().valueChanged.connect(lambda value: self.on_scroll(value, table_view))
+            table_view.verticalScrollBar().valueChanged.connect(
+                lambda value: self.on_scroll(value, table_view)
+            )
 
         except Exception as e:
             print(f"Error loading file: {e}")
@@ -287,7 +315,9 @@ class Arborist(QMainWindow):
             self.analytics_viewer.resizeColumnsToContents()
 
             # Connect scroll event for lazy loading in the analytics tab
-            self.analytics_viewer.verticalScrollBar().valueChanged.connect(lambda value: self.on_scroll(value, self.analytics_viewer))
+            self.analytics_viewer.verticalScrollBar().valueChanged.connect(
+                lambda value: self.on_scroll(value, self.analytics_viewer)
+            )
 
             # Clear the outcome variable dropdown and add the column names
             self.outcome_combo.clear()
