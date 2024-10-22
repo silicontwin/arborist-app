@@ -15,9 +15,9 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QHeaderView, QPushButton, QSizePolicy,
-    QSplitter, QTableView, QTreeView, QVBoxLayout,
-    QWidget)
+from PySide6.QtWidgets import (QApplication, QHBoxLayout, QHeaderView, QPushButton,
+    QSizePolicy, QSplitter, QTableView, QTreeView,
+    QVBoxLayout, QWidget)
 
 class Ui_BrowseTab(object):
     def setupUi(self, BrowseTab):
@@ -25,6 +25,23 @@ class Ui_BrowseTab(object):
             BrowseTab.setObjectName(u"BrowseTab")
         self.verticalLayout = QVBoxLayout(BrowseTab)
         self.verticalLayout.setObjectName(u"verticalLayout")
+        self.navigationLayout = QHBoxLayout()
+        self.navigationLayout.setObjectName(u"navigationLayout")
+        self.back_button = QPushButton(BrowseTab)
+        self.back_button.setObjectName(u"back_button")
+        self.back_button.setEnabled(False)
+
+        self.navigationLayout.addWidget(self.back_button)
+
+        self.forward_button = QPushButton(BrowseTab)
+        self.forward_button.setObjectName(u"forward_button")
+        self.forward_button.setEnabled(False)
+
+        self.navigationLayout.addWidget(self.forward_button)
+
+
+        self.verticalLayout.addLayout(self.navigationLayout)
+
         self.splitter = QSplitter(BrowseTab)
         self.splitter.setObjectName(u"splitter")
         self.splitter.setOrientation(Qt.Horizontal)
@@ -52,6 +69,8 @@ class Ui_BrowseTab(object):
     # setupUi
 
     def retranslateUi(self, BrowseTab):
+        self.back_button.setText(QCoreApplication.translate("BrowseTab", u"Back", None))
+        self.forward_button.setText(QCoreApplication.translate("BrowseTab", u"Forward", None))
         self.analyze_button.setText(QCoreApplication.translate("BrowseTab", u"Analyze Dataset", None))
         pass
     # retranslateUi
