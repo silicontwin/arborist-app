@@ -188,6 +188,9 @@ class Arborist(QMainWindow):
         self.no_dataset_label = self.analyze_ui.no_dataset_label
         self.analytics_viewer = self.analyze_ui.analytics_viewer
 
+        # Outcome variable dropdown
+        self.outcome_combo = self.analyze_ui.comboBox
+
         # Initially, show only the "No dataset" label, not the dataset viewer
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
@@ -234,6 +237,9 @@ class Arborist(QMainWindow):
             # Automatically adjust the column width to fit the content and header
             table_view.resizeColumnsToContents()
 
+            self.outcome_combo.clear()  # Clear the outcome variable dropdown
+            self.outcome_combo.addItems(headers)  # Add the column names to the dropdown
+
             # Connect the scroll event for lazy loading
             table_view.verticalScrollBar().valueChanged.connect(lambda value: self.on_scroll(value, table_view))
 
@@ -259,6 +265,10 @@ class Arborist(QMainWindow):
 
             # Connect scroll event for lazy loading in the analytics tab
             self.analytics_viewer.verticalScrollBar().valueChanged.connect(lambda value: self.on_scroll(value, self.analytics_viewer))
+
+            # Clear the outcome variable dropdown and add the column names
+            self.outcome_combo.clear()
+            self.outcome_combo.addItems(model.headers)
 
             self.no_dataset_label.setVisible(False)
             self.analytics_viewer.setVisible(True)
