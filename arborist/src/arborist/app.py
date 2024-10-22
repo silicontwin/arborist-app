@@ -38,7 +38,7 @@ class PandasTableModel(QAbstractTableModel):
         self.headers = headers
         self._sort_order = Qt.AscendingOrder  # Default sort order
         self._sort_column = None  # No sort initially
-        self.selected_column = None  # Outcome variable column to highlight
+        self.selected_column_name = None  # Outcome variable column to highlight
 
         if isinstance(data, pd.DataFrame):
             self._data = data
@@ -68,10 +68,10 @@ class PandasTableModel(QAbstractTableModel):
         # Highlight the selected outcome variable column and prediction columns
         if role == Qt.BackgroundRole:
             column_name = self.headers[index.column()]
-            if self.selected_column is not None and index.column() == self.selected_column:
+            if self.selected_column_name == column_name:
                 return QColor("#FFFFCB")  # Light yellow
             elif column_name in ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile']:
-                return QColor("#CBFFFF")  # Light blue color
+                return QColor("#CCCCFF")  # Light blue
 
         return None
 
@@ -130,9 +130,9 @@ class PandasTableModel(QAbstractTableModel):
 
         self.layoutChanged.emit()
 
-    def set_highlighted_column(self, column_index):
+    def set_highlighted_column(self, column_name):
         """Set the column to highlight in yellow."""
-        self.selected_column = column_index
+        self.selected_column_name = column_name
         self.layoutChanged.emit()
 
 
@@ -406,31 +406,34 @@ class Arborist(QMainWindow):
 
     def highlight_selected_column(self):
         """Highlight the selected column in the analytics viewer."""
-        selected_index = self.outcome_combo.currentIndex()
+        selected_var = self.outcome_combo.currentText()
         model = self.analytics_viewer.model()
-        if model:
-            model.set_highlighted_column(selected_index)
+        if model and selected_var in model.headers:
+            model.set_highlighted_column(selected_var)
 
     def open_in_analytics_view(self):
         """Open the dataset in the analytics view (second tab)."""
         if hasattr(self, 'current_file_path'):
-            # Load the entire dataset into a DataFrame using pyarrow
+            # Reload the dataset with initial chunk for the analytics view
             try:
-                # Use pyarrow to load the dataset
-                dataset = ds.dataset(self.current_file_path, format='csv')
-                table = dataset.to_table()
-                self.dataframe = table.to_pandas()
-                headers = self.dataframe.columns.tolist()
-
-                # Create a model from the DataFrame
-                model = PandasTableModel(self.dataframe, headers)
+                chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
+                first_chunk = next(chunk_iter)
+                headers = first_chunk.columns.tolist()
+                # Re-create chunk_iter including the first chunk
+                chunk_iter = itertools.chain([first_chunk], chunk_iter)
+                model = PandasTableModel(chunk_iter, headers)
                 self.analytics_viewer.setModel(model)
                 self.analytics_viewer.resizeColumnsToContents()
 
                 # Enable sorting
                 self.analytics_viewer.setSortingEnabled(True)
 
-                # Clear the outcome and treatment variable dropdowns and add the column names
+                # Connect scroll event for lazy loading in the analytics tab
+                self.analytics_viewer.verticalScrollBar().valueChanged.connect(
+                    lambda value: self.on_scroll(value, self.analytics_viewer)
+                )
+
+                # Clear the outcome variable dropdown and add the column names
                 self.outcome_combo.clear()
                 self.outcome_combo.addItems(headers)
                 self.treatment_combo.clear()
@@ -453,7 +456,7 @@ class Arborist(QMainWindow):
 
     def train_model(self):
         """Train the model using the stochtree library and update the dataset."""
-        if not hasattr(self, 'dataframe'):
+        if not hasattr(self, 'current_file_path'):
             print("No dataset loaded.")
             return
 
@@ -464,8 +467,25 @@ class Arborist(QMainWindow):
             return
 
         try:
-            df_cleaned = self.dataframe.dropna()
-            initial_row_count = len(self.dataframe)
+            # Read the first row to get headers
+            first_chunk = pd.read_csv(self.current_file_path, nrows=0)
+            all_columns = first_chunk.columns.tolist()
+            
+            # Define the columns to read (all columns to maintain original order)
+            columns_to_read = all_columns
+
+            # Use pyarrow to read all columns
+            dataset = ds.dataset(self.current_file_path, format='csv')
+
+            # Read the columns into a pyarrow table
+            table = dataset.to_table(columns=columns_to_read)
+
+            # Convert to pandas DataFrame
+            df = table.to_pandas()
+
+            # Proceed with data cleaning and model training
+            df_cleaned = df.dropna()
+            initial_row_count = len(df)
             observations_removed = initial_row_count - len(df_cleaned)
 
             # Ensure that outcome variable is in the data
@@ -473,7 +493,7 @@ class Arborist(QMainWindow):
                 print(f"Outcome variable '{outcome_var}' not found in the data.")
                 return
 
-            # Use all other columns as features X
+            # Use all columns except the outcome variable as features
             feature_columns = [col for col in df_cleaned.columns if col != outcome_var]
 
             # Select features and outcome
@@ -518,9 +538,9 @@ class Arborist(QMainWindow):
             df_cleaned['97.5th percentile'] = percentile_97_5
 
             # Reorder the columns to show predictions first
-            cols = ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile'] + \
-                [col for col in df_cleaned.columns if col not in ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile']]
-            df_cleaned = df_cleaned[cols]
+            prediction_cols = ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile']
+            existing_cols = [col for col in df_cleaned.columns if col not in prediction_cols]
+            df_cleaned = df_cleaned[prediction_cols + existing_cols]
 
             # Update the model and the view
             headers = df_cleaned.columns.tolist()
@@ -528,6 +548,9 @@ class Arborist(QMainWindow):
             model = PandasTableModel(self.dataframe, headers)
             self.analytics_viewer.setModel(model)
             self.analytics_viewer.resizeColumnsToContents()
+
+            # Re-highlight the selected outcome variable column
+            self.highlight_selected_column()
 
             # Print the number of observations removed
             print(f"Number of observations removed due to missing data: {observations_removed}")
