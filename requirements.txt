@@ -1,2 +1,3 @@
 briefcase
+pandas
 PySide6
