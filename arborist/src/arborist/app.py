@@ -71,7 +71,7 @@ class PandasTableModel(QAbstractTableModel):
             column_name = self.headers[index.column()]
             if self.selected_column_name == column_name:
                 return QColor("#FFFFCB")  # Light yellow
-            elif column_name in ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile']:
+            elif column_name in ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']:
                 return QColor("#CCCCFF")  # Light blue
 
         return None
@@ -563,12 +563,12 @@ class Arborist(QMainWindow):
             percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
 
             # Add predictions to the DataFrame
-            df_cleaned['Posterior Average (y hat)'] = posterior_mean
-            df_cleaned['2.5th percentile'] = percentile_2_5
-            df_cleaned['97.5th percentile'] = percentile_97_5
+            df_cleaned['Posterior Average ŷ'] = posterior_mean
+            df_cleaned['2.5th percentile ŷ'] = percentile_2_5
+            df_cleaned['97.5th percentile ŷ'] = percentile_97_5
 
             # Reorder the columns to show predictions first
-            prediction_cols = ['Posterior Average (y hat)', '2.5th percentile', '97.5th percentile']
+            prediction_cols = ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']
             existing_cols = [col for col in df_cleaned.columns if col not in prediction_cols]
             df_cleaned = df_cleaned[prediction_cols + existing_cols]
 
