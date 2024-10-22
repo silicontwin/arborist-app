@@ -1,4 +1,8 @@
 briefcase
+numpy
 pandas
+pyarrow
 PySide6
+scikit-learn
+scipy
 stochtree
