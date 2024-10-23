@@ -28,6 +28,7 @@ from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProx
 from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.train import Ui_TrainTab
+from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
 
 CHUNK_SIZE = 10000  # Number of rows to load per chunk
@@ -178,13 +179,15 @@ class Arborist(QMainWindow):
         # Create a tab widget for switching between the file browser and dataset viewer
         self.tabs = QTabWidget()
 
-        # Load the UI for both tabs (Browse and Train)
+        # Load the UI for all tabs (Browse, Train, and Predict)
         self.load_browse_tab_ui()
         self.load_train_tab_ui()
+        self.load_predict_tab_ui()
 
         # Add the tabs to the main layout
         self.tabs.addTab(self.browse_tab, "Browse")
         self.tabs.addTab(self.train_tab, "Train")
+        self.tabs.addTab(self.predict_tab, "Predict")
 
         # Set the central widget for the main window
         self.setCentralWidget(self.tabs)
@@ -294,6 +297,12 @@ class Arborist(QMainWindow):
 
         # Outcome and treatment variable selection
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
+
+    def load_predict_tab_ui(self):
+        """Load and set up the predict tab UI."""
+        self.predict_tab = QWidget()
+        self.predict_ui = Ui_PredictTab()
+        self.predict_ui.setupUi(self.predict_tab)
 
     def center_window(self):
         """Center the window on the screen."""
