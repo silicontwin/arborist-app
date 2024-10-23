@@ -50,9 +50,10 @@ class Ui_BrowseTab(object):
         sizePolicy.setVerticalStretch(0)
         sizePolicy.setHeightForWidth(self.bottomMenu.sizePolicy().hasHeightForWidth())
         self.bottomMenu.setSizePolicy(sizePolicy)
-        self.bottomMenu.setFrameShape(QFrame.Shape.StyledPanel)
+        self.bottomMenu.setFrameShape(QFrame.Shape.NoFrame)
         self.bottomMenu.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout = QHBoxLayout(self.bottomMenu)
+        self.horizontalLayout.setSpacing(10)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
         self.navigationFrame = QFrame(self.bottomMenu)
@@ -62,16 +63,20 @@ class Ui_BrowseTab(object):
         sizePolicy1.setVerticalStretch(0)
         sizePolicy1.setHeightForWidth(self.navigationFrame.sizePolicy().hasHeightForWidth())
         self.navigationFrame.setSizePolicy(sizePolicy1)
-        self.navigationFrame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.navigationFrame.setFrameShape(QFrame.Shape.NoFrame)
         self.navigationFrame.setFrameShadow(QFrame.Shadow.Raised)
         self.navigationLayout = QHBoxLayout(self.navigationFrame)
+        self.navigationLayout.setSpacing(10)
         self.navigationLayout.setObjectName(u"navigationLayout")
+        self.navigationLayout.setContentsMargins(0, 0, 0, 0)
         self.back_button = QPushButton(self.navigationFrame)
         self.back_button.setObjectName(u"back_button")
         self.back_button.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.back_button.sizePolicy().hasHeightForWidth())
         self.back_button.setSizePolicy(sizePolicy1)
-        self.back_button.setMinimumSize(QSize(100, 40))
+        self.back_button.setMinimumSize(QSize(80, 30))
+        self.back_button.setStyleSheet(u"background-color: #DDDDDD;\n"
+"border-radius: 4px;")
 
         self.navigationLayout.addWidget(self.back_button)
 
@@ -80,7 +85,9 @@ class Ui_BrowseTab(object):
         self.forward_button.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.forward_button.sizePolicy().hasHeightForWidth())
         self.forward_button.setSizePolicy(sizePolicy1)
-        self.forward_button.setMinimumSize(QSize(100, 40))
+        self.forward_button.setMinimumSize(QSize(80, 30))
+        self.forward_button.setStyleSheet(u"background-color: #DDDDDD;\n"
+"border-radius: 4px;")
 
         self.navigationLayout.addWidget(self.forward_button)
 
@@ -93,10 +100,13 @@ class Ui_BrowseTab(object):
 
         self.openDatasetButton = QPushButton(self.bottomMenu)
         self.openDatasetButton.setObjectName(u"openDatasetButton")
-        self.openDatasetButton.setVisible(True)
         sizePolicy1.setHeightForWidth(self.openDatasetButton.sizePolicy().hasHeightForWidth())
         self.openDatasetButton.setSizePolicy(sizePolicy1)
-        self.openDatasetButton.setMinimumSize(QSize(150, 40))
+        self.openDatasetButton.setMinimumSize(QSize(120, 30))
+        self.openDatasetButton.setVisible(True)
+        self.openDatasetButton.setStyleSheet(u"background-color: #FF0000;\n"
+"color: #FFFFFF;\n"
+"border-radius: 4px;")
 
         self.horizontalLayout.addWidget(self.openDatasetButton)
 
