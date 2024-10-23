@@ -17,7 +17,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
     QHeaderView, QLabel, QPushButton, QSizePolicy,
-    QTableView, QVBoxLayout, QWidget)
+    QSpacerItem, QTableView, QVBoxLayout, QWidget)
 
 class Ui_TrainTab(object):
     def setupUi(self, TrainTab):
@@ -29,7 +29,14 @@ class Ui_TrainTab(object):
         self.verticalLayout.setSpacing(10)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(10, 10, 10, 10)
-        self.frame_3 = QFrame(TrainTab)
+        self.frame = QFrame(TrainTab)
+        self.frame.setObjectName(u"frame")
+        self.frame.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout = QHBoxLayout(self.frame)
+        self.horizontalLayout.setObjectName(u"horizontalLayout")
+        self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
+        self.frame_3 = QFrame(self.frame)
         self.frame_3.setObjectName(u"frame_3")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -178,7 +185,35 @@ class Ui_TrainTab(object):
         self.horizontalLayout_3.addWidget(self.frame_7)
 
 
-        self.verticalLayout.addWidget(self.frame_3)
+        self.horizontalLayout.addWidget(self.frame_3)
+
+        self.horizontalSpacer = QSpacerItem(40, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        self.horizontalLayout.addItem(self.horizontalSpacer)
+
+        self.frame_4 = QFrame(self.frame)
+        self.frame_4.setObjectName(u"frame_4")
+        self.frame_4.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame_4.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_4 = QHBoxLayout(self.frame_4)
+        self.horizontalLayout_4.setSpacing(0)
+        self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
+        self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.parametersPushButton = QPushButton(self.frame_4)
+        self.parametersPushButton.setObjectName(u"parametersPushButton")
+        sizePolicy.setHeightForWidth(self.parametersPushButton.sizePolicy().hasHeightForWidth())
+        self.parametersPushButton.setSizePolicy(sizePolicy)
+        self.parametersPushButton.setMinimumSize(QSize(130, 30))
+        self.parametersPushButton.setStyleSheet(u"background-color: #DDDDDD;\n"
+"border-radius: 4px;")
+
+        self.horizontalLayout_4.addWidget(self.parametersPushButton)
+
+
+        self.horizontalLayout.addWidget(self.frame_4)
+
+
+        self.verticalLayout.addWidget(self.frame)
 
         self.no_dataset_label = QLabel(TrainTab)
         self.no_dataset_label.setObjectName(u"no_dataset_label")
@@ -186,11 +221,29 @@ class Ui_TrainTab(object):
 
         self.verticalLayout.addWidget(self.no_dataset_label)
 
-        self.analytics_viewer = QTableView(TrainTab)
+        self.frame_6 = QFrame(TrainTab)
+        self.frame_6.setObjectName(u"frame_6")
+        self.frame_6.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame_6.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout_6 = QHBoxLayout(self.frame_6)
+        self.horizontalLayout_6.setSpacing(10)
+        self.horizontalLayout_6.setObjectName(u"horizontalLayout_6")
+        self.horizontalLayout_6.setContentsMargins(0, 0, 0, 0)
+        self.analytics_viewer = QTableView(self.frame_6)
         self.analytics_viewer.setObjectName(u"analytics_viewer")
         self.analytics_viewer.setSortingEnabled(True)
 
-        self.verticalLayout.addWidget(self.analytics_viewer)
+        self.horizontalLayout_6.addWidget(self.analytics_viewer)
+
+        self.parametersMenu = QWidget(self.frame_6)
+        self.parametersMenu.setObjectName(u"parametersMenu")
+        self.parametersMenu.setMinimumSize(QSize(300, 0))
+        self.parametersMenu.setStyleSheet(u"background-color: #FFFFFF;")
+
+        self.horizontalLayout_6.addWidget(self.parametersMenu)
+
+
+        self.verticalLayout.addWidget(self.frame_6)
 
 
         self.retranslateUi(TrainTab)
@@ -210,6 +263,7 @@ class Ui_TrainTab(object):
         self.trainButton.setText(QCoreApplication.translate("TrainTab", u"Train Model", None))
         self.trainingTimeLabel.setText(QCoreApplication.translate("TrainTab", u"Training time:", None))
         self.trainingTimeValue.setText(QCoreApplication.translate("TrainTab", u"0 seconds", None))
+        self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Parameters", None))
         self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Browse\" tab", None))
         pass
     # retranslateUi
