@@ -14,4 +14,4 @@
 - Build the layouts:
   -  `pyside6-uic layout.ui -o layout.py`:
   -  `pyside6-uic browse.ui -o browse.py`:
-  -  `pyside6-uic analyze.ui -o analyze.py`:
+  -  `pyside6-uic train.ui -o train.py`:
