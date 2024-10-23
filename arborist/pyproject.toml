@@ -20,15 +20,23 @@ test_sources = [
 ]
 
 requires = [
-    "PySide6-Essentials~=6.7",
     # "PySide6-Addons~=6.7",
+    "numpy",
+    "pandas",
+    "pyarrow",
+    "PySide6",
+    "PySide6-Essentials~=6.7",
+    "scikit-learn",
+    "scipy",
+    "stochtree",
 ]
+
 test_requires = [
     "pytest",
 ]
 
 [tool.briefcase.app.arborist.macOS]
-universal_build = true
+universal_build = false
 requires = [
     "std-nslog~=1.0.3",
 ]
