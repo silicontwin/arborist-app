@@ -366,11 +366,6 @@
      </property>
     </widget>
    </item>
-   <item>
-    <widget class="QWidget" name="toolbar" native="true">
-     <layout class="QHBoxLayout" name="toolbar_layout"/>
-    </widget>
-   </item>
   </layout>
  </widget>
  <resources/>

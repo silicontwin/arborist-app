@@ -186,13 +186,6 @@ class Ui_TrainTab(object):
 
         self.verticalLayout.addWidget(self.analytics_viewer)
 
-        self.toolbar = QWidget(TrainTab)
-        self.toolbar.setObjectName(u"toolbar")
-        self.toolbar_layout = QHBoxLayout(self.toolbar)
-        self.toolbar_layout.setObjectName(u"toolbar_layout")
-
-        self.verticalLayout.addWidget(self.toolbar)
-
 
         self.retranslateUi(TrainTab)
 
