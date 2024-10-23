@@ -23,6 +23,8 @@ class Ui_BrowseTab(object):
     def setupUi(self, BrowseTab):
         if not BrowseTab.objectName():
             BrowseTab.setObjectName(u"BrowseTab")
+        BrowseTab.resize(1600, 900)
+        BrowseTab.setBaseSize(QSize(1600, 900))
         self.verticalLayout = QVBoxLayout(BrowseTab)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.navigationLayout = QHBoxLayout()
@@ -44,7 +46,7 @@ class Ui_BrowseTab(object):
 
         self.splitter = QSplitter(BrowseTab)
         self.splitter.setObjectName(u"splitter")
-        self.splitter.setOrientation(Qt.Horizontal)
+        self.splitter.setOrientation(Qt.Orientation.Horizontal)
         self.treeView = QTreeView(self.splitter)
         self.treeView.setObjectName(u"treeView")
         self.treeView.setMinimumSize(QSize(200, 0))
