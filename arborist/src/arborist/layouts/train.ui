@@ -501,16 +501,289 @@ border-radius: 4px;</string>
        </widget>
       </item>
       <item>
-       <widget class="QWidget" name="parametersMenu" native="true">
+       <widget class="QFrame" name="parametersMenu">
         <property name="minimumSize">
          <size>
           <width>300</width>
           <height>0</height>
          </size>
         </property>
+        <property name="visible">
+         <bool>false</bool>
+        </property>
         <property name="styleSheet">
          <string notr="true">background-color: #FFFFFF;</string>
         </property>
+        <layout class="QVBoxLayout" name="verticalLayout_Parameters">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin">
+          <number>10</number>
+         </property>
+         <property name="topMargin">
+          <number>10</number>
+         </property>
+         <property name="rightMargin">
+          <number>10</number>
+         </property>
+         <property name="bottomMargin">
+          <number>10</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="parametersTitleLabel">
+           <property name="styleSheet">
+            <string notr="true">font-weight: bold; border-bottom: 1px solid lightgray; padding-bottom: 5px;</string>
+           </property>
+           <property name="text">
+            <string>Model Parameters</string>
+           </property>
+           <property name="alignment">
+            <set>Qt::AlignmentFlag::AlignCenter</set>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_Trees">
+           <item>
+            <widget class="QLabel" name="treesLabel">
+             <property name="text">
+              <string>Number of Trees (M)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="treesSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>1000</number>
+             </property>
+             <property name="value">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_BurnIn">
+           <item>
+            <widget class="QLabel" name="burnInLabel">
+             <property name="text">
+              <string>Burn-in Iterations</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="burnInSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>10000</number>
+             </property>
+             <property name="value">
+              <number>1000</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_Draws">
+           <item>
+            <widget class="QLabel" name="drawsLabel">
+             <property name="text">
+              <string>Number of Draws</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="drawsSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>100000</number>
+             </property>
+             <property name="value">
+              <number>5000</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_Thinning">
+           <item>
+            <widget class="QLabel" name="thinningLabel">
+             <property name="text">
+              <string>Thinning</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="thinningSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>1</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_PriorMean">
+           <item>
+            <widget class="QLabel" name="priorMeanLabel">
+             <property name="text">
+              <string>Prior Mean of Leaf Parameters</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="priorMeanSpinBox">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_PriorVariance">
+           <item>
+            <widget class="QLabel" name="priorVarianceLabel">
+             <property name="text">
+              <string>Prior Variance of Leaf Parameters</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="priorVarianceSpinBox">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_Alpha">
+           <item>
+            <widget class="QLabel" name="alphaLabel">
+             <property name="text">
+              <string>Alpha (α) for Tree Structure Prior</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QDoubleSpinBox" name="alphaSpinBox">
+             <property name="minimum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="maximum">
+              <double>0.000000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.000000000000000</double>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_Beta">
+           <item>
+            <widget class="QLabel" name="betaLabel">
+             <property name="text">
+              <string>Beta (β) for Tree Structure Prior</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="betaSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>2</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_Depth">
+           <item>
+            <widget class="QLabel" name="treeDepthLabel">
+             <property name="text">
+              <string>Tree Depth (D)</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="treeDepthSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>10</number>
+             </property>
+             <property name="value">
+              <number>3</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <layout class="QHBoxLayout" name="horizontalLayout_NodeSize">
+           <item>
+            <widget class="QLabel" name="nodeSizeLabel">
+             <property name="text">
+              <string>Minimum Node Size</string>
+             </property>
+            </widget>
+           </item>
+           <item>
+            <widget class="QSpinBox" name="nodeSizeSpinBox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>100</number>
+             </property>
+             <property name="value">
+              <number>5</number>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+        </layout>
        </widget>
       </item>
      </layout>

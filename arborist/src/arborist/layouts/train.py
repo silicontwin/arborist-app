@@ -15,9 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
-    QHeaderView, QLabel, QPushButton, QSizePolicy,
-    QSpacerItem, QTableView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QFrame,
+    QHBoxLayout, QHeaderView, QLabel, QPushButton,
+    QSizePolicy, QSpacerItem, QSpinBox, QTableView,
+    QVBoxLayout, QWidget)
 
 class Ui_TrainTab(object):
     def setupUi(self, TrainTab):
@@ -235,10 +236,202 @@ class Ui_TrainTab(object):
 
         self.horizontalLayout_6.addWidget(self.analytics_viewer)
 
-        self.parametersMenu = QWidget(self.frame_6)
+        self.parametersMenu = QFrame(self.frame_6)
         self.parametersMenu.setObjectName(u"parametersMenu")
         self.parametersMenu.setMinimumSize(QSize(300, 0))
+        self.parametersMenu.setVisible(False)
         self.parametersMenu.setStyleSheet(u"background-color: #FFFFFF;")
+        self.verticalLayout_Parameters = QVBoxLayout(self.parametersMenu)
+        self.verticalLayout_Parameters.setSpacing(10)
+        self.verticalLayout_Parameters.setObjectName(u"verticalLayout_Parameters")
+        self.verticalLayout_Parameters.setContentsMargins(10, 10, 10, 10)
+        self.parametersTitleLabel = QLabel(self.parametersMenu)
+        self.parametersTitleLabel.setObjectName(u"parametersTitleLabel")
+        self.parametersTitleLabel.setStyleSheet(u"font-weight: bold; border-bottom: 1px solid lightgray; padding-bottom: 5px;")
+        self.parametersTitleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.verticalLayout_Parameters.addWidget(self.parametersTitleLabel)
+
+        self.horizontalLayout_Trees = QHBoxLayout()
+        self.horizontalLayout_Trees.setObjectName(u"horizontalLayout_Trees")
+        self.treesLabel = QLabel(self.parametersMenu)
+        self.treesLabel.setObjectName(u"treesLabel")
+
+        self.horizontalLayout_Trees.addWidget(self.treesLabel)
+
+        self.treesSpinBox = QSpinBox(self.parametersMenu)
+        self.treesSpinBox.setObjectName(u"treesSpinBox")
+        self.treesSpinBox.setMinimum(1)
+        self.treesSpinBox.setMaximum(1000)
+        self.treesSpinBox.setValue(100)
+
+        self.horizontalLayout_Trees.addWidget(self.treesSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Trees)
+
+        self.horizontalLayout_BurnIn = QHBoxLayout()
+        self.horizontalLayout_BurnIn.setObjectName(u"horizontalLayout_BurnIn")
+        self.burnInLabel = QLabel(self.parametersMenu)
+        self.burnInLabel.setObjectName(u"burnInLabel")
+
+        self.horizontalLayout_BurnIn.addWidget(self.burnInLabel)
+
+        self.burnInSpinBox = QSpinBox(self.parametersMenu)
+        self.burnInSpinBox.setObjectName(u"burnInSpinBox")
+        self.burnInSpinBox.setMinimum(1)
+        self.burnInSpinBox.setMaximum(10000)
+        self.burnInSpinBox.setValue(1000)
+
+        self.horizontalLayout_BurnIn.addWidget(self.burnInSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_BurnIn)
+
+        self.horizontalLayout_Draws = QHBoxLayout()
+        self.horizontalLayout_Draws.setObjectName(u"horizontalLayout_Draws")
+        self.drawsLabel = QLabel(self.parametersMenu)
+        self.drawsLabel.setObjectName(u"drawsLabel")
+
+        self.horizontalLayout_Draws.addWidget(self.drawsLabel)
+
+        self.drawsSpinBox = QSpinBox(self.parametersMenu)
+        self.drawsSpinBox.setObjectName(u"drawsSpinBox")
+        self.drawsSpinBox.setMinimum(1)
+        self.drawsSpinBox.setMaximum(100000)
+        self.drawsSpinBox.setValue(5000)
+
+        self.horizontalLayout_Draws.addWidget(self.drawsSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Draws)
+
+        self.horizontalLayout_Thinning = QHBoxLayout()
+        self.horizontalLayout_Thinning.setObjectName(u"horizontalLayout_Thinning")
+        self.thinningLabel = QLabel(self.parametersMenu)
+        self.thinningLabel.setObjectName(u"thinningLabel")
+
+        self.horizontalLayout_Thinning.addWidget(self.thinningLabel)
+
+        self.thinningSpinBox = QSpinBox(self.parametersMenu)
+        self.thinningSpinBox.setObjectName(u"thinningSpinBox")
+        self.thinningSpinBox.setMinimum(1)
+        self.thinningSpinBox.setMaximum(100)
+        self.thinningSpinBox.setValue(1)
+
+        self.horizontalLayout_Thinning.addWidget(self.thinningSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Thinning)
+
+        self.horizontalLayout_PriorMean = QHBoxLayout()
+        self.horizontalLayout_PriorMean.setObjectName(u"horizontalLayout_PriorMean")
+        self.priorMeanLabel = QLabel(self.parametersMenu)
+        self.priorMeanLabel.setObjectName(u"priorMeanLabel")
+
+        self.horizontalLayout_PriorMean.addWidget(self.priorMeanLabel)
+
+        self.priorMeanSpinBox = QDoubleSpinBox(self.parametersMenu)
+        self.priorMeanSpinBox.setObjectName(u"priorMeanSpinBox")
+        self.priorMeanSpinBox.setMinimum(0.000000000000000)
+        self.priorMeanSpinBox.setMaximum(0.000000000000000)
+        self.priorMeanSpinBox.setValue(0.000000000000000)
+
+        self.horizontalLayout_PriorMean.addWidget(self.priorMeanSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_PriorMean)
+
+        self.horizontalLayout_PriorVariance = QHBoxLayout()
+        self.horizontalLayout_PriorVariance.setObjectName(u"horizontalLayout_PriorVariance")
+        self.priorVarianceLabel = QLabel(self.parametersMenu)
+        self.priorVarianceLabel.setObjectName(u"priorVarianceLabel")
+
+        self.horizontalLayout_PriorVariance.addWidget(self.priorVarianceLabel)
+
+        self.priorVarianceSpinBox = QDoubleSpinBox(self.parametersMenu)
+        self.priorVarianceSpinBox.setObjectName(u"priorVarianceSpinBox")
+        self.priorVarianceSpinBox.setMinimum(0.000000000000000)
+        self.priorVarianceSpinBox.setMaximum(0.000000000000000)
+        self.priorVarianceSpinBox.setValue(0.000000000000000)
+
+        self.horizontalLayout_PriorVariance.addWidget(self.priorVarianceSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_PriorVariance)
+
+        self.horizontalLayout_Alpha = QHBoxLayout()
+        self.horizontalLayout_Alpha.setObjectName(u"horizontalLayout_Alpha")
+        self.alphaLabel = QLabel(self.parametersMenu)
+        self.alphaLabel.setObjectName(u"alphaLabel")
+
+        self.horizontalLayout_Alpha.addWidget(self.alphaLabel)
+
+        self.alphaSpinBox = QDoubleSpinBox(self.parametersMenu)
+        self.alphaSpinBox.setObjectName(u"alphaSpinBox")
+        self.alphaSpinBox.setMinimum(0.000000000000000)
+        self.alphaSpinBox.setMaximum(0.000000000000000)
+        self.alphaSpinBox.setValue(0.000000000000000)
+
+        self.horizontalLayout_Alpha.addWidget(self.alphaSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Alpha)
+
+        self.horizontalLayout_Beta = QHBoxLayout()
+        self.horizontalLayout_Beta.setObjectName(u"horizontalLayout_Beta")
+        self.betaLabel = QLabel(self.parametersMenu)
+        self.betaLabel.setObjectName(u"betaLabel")
+
+        self.horizontalLayout_Beta.addWidget(self.betaLabel)
+
+        self.betaSpinBox = QSpinBox(self.parametersMenu)
+        self.betaSpinBox.setObjectName(u"betaSpinBox")
+        self.betaSpinBox.setMinimum(1)
+        self.betaSpinBox.setMaximum(10)
+        self.betaSpinBox.setValue(2)
+
+        self.horizontalLayout_Beta.addWidget(self.betaSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Beta)
+
+        self.horizontalLayout_Depth = QHBoxLayout()
+        self.horizontalLayout_Depth.setObjectName(u"horizontalLayout_Depth")
+        self.treeDepthLabel = QLabel(self.parametersMenu)
+        self.treeDepthLabel.setObjectName(u"treeDepthLabel")
+
+        self.horizontalLayout_Depth.addWidget(self.treeDepthLabel)
+
+        self.treeDepthSpinBox = QSpinBox(self.parametersMenu)
+        self.treeDepthSpinBox.setObjectName(u"treeDepthSpinBox")
+        self.treeDepthSpinBox.setMinimum(1)
+        self.treeDepthSpinBox.setMaximum(10)
+        self.treeDepthSpinBox.setValue(3)
+
+        self.horizontalLayout_Depth.addWidget(self.treeDepthSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Depth)
+
+        self.horizontalLayout_NodeSize = QHBoxLayout()
+        self.horizontalLayout_NodeSize.setObjectName(u"horizontalLayout_NodeSize")
+        self.nodeSizeLabel = QLabel(self.parametersMenu)
+        self.nodeSizeLabel.setObjectName(u"nodeSizeLabel")
+
+        self.horizontalLayout_NodeSize.addWidget(self.nodeSizeLabel)
+
+        self.nodeSizeSpinBox = QSpinBox(self.parametersMenu)
+        self.nodeSizeSpinBox.setObjectName(u"nodeSizeSpinBox")
+        self.nodeSizeSpinBox.setMinimum(1)
+        self.nodeSizeSpinBox.setMaximum(100)
+        self.nodeSizeSpinBox.setValue(5)
+
+        self.horizontalLayout_NodeSize.addWidget(self.nodeSizeSpinBox)
+
+
+        self.verticalLayout_Parameters.addLayout(self.horizontalLayout_NodeSize)
+
 
         self.horizontalLayout_6.addWidget(self.parametersMenu)
 
@@ -265,6 +458,17 @@ class Ui_TrainTab(object):
         self.trainingTimeValue.setText(QCoreApplication.translate("TrainTab", u"0 seconds", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Parameters", None))
         self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Browse\" tab", None))
+        self.parametersTitleLabel.setText(QCoreApplication.translate("TrainTab", u"Model Parameters", None))
+        self.treesLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Trees (M)", None))
+        self.burnInLabel.setText(QCoreApplication.translate("TrainTab", u"Burn-in Iterations", None))
+        self.drawsLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Draws", None))
+        self.thinningLabel.setText(QCoreApplication.translate("TrainTab", u"Thinning", None))
+        self.priorMeanLabel.setText(QCoreApplication.translate("TrainTab", u"Prior Mean of Leaf Parameters", None))
+        self.priorVarianceLabel.setText(QCoreApplication.translate("TrainTab", u"Prior Variance of Leaf Parameters", None))
+        self.alphaLabel.setText(QCoreApplication.translate("TrainTab", u"Alpha (\u03b1) for Tree Structure Prior", None))
+        self.betaLabel.setText(QCoreApplication.translate("TrainTab", u"Beta (\u03b2) for Tree Structure Prior", None))
+        self.treeDepthLabel.setText(QCoreApplication.translate("TrainTab", u"Tree Depth (D)", None))
+        self.nodeSizeLabel.setText(QCoreApplication.translate("TrainTab", u"Minimum Node Size", None))
         pass
     # retranslateUi
 
