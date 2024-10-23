@@ -277,6 +277,12 @@ class Arborist(QMainWindow):
         # Initially hide the treatment frame
         self.train_ui.treatmentFrame.setVisible(False)
 
+         # Initially hide the parameters menu
+        self.train_ui.parametersMenu.setVisible(False)
+
+        # Connect button to toggle parameters menu
+        self.train_ui.parametersPushButton.clicked.connect(self.toggle_parameters_menu)
+
         # No dataset label and analytics viewer
         self.no_dataset_label = self.train_ui.no_dataset_label
         self.analytics_viewer = self.train_ui.analytics_viewer
@@ -297,6 +303,11 @@ class Arborist(QMainWindow):
 
         # Outcome and treatment variable selection
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
+
+    def toggle_parameters_menu(self):
+        """Toggle the visibility of the parameters menu."""
+        is_visible = self.train_ui.parametersMenu.isVisible()
+        self.train_ui.parametersMenu.setVisible(not is_visible)
 
     def load_predict_tab_ui(self):
         """Load and set up the predict tab UI."""
