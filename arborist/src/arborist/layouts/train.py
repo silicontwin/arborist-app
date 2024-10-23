@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'analyze.ui'
+## Form generated from reading UI file 'train.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.0
 ##
@@ -19,15 +19,15 @@ from PySide6.QtWidgets import (QApplication, QComboBox, QFrame, QHBoxLayout,
     QHeaderView, QLabel, QPushButton, QSizePolicy,
     QTableView, QVBoxLayout, QWidget)
 
-class Ui_AnalyzeTab(object):
-    def setupUi(self, AnalyzeTab):
-        if not AnalyzeTab.objectName():
-            AnalyzeTab.setObjectName(u"AnalyzeTab")
-        AnalyzeTab.resize(1600, 900)
-        AnalyzeTab.setBaseSize(QSize(1600, 900))
-        self.verticalLayout = QVBoxLayout(AnalyzeTab)
+class Ui_TrainTab(object):
+    def setupUi(self, TrainTab):
+        if not TrainTab.objectName():
+            TrainTab.setObjectName(u"TrainTab")
+        TrainTab.resize(1600, 900)
+        TrainTab.setBaseSize(QSize(1600, 900))
+        self.verticalLayout = QVBoxLayout(TrainTab)
         self.verticalLayout.setObjectName(u"verticalLayout")
-        self.frame_2 = QFrame(AnalyzeTab)
+        self.frame_2 = QFrame(TrainTab)
         self.frame_2.setObjectName(u"frame_2")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
         sizePolicy.setHorizontalStretch(0)
@@ -43,7 +43,7 @@ class Ui_AnalyzeTab(object):
 
         self.verticalLayout.addWidget(self.frame_2)
 
-        self.frame_3 = QFrame(AnalyzeTab)
+        self.frame_3 = QFrame(TrainTab)
         self.frame_3.setObjectName(u"frame_3")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
@@ -207,19 +207,19 @@ class Ui_AnalyzeTab(object):
 
         self.verticalLayout.addWidget(self.frame_3)
 
-        self.no_dataset_label = QLabel(AnalyzeTab)
+        self.no_dataset_label = QLabel(TrainTab)
         self.no_dataset_label.setObjectName(u"no_dataset_label")
         self.no_dataset_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout.addWidget(self.no_dataset_label)
 
-        self.analytics_viewer = QTableView(AnalyzeTab)
+        self.analytics_viewer = QTableView(TrainTab)
         self.analytics_viewer.setObjectName(u"analytics_viewer")
         self.analytics_viewer.setSortingEnabled(True)
 
         self.verticalLayout.addWidget(self.analytics_viewer)
 
-        self.toolbar = QWidget(AnalyzeTab)
+        self.toolbar = QWidget(TrainTab)
         self.toolbar.setObjectName(u"toolbar")
         self.toolbar_layout = QHBoxLayout(self.toolbar)
         self.toolbar_layout.setObjectName(u"toolbar_layout")
@@ -227,24 +227,24 @@ class Ui_AnalyzeTab(object):
         self.verticalLayout.addWidget(self.toolbar)
 
 
-        self.retranslateUi(AnalyzeTab)
+        self.retranslateUi(TrainTab)
 
-        QMetaObject.connectSlotsByName(AnalyzeTab)
+        QMetaObject.connectSlotsByName(TrainTab)
     # setupUi
 
-    def retranslateUi(self, AnalyzeTab):
-        self.modelLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Model:", None))
-        self.modelComboBox.setItemText(0, QCoreApplication.translate("AnalyzeTab", u"BART", None))
-        self.modelComboBox.setItemText(1, QCoreApplication.translate("AnalyzeTab", u"XBART", None))
-        self.modelComboBox.setItemText(2, QCoreApplication.translate("AnalyzeTab", u"BCF", None))
-        self.modelComboBox.setItemText(3, QCoreApplication.translate("AnalyzeTab", u"XBCF", None))
+    def retranslateUi(self, TrainTab):
+        self.modelLabel.setText(QCoreApplication.translate("TrainTab", u"Model:", None))
+        self.modelComboBox.setItemText(0, QCoreApplication.translate("TrainTab", u"BART", None))
+        self.modelComboBox.setItemText(1, QCoreApplication.translate("TrainTab", u"XBART", None))
+        self.modelComboBox.setItemText(2, QCoreApplication.translate("TrainTab", u"BCF", None))
+        self.modelComboBox.setItemText(3, QCoreApplication.translate("TrainTab", u"XBCF", None))
 
-        self.label.setText(QCoreApplication.translate("AnalyzeTab", u"Outcome Variable (y):", None))
-        self.treatmentLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Treatment Variable (Z):", None))
-        self.trainButton.setText(QCoreApplication.translate("AnalyzeTab", u"Train Model", None))
-        self.trainingTimeLabel.setText(QCoreApplication.translate("AnalyzeTab", u"Training time:", None))
-        self.trainingTimeValue.setText(QCoreApplication.translate("AnalyzeTab", u"0 seconds", None))
-        self.no_dataset_label.setText(QCoreApplication.translate("AnalyzeTab", u"Please select a dataset from the \"Browse\" tab", None))
+        self.label.setText(QCoreApplication.translate("TrainTab", u"Outcome Variable (y):", None))
+        self.treatmentLabel.setText(QCoreApplication.translate("TrainTab", u"Treatment Variable (Z):", None))
+        self.trainButton.setText(QCoreApplication.translate("TrainTab", u"Train Model", None))
+        self.trainingTimeLabel.setText(QCoreApplication.translate("TrainTab", u"Training time:", None))
+        self.trainingTimeValue.setText(QCoreApplication.translate("TrainTab", u"0 seconds", None))
+        self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Browse\" tab", None))
         pass
     # retranslateUi
 
