@@ -32,6 +32,8 @@ from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
 import multiprocessing
 import queue
+import tempfile
+import platform
 
 CHUNK_SIZE = 10000  # Number of rows to load per chunk
 
@@ -159,12 +161,13 @@ class DatasetFileFilterProxyModel(QSortFilterProxyModel):
         return ext.lower() in self.dataset_extensions
 
 
-def training_process_func(current_file_path, outcome_var, result_queue):
+def training_process_func(current_file_path, outcome_var, temp_result_file_path):
+    """Function to run the training process in a separate process."""
     try:
         # Read the first row to get headers
         first_chunk = pd.read_csv(current_file_path, nrows=0)
         all_columns = first_chunk.columns.tolist()
-        
+
         # Define the columns to read (all columns to maintain original order)
         columns_to_read = all_columns
 
@@ -181,7 +184,7 @@ def training_process_func(current_file_path, outcome_var, result_queue):
         categorical_columns = df.select_dtypes(include=['object', 'category']).columns
         if len(categorical_columns) > 0:
             ohe = OneHotEncoder(sparse_output=False, drop='first')
-            ohe_df = pd.DataFrame(ohe.fit_transform(df[categorical_columns]), 
+            ohe_df = pd.DataFrame(ohe.fit_transform(df[categorical_columns]),
                                   columns=ohe.get_feature_names_out(categorical_columns))
             df = pd.concat([df.drop(categorical_columns, axis=1), ohe_df], axis=1)
 
@@ -192,7 +195,9 @@ def training_process_func(current_file_path, outcome_var, result_queue):
 
         # Ensure that outcome variable is in the data
         if outcome_var not in df_cleaned.columns:
-            result_queue.put(('error', f"Outcome variable '{outcome_var}' not found in the data."))
+            # Save error message to the temp file
+            with open(temp_result_file_path, 'w') as f:
+                f.write(f"ERROR: Outcome variable '{outcome_var}' not found in the data.")
             return
 
         # Use all columns except the outcome variable as features
@@ -204,7 +209,9 @@ def training_process_func(current_file_path, outcome_var, result_queue):
 
         # Ensure that y is numeric
         if not np.issubdtype(y.dtype, np.number):
-            result_queue.put(('error', f"Outcome variable '{outcome_var}' is not numeric."))
+            # Save error message to the temp file
+            with open(temp_result_file_path, 'w') as f:
+                f.write(f"ERROR: Outcome variable '{outcome_var}' is not numeric.")
             return
 
         # Standardize the outcome variable
@@ -244,11 +251,17 @@ def training_process_func(current_file_path, outcome_var, result_queue):
         existing_cols = [col for col in df_cleaned.columns if col not in prediction_cols]
         df_cleaned = df_cleaned[prediction_cols + existing_cols]
 
-        # Put the result in the queue
-        result_queue.put(('result', (df_cleaned, observations_removed)))
+        # Save the result to a temporary file
+        df_cleaned.to_parquet(temp_result_file_path, index=False)
+
+        # Save the number of observations removed
+        with open(temp_result_file_path + '_meta.txt', 'w') as f:
+            f.write(str(observations_removed))
 
     except Exception as e:
-        result_queue.put(('error', str(e)))
+        # Save error message to the temp file
+        with open(temp_result_file_path, 'w') as f:
+            f.write(f"ERROR: {str(e)}")
 
 
 class Arborist(QMainWindow):
@@ -611,14 +624,28 @@ class Arborist(QMainWindow):
         # Disable the train button to prevent multiple clicks
         self.train_button.setEnabled(False)
 
-        # Create a multiprocessing.Queue to receive results
+        # Create a temporary file path for the results
+        self.temp_result_file = tempfile.NamedTemporaryFile(delete=False, suffix='.parquet')
+        self.temp_result_file_path = self.temp_result_file.name
+        self.temp_result_file.close()  # Close the file so the subprocess can write to it
+
+        # Create a multiprocessing.Queue to receive process status
         self.result_queue = multiprocessing.Queue()
 
         # Start the training process
-        self.training_process = multiprocessing.Process(
-            target=training_process_func,
-            args=(self.current_file_path, outcome_var, self.result_queue)
-        )
+        args = (self.current_file_path, outcome_var, self.temp_result_file_path)
+        if platform.system() == 'Windows':
+            # On Windows, protect the process creation
+            multiprocessing.freeze_support()
+            self.training_process = multiprocessing.Process(
+                target=training_process_func,
+                args=args
+            )
+        else:
+            self.training_process = multiprocessing.Process(
+                target=training_process_func,
+                args=args
+            )
         self.training_process.start()
 
         # Start the timer to check for results periodically
@@ -626,38 +653,61 @@ class Arborist(QMainWindow):
 
     def check_training_process(self):
         """Check if the training process has finished and handle the results."""
+        if self.training_process.is_alive():
+            return
+
+        self.timer.stop()
+        self.training_process.join()
+        self.training_process = None
+        self.train_button.setEnabled(True)
+
+        # Check if the temp result file contains an error
         try:
-            while True:
-                msg_type, data = self.result_queue.get_nowait()
-                if msg_type == 'result':
-                    df_cleaned, observations_removed = data
-                    self.on_training_result(df_cleaned, observations_removed)
-                elif msg_type == 'error':
-                    error_message = data
+            with open(self.temp_result_file_path, 'r') as f:
+                first_line = f.readline()
+                if first_line.startswith("ERROR:"):
+                    error_message = first_line[6:].strip()
                     self.on_training_error(error_message)
-        except queue.Empty:
+                    os.remove(self.temp_result_file_path)
+                    return
+        except UnicodeDecodeError:
+            # The file is binary (Parquet), proceed to load it
             pass
 
-        if not self.training_process.is_alive():
-            self.timer.stop()
-            self.training_process.join()
-            self.training_process = None
-            self.train_button.setEnabled(True)
+        # Load the result using lazy loading
+        try:
+            # Use pyarrow to read the Parquet file in chunks
+            dataset = ds.dataset(self.temp_result_file_path, format='parquet')
+            # Get the schema to extract headers
+            schema = dataset.schema
+            headers = schema.names
 
-    def on_training_result(self, df_cleaned, observations_removed):
-        """Handle the result from the training process."""
-        # Update the DataFrame with predictions
-        self.dataframe = df_cleaned
-        headers = df_cleaned.columns.tolist()
-        model = PandasTableModel(self.dataframe, headers)
-        self.analytics_viewer.setModel(model)
-        self.analytics_viewer.resizeColumnsToContents()
+            # Create an iterator over the data in chunks
+            scanner = dataset.scanner(batch_size=CHUNK_SIZE)
+            record_batches = scanner.to_batches()
+            chunk_iter = (rb.to_pandas() for rb in record_batches)
 
-        # Re-highlight the selected outcome variable column
-        self.highlight_selected_column()
+            # Initialize the model with the first chunk
+            first_chunk = next(chunk_iter)
+            model = PandasTableModel(itertools.chain([first_chunk], chunk_iter), headers)
+            self.analytics_viewer.setModel(model)
+            self.analytics_viewer.resizeColumnsToContents()
 
-        # Print the number of observations removed
-        print(f"Number of observations removed due to missing data: {observations_removed}")
+            # Re-highlight the selected outcome variable column
+            self.highlight_selected_column()
+
+            # Read observations_removed from metadata file
+            meta_file_path = self.temp_result_file_path + '_meta.txt'
+            with open(meta_file_path, 'r') as f:
+                observations_removed = int(f.read())
+            print(f"Number of observations removed due to missing data: {observations_removed}")
+
+            # Clean up temporary files
+            os.remove(self.temp_result_file_path)
+            os.remove(meta_file_path)
+
+        except Exception as e:
+            self.on_training_error(str(e))
 
     def on_training_error(self, error_message):
         """Handle errors from the training process."""
@@ -668,6 +718,7 @@ class Arborist(QMainWindow):
 
 # Main function to start the application
 def main():
+    multiprocessing.freeze_support()  # Needed for Windows support
     app = QApplication(sys.argv)
     main_window = Arborist()
     main_window.show()
