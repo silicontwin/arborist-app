@@ -27,7 +27,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
 from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
-from arborist.layouts.analyze import Ui_AnalyzeTab
+from arborist.layouts.train import Ui_TrainTab
 from stochtree import BCFModel, BARTModel
 
 CHUNK_SIZE = 10000  # Number of rows to load per chunk
@@ -178,13 +178,13 @@ class Arborist(QMainWindow):
         # Create a tab widget for switching between the file browser and dataset viewer
         self.tabs = QTabWidget()
 
-        # Load the UI for both tabs (Browse and Analyze)
+        # Load the UI for both tabs (Browse and Train)
         self.load_browse_tab_ui()
-        self.load_analyze_tab_ui()
+        self.load_train_tab_ui()
 
         # Add the tabs to the main layout
         self.tabs.addTab(self.browse_tab, "Browse")
-        self.tabs.addTab(self.analyze_tab, "Analyze")
+        self.tabs.addTab(self.train_tab, "Train")
 
         # Set the central widget for the main window
         self.setCentralWidget(self.tabs)
@@ -193,19 +193,19 @@ class Arborist(QMainWindow):
         self.tabs.currentChanged.connect(self.check_model_frame_visibility)
 
         # Connect signal for model selection change
-        self.analyze_ui.modelComboBox.currentIndexChanged.connect(self.check_model_frame_visibility)
+        self.train_ui.modelComboBox.currentIndexChanged.connect(self.check_model_frame_visibility)
 
     def check_model_frame_visibility(self):
         """Show or hide the treatmentFrame based on the selected tab and model."""
-        # Check if the current tab is "Analyze"
-        is_analyze_tab = self.tabs.currentIndex() == 1
+        # Check if the current tab is "Train"
+        is_train_tab = self.tabs.currentIndex() == 1
 
         # Check if the selected model is BCF or XBCF
-        selected_model = self.analyze_ui.modelComboBox.currentText()
+        selected_model = self.train_ui.modelComboBox.currentText()
         is_bcf_xbcf_model = selected_model in ["BCF", "XBCF"]
 
         # Show or hide the treatment frame
-        self.analyze_ui.treatmentFrame.setVisible(is_analyze_tab and is_bcf_xbcf_model)
+        self.train_ui.treatmentFrame.setVisible(is_train_tab and is_bcf_xbcf_model)
 
     def load_browse_tab_ui(self):
         """Load and set up the browse tab UI (for the file browser)."""
@@ -246,8 +246,8 @@ class Arborist(QMainWindow):
         # Set splitter sizes to 600 for the file browser, 1000 for the file viewer
         self.browse_ui.splitter.setSizes([600, 1000])
 
-        # "Analyze Dataset" button setup
-        self.open_button = self.browse_ui.analyze_button
+        # "Train Dataset" button setup
+        self.open_button = self.browse_ui.openDatasetButton
         self.open_button.setVisible(False)  # Initially hidden until a dataset is selected
         self.open_button.clicked.connect(self.open_in_analytics_view)
 
@@ -265,27 +265,27 @@ class Arborist(QMainWindow):
         self.back_button.setEnabled(False)
         self.forward_button.setEnabled(False)
 
-    def load_analyze_tab_ui(self):
-        """Load and set up the analyze tab UI (for the dataset analysis)."""
-        self.analyze_tab = QWidget()
-        self.analyze_ui = Ui_AnalyzeTab()
-        self.analyze_ui.setupUi(self.analyze_tab)
+    def load_train_tab_ui(self):
+        """Load and set up the train tab UI (for the dataset analysis)."""
+        self.train_tab = QWidget()
+        self.train_ui = Ui_TrainTab()
+        self.train_ui.setupUi(self.train_tab)
 
         # Initially hide the treatment frame
-        self.analyze_ui.treatmentFrame.setVisible(False)
+        self.train_ui.treatmentFrame.setVisible(False)
 
         # No dataset label and analytics viewer
-        self.no_dataset_label = self.analyze_ui.no_dataset_label
-        self.analytics_viewer = self.analyze_ui.analytics_viewer
+        self.no_dataset_label = self.train_ui.no_dataset_label
+        self.analytics_viewer = self.train_ui.analytics_viewer
 
         # Outcome variable dropdown
-        self.outcome_combo = self.analyze_ui.outcomeComboBox
+        self.outcome_combo = self.train_ui.outcomeComboBox
 
         # Treatment variable dropdown
-        self.treatment_combo = self.analyze_ui.treatmentComboBox
+        self.treatment_combo = self.train_ui.treatmentComboBox
 
         # Train Model button
-        self.train_button = self.analyze_ui.trainButton
+        self.train_button = self.train_ui.trainButton
         self.train_button.clicked.connect(self.train_model)
 
         # Initially, show only the "No dataset" label, not the dataset viewer
