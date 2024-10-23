@@ -56,11 +56,11 @@ class Ui_BrowseTab(object):
 
         self.verticalLayout.addWidget(self.splitter)
 
-        self.analyze_button = QPushButton(BrowseTab)
-        self.analyze_button.setObjectName(u"analyze_button")
-        self.analyze_button.setVisible(False)
+        self.openDatasetButton = QPushButton(BrowseTab)
+        self.openDatasetButton.setObjectName(u"openDatasetButton")
+        self.openDatasetButton.setVisible(False)
 
-        self.verticalLayout.addWidget(self.analyze_button)
+        self.verticalLayout.addWidget(self.openDatasetButton)
 
 
         self.retranslateUi(BrowseTab)
@@ -71,7 +71,7 @@ class Ui_BrowseTab(object):
     def retranslateUi(self, BrowseTab):
         self.back_button.setText(QCoreApplication.translate("BrowseTab", u"Back", None))
         self.forward_button.setText(QCoreApplication.translate("BrowseTab", u"Forward", None))
-        self.analyze_button.setText(QCoreApplication.translate("BrowseTab", u"Analyze Dataset", None))
+        self.openDatasetButton.setText(QCoreApplication.translate("BrowseTab", u"Open Dataset", None))
         pass
     # retranslateUi
 

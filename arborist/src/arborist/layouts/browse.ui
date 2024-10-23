@@ -48,9 +48,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QPushButton" name="analyze_button">
+    <widget class="QPushButton" name="openDatasetButton">
      <property name="text">
-      <string>Analyze Dataset</string>
+      <string>Open Dataset</string>
      </property>
      <property name="visible">
       <bool>false</bool>
