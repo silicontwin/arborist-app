@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>PredictTab</class>
+ <widget class="QWidget" name="PredictTab">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>800</width>
+    <height>600</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Predict</string>
+  </property>
+  <!-- Add your other UI elements here -->
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
