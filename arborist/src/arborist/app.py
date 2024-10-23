@@ -24,12 +24,14 @@ from PySide6.QtWidgets import (
     QHeaderView,
     QComboBox,
 )
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, QObject, Signal, QTimer
 from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.train import Ui_TrainTab
 from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
+import multiprocessing
+import queue
 
 CHUNK_SIZE = 10000  # Number of rows to load per chunk
 
@@ -157,6 +159,98 @@ class DatasetFileFilterProxyModel(QSortFilterProxyModel):
         return ext.lower() in self.dataset_extensions
 
 
+def training_process_func(current_file_path, outcome_var, result_queue):
+    try:
+        # Read the first row to get headers
+        first_chunk = pd.read_csv(current_file_path, nrows=0)
+        all_columns = first_chunk.columns.tolist()
+        
+        # Define the columns to read (all columns to maintain original order)
+        columns_to_read = all_columns
+
+        # Use pyarrow to read all columns
+        dataset = ds.dataset(current_file_path, format='csv')
+
+        # Read the columns into a pyarrow table
+        table = dataset.to_table(columns=columns_to_read)
+
+        # Convert to pandas DataFrame
+        df = table.to_pandas()
+
+        # One-hot encode non-numeric columns
+        categorical_columns = df.select_dtypes(include=['object', 'category']).columns
+        if len(categorical_columns) > 0:
+            ohe = OneHotEncoder(sparse_output=False, drop='first')
+            ohe_df = pd.DataFrame(ohe.fit_transform(df[categorical_columns]), 
+                                  columns=ohe.get_feature_names_out(categorical_columns))
+            df = pd.concat([df.drop(categorical_columns, axis=1), ohe_df], axis=1)
+
+        # Proceed with data cleaning and model training
+        df_cleaned = df.dropna()
+        initial_row_count = len(df)
+        observations_removed = initial_row_count - len(df_cleaned)
+
+        # Ensure that outcome variable is in the data
+        if outcome_var not in df_cleaned.columns:
+            result_queue.put(('error', f"Outcome variable '{outcome_var}' not found in the data."))
+            return
+
+        # Use all columns except the outcome variable as features
+        feature_columns = [col for col in df_cleaned.columns if col != outcome_var]
+
+        # Select features and outcome
+        X = df_cleaned[feature_columns].to_numpy()
+        y = df_cleaned[outcome_var].to_numpy()
+
+        # Ensure that y is numeric
+        if not np.issubdtype(y.dtype, np.number):
+            result_queue.put(('error', f"Outcome variable '{outcome_var}' is not numeric."))
+            return
+
+        # Standardize the outcome variable
+        y_mean = np.mean(y)
+        y_std = np.std(y)
+        y_standardized = (y - y_mean) / y_std
+
+        # Train the BART model
+        bart_model = BARTModel()
+
+        # Sample from the posterior
+        bart_model.sample(
+            X_train=X,
+            y_train=y_standardized,
+            X_test=X,
+            num_gfr=0,
+            num_burnin=100,
+            num_mcmc=100
+        )
+
+        # Get predictions
+        y_pred_samples = bart_model.predict(covariates=X)
+        y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
+
+        # Compute posterior summaries over the samples (axis=1)
+        posterior_mean = np.mean(y_pred_samples, axis=1)
+        percentile_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
+        percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
+
+        # Add predictions to the DataFrame
+        df_cleaned['Posterior Average ŷ'] = posterior_mean
+        df_cleaned['2.5th percentile ŷ'] = percentile_2_5
+        df_cleaned['97.5th percentile ŷ'] = percentile_97_5
+
+        # Reorder the columns to show predictions first
+        prediction_cols = ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']
+        existing_cols = [col for col in df_cleaned.columns if col not in prediction_cols]
+        df_cleaned = df_cleaned[prediction_cols + existing_cols]
+
+        # Put the result in the queue
+        result_queue.put(('result', (df_cleaned, observations_removed)))
+
+    except Exception as e:
+        result_queue.put(('error', str(e)))
+
+
 class Arborist(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -197,6 +291,12 @@ class Arborist(QMainWindow):
 
         # Connect signal for model selection change
         self.train_ui.modelComboBox.currentIndexChanged.connect(self.check_model_frame_visibility)
+
+        # Initialize a timer to check for training process results
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.check_training_process)
+        self.training_process = None
+        self.result_queue = None
 
     def check_model_frame_visibility(self):
         """Show or hide the treatmentFrame based on the selected tab and model."""
@@ -277,7 +377,7 @@ class Arborist(QMainWindow):
         # Initially hide the treatment frame
         self.train_ui.treatmentFrame.setVisible(False)
 
-         # Initially hide the parameters menu
+        # Initially hide the parameters menu
         self.train_ui.parametersMenu.setVisible(False)
 
         # Connect button to toggle parameters menu
@@ -497,7 +597,7 @@ class Arborist(QMainWindow):
         self.tabs.setCurrentIndex(1)
 
     def train_model(self):
-        """Train the model using the stochtree library and update the dataset."""
+        """Start the training process in a separate process."""
         if not hasattr(self, 'current_file_path'):
             print("No dataset loaded.")
             return
@@ -508,105 +608,62 @@ class Arborist(QMainWindow):
             print("Please select an outcome variable.")
             return
 
+        # Disable the train button to prevent multiple clicks
+        self.train_button.setEnabled(False)
+
+        # Create a multiprocessing.Queue to receive results
+        self.result_queue = multiprocessing.Queue()
+
+        # Start the training process
+        self.training_process = multiprocessing.Process(
+            target=training_process_func,
+            args=(self.current_file_path, outcome_var, self.result_queue)
+        )
+        self.training_process.start()
+
+        # Start the timer to check for results periodically
+        self.timer.start(100)  # Check every 100 milliseconds
+
+    def check_training_process(self):
+        """Check if the training process has finished and handle the results."""
         try:
-            # Read the first row to get headers
-            first_chunk = pd.read_csv(self.current_file_path, nrows=0)
-            all_columns = first_chunk.columns.tolist()
-            
-            # Define the columns to read (all columns to maintain original order)
-            columns_to_read = all_columns
+            while True:
+                msg_type, data = self.result_queue.get_nowait()
+                if msg_type == 'result':
+                    df_cleaned, observations_removed = data
+                    self.on_training_result(df_cleaned, observations_removed)
+                elif msg_type == 'error':
+                    error_message = data
+                    self.on_training_error(error_message)
+        except queue.Empty:
+            pass
 
-            # Use pyarrow to read all columns
-            dataset = ds.dataset(self.current_file_path, format='csv')
+        if not self.training_process.is_alive():
+            self.timer.stop()
+            self.training_process.join()
+            self.training_process = None
+            self.train_button.setEnabled(True)
 
-            # Read the columns into a pyarrow table
-            table = dataset.to_table(columns=columns_to_read)
+    def on_training_result(self, df_cleaned, observations_removed):
+        """Handle the result from the training process."""
+        # Update the DataFrame with predictions
+        self.dataframe = df_cleaned
+        headers = df_cleaned.columns.tolist()
+        model = PandasTableModel(self.dataframe, headers)
+        self.analytics_viewer.setModel(model)
+        self.analytics_viewer.resizeColumnsToContents()
 
-            # Convert to pandas DataFrame
-            df = table.to_pandas()
+        # Re-highlight the selected outcome variable column
+        self.highlight_selected_column()
 
-            # One-hot encode non-numeric columns
-            categorical_columns = df.select_dtypes(include=['object', 'category']).columns
-            if len(categorical_columns) > 0:
-                ohe = OneHotEncoder(sparse_output=False, drop='first')
-                ohe_df = pd.DataFrame(ohe.fit_transform(df[categorical_columns]), 
-                                      columns=ohe.get_feature_names_out(categorical_columns))
-                df = pd.concat([df.drop(categorical_columns, axis=1), ohe_df], axis=1)
+        # Print the number of observations removed
+        print(f"Number of observations removed due to missing data: {observations_removed}")
 
-            # Proceed with data cleaning and model training
-            df_cleaned = df.dropna()
-            initial_row_count = len(df)
-            observations_removed = initial_row_count - len(df_cleaned)
-
-            # Ensure that outcome variable is in the data
-            if outcome_var not in df_cleaned.columns:
-                print(f"Outcome variable '{outcome_var}' not found in the data.")
-                return
-
-            # Use all columns except the outcome variable as features
-            feature_columns = [col for col in df_cleaned.columns if col != outcome_var]
-
-            # Select features and outcome
-            X = df_cleaned[feature_columns].to_numpy()
-            y = df_cleaned[outcome_var].to_numpy()
-
-            # Ensure that y is numeric
-            if not np.issubdtype(y.dtype, np.number):
-                print(f"Outcome variable '{outcome_var}' is not numeric.")
-                return
-
-            # Standardize the outcome variable
-            y_mean = np.mean(y)
-            y_std = np.std(y)
-            y_standardized = (y - y_mean) / y_std
-
-            # Train the BART model
-            bart_model = BARTModel()
-
-            # Sample from the posterior
-            bart_model.sample(
-                X_train=X,
-                y_train=y_standardized,
-                X_test=X,
-                num_gfr=0,
-                num_burnin=100,
-                num_mcmc=100
-            )
-
-            # Get predictions
-            y_pred_samples = bart_model.predict(covariates=X)
-            y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
-
-            # Compute posterior summaries over the samples (axis=1)
-            posterior_mean = np.mean(y_pred_samples, axis=1)
-            percentile_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
-            percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
-
-            # Add predictions to the DataFrame
-            df_cleaned['Posterior Average ŷ'] = posterior_mean
-            df_cleaned['2.5th percentile ŷ'] = percentile_2_5
-            df_cleaned['97.5th percentile ŷ'] = percentile_97_5
-
-            # Reorder the columns to show predictions first
-            prediction_cols = ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']
-            existing_cols = [col for col in df_cleaned.columns if col not in prediction_cols]
-            df_cleaned = df_cleaned[prediction_cols + existing_cols]
-
-            # Update the model and the view
-            headers = df_cleaned.columns.tolist()
-            self.dataframe = df_cleaned  # Update the dataframe with predictions
-            model = PandasTableModel(self.dataframe, headers)
-            self.analytics_viewer.setModel(model)
-            self.analytics_viewer.resizeColumnsToContents()
-
-            # Re-highlight the selected outcome variable column
-            self.highlight_selected_column()
-
-            # Print the number of observations removed
-            print(f"Number of observations removed due to missing data: {observations_removed}")
-
-        except Exception as e:
-            print(f"Error during model training: {e}")
+    def on_training_error(self, error_message):
+        """Handle errors from the training process."""
+        print(f"Error during model training: {error_message}")
+        # Re-enable the train button
+        self.train_button.setEnabled(True)
 
 
 # Main function to start the application
