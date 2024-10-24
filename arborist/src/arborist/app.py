@@ -11,11 +11,30 @@ import pyarrow.dataset as ds
 import pyarrow as pa
 from sklearn.preprocessing import OneHotEncoder
 from PySide6.QtWidgets import (
-    QApplication, QMainWindow, QTreeView, QTableView, QFileSystemModel,
-    QLabel, QPushButton, QTabWidget, QWidget, QSplitter, QHeaderView,
-    QComboBox, QProgressDialog, QMessageBox
+    QApplication,
+    QMainWindow,
+    QTreeView,
+    QTableView,
+    QFileSystemModel,
+    QLabel,
+    QPushButton,
+    QTabWidget,
+    QWidget,
+    QSplitter,
+    QHeaderView,
+    QComboBox,
+    QProgressDialog,
+    QMessageBox,
 )
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, QThread, Signal, Slot
+from PySide6.QtCore import (
+    Qt,
+    QAbstractTableModel,
+    QModelIndex,
+    QSortFilterProxyModel,
+    QThread,
+    Signal,
+    Slot,
+)
 from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.train import Ui_TrainTab
@@ -24,6 +43,7 @@ from stochtree import BCFModel, BARTModel
 import time
 
 CHUNK_SIZE = 1000  # Number of rows to load per chunk
+
 
 # Lazy loading for handling large datasets in chunks with sorting enabled
 class PandasTableModel(QAbstractTableModel):
@@ -58,7 +78,7 @@ class PandasTableModel(QAbstractTableModel):
             # Return data from the loaded dataset
             value = self._data.iloc[index.row(), index.column()]
             if pd.isnull(value):
-                return ''
+                return ""
             return str(value)
 
         # Highlight the selected outcome variable column and prediction columns
@@ -66,7 +86,11 @@ class PandasTableModel(QAbstractTableModel):
             column_name = self.headers[index.column()]
             if self.selected_column_name == column_name:
                 return QColor("#FFFFCB")  # Light yellow
-            elif column_name in ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']:
+            elif column_name in [
+                "Posterior Average ŷ",
+                "2.5th percentile ŷ",
+                "97.5th percentile ŷ",
+            ]:
                 return QColor("#CCCCFF")  # Light blue
 
         return None
@@ -88,29 +112,37 @@ class PandasTableModel(QAbstractTableModel):
         try:
             chunk = next(self.chunk_iter)
             old_row_count = self.rowCount()
-            self.beginInsertRows(QModelIndex(), old_row_count, old_row_count + len(chunk) - 1)
-            
+            self.beginInsertRows(
+                QModelIndex(), old_row_count, old_row_count + len(chunk) - 1
+            )
+
             if self.predictions is not None:
                 start_idx = self.chunks_loaded * CHUNK_SIZE
                 end_idx = start_idx + len(chunk)
-                
+
                 # Create a new DataFrame with predictions and original data
                 prediction_data = {
-                    'Posterior Average ŷ': self.predictions['Posterior Mean'][start_idx:end_idx],
-                    '2.5th percentile ŷ': self.predictions['2.5th Percentile'][start_idx:end_idx],
-                    '97.5th percentile ŷ': self.predictions['97.5th Percentile'][start_idx:end_idx]
+                    "Posterior Average ŷ": self.predictions["Posterior Mean"][
+                        start_idx:end_idx
+                    ],
+                    "2.5th percentile ŷ": self.predictions["2.5th Percentile"][
+                        start_idx:end_idx
+                    ],
+                    "97.5th percentile ŷ": self.predictions["97.5th Percentile"][
+                        start_idx:end_idx
+                    ],
                 }
-                
+
                 # Combine predictions with chunk data
-                combined_chunk = pd.concat([
-                    pd.DataFrame(prediction_data),
-                    chunk.reset_index(drop=True)
-                ], axis=1)
-                
+                combined_chunk = pd.concat(
+                    [pd.DataFrame(prediction_data), chunk.reset_index(drop=True)],
+                    axis=1,
+                )
+
                 self._data = pd.concat([self._data, combined_chunk], ignore_index=True)
             else:
                 self._data = pd.concat([self._data, chunk], ignore_index=True)
-            
+
             self.chunks_loaded += 1
             self.endInsertRows()
 
@@ -172,13 +204,14 @@ class DatasetFileFilterProxyModel(QSortFilterProxyModel):
         _, ext = os.path.splitext(file_name)
         return ext.lower() in self.dataset_extensions
 
+
 class ModelTrainingWorker(QThread):
     """Worker thread for model training to prevent UI freezing."""
-    
+
     progress = Signal(int)
     finished = Signal(dict, float)
     error = Signal(str)
-    
+
     def __init__(self, trainer, model_params):
         super().__init__()
         self.trainer = trainer
@@ -189,27 +222,27 @@ class ModelTrainingWorker(QThread):
         """Main method that runs in the separate thread."""
         try:
             start_time = time.time()
-            
+
             self.progress.emit(10)
             print("Loading data...")
             self.trainer.load_data()
-            
+
             self.progress.emit(30)
             print("Preparing features...")
             self.trainer.prepare_features()
-            
+
             self.progress.emit(40)
             print("Training model...")
             self.trainer.train_model(**self.model_params)
-            
+
             self.progress.emit(80)
             print("Generating predictions...")
             predictions = self.trainer.predict()
-            
+
             self.progress.emit(100)
             training_time = time.time() - start_time
             self.finished.emit(predictions, training_time)
-            
+
         except Exception as e:
             self.error.emit(str(e))
 
@@ -217,10 +250,11 @@ class ModelTrainingWorker(QThread):
         """Stop the training process."""
         self._is_running = False
 
+
 # Shared class for model training and preprocessing
 class ModelTrainer:
     """ModelTrainer class with error handling and progress tracking."""
-    
+
     def __init__(self, file_path: str, outcome_var: str, treatment_var: str = None):
         self.file_path = file_path
         self.outcome_var = outcome_var
@@ -255,12 +289,18 @@ class ModelTrainer:
         original_row_count = len(self.data)
 
         # One-hot encode non-numeric columns
-        categorical_columns = self.data.select_dtypes(include=['object', 'category']).columns
+        categorical_columns = self.data.select_dtypes(
+            include=["object", "category"]
+        ).columns
         if len(categorical_columns) > 0:
-            ohe = OneHotEncoder(sparse_output=False, drop='first')
-            ohe_df = pd.DataFrame(ohe.fit_transform(self.data[categorical_columns]),
-                                columns=ohe.get_feature_names_out(categorical_columns))
-            self.data = pd.concat([self.data.drop(categorical_columns, axis=1), ohe_df], axis=1)
+            ohe = OneHotEncoder(sparse_output=False, drop="first")
+            ohe_df = pd.DataFrame(
+                ohe.fit_transform(self.data[categorical_columns]),
+                columns=ohe.get_feature_names_out(categorical_columns),
+            )
+            self.data = pd.concat(
+                [self.data.drop(categorical_columns, axis=1), ohe_df], axis=1
+            )
 
         # Drop missing values
         self.data_cleaned = self.data.dropna()
@@ -269,8 +309,10 @@ class ModelTrainer:
     def prepare_features(self):
         """Prepare features (X) and outcome (y) for model training."""
         if self.outcome_var not in self.data_cleaned.columns:
-            raise ValueError(f"Outcome variable '{self.outcome_var}' not found in the data.")
-        
+            raise ValueError(
+                f"Outcome variable '{self.outcome_var}' not found in the data."
+            )
+
         # Features (all columns except outcome variable)
         self.X = self.data_cleaned.drop(columns=[self.outcome_var]).to_numpy()
         self.y = self.data_cleaned[self.outcome_var].to_numpy()
@@ -280,7 +322,14 @@ class ModelTrainer:
         self.y_std = np.std(self.y)
         self.y_standardized = (self.y - self.y_mean) / self.y_std
 
-    def train_model(self, model_name: str, num_trees: int, burn_in: int, num_draws: int, thinning: int):
+    def train_model(
+        self,
+        model_name: str,
+        num_trees: int,
+        burn_in: int,
+        num_draws: int,
+        thinning: int,
+    ):
         """Train the model based on the selected type."""
         try:
             if model_name == "BART":
@@ -302,17 +351,22 @@ class ModelTrainer:
     def predict(self):
         """Generate predictions and convert them back to the original scale."""
         self.y_pred_samples = self.model.predict(covariates=self.X)
-        self.y_pred_samples = self.y_pred_samples * self.y_std + self.y_mean  # Convert back to original scale
-        
+        self.y_pred_samples = (
+            self.y_pred_samples * self.y_std + self.y_mean
+        )  # Convert back to original scale
+
         # Verify prediction length matches data length
         if len(self.y_pred_samples) != len(self.data_cleaned):
-            raise ValueError(f"Prediction length ({len(self.y_pred_samples)}) doesn't match data length ({len(self.data_cleaned)})")
-        
+            raise ValueError(
+                f"Prediction length ({len(self.y_pred_samples)}) doesn't match data length ({len(self.data_cleaned)})"
+            )
+
         return {
-            'Posterior Mean': np.mean(self.y_pred_samples, axis=1),
-            '2.5th Percentile': np.percentile(self.y_pred_samples, 2.5, axis=1),
-            '97.5th Percentile': np.percentile(self.y_pred_samples, 97.5, axis=1),
+            "Posterior Mean": np.mean(self.y_pred_samples, axis=1),
+            "2.5th Percentile": np.percentile(self.y_pred_samples, 2.5, axis=1),
+            "97.5th Percentile": np.percentile(self.y_pred_samples, 97.5, axis=1),
         }
+
 
 class Arborist(QMainWindow):
     def __init__(self):
@@ -358,16 +412,24 @@ class Arborist(QMainWindow):
         self.tabs.currentChanged.connect(self.check_model_frame_visibility)
 
         # Connect signal for model selection change
-        self.train_ui.modelComboBox.currentIndexChanged.connect(self.check_model_frame_visibility)
+        self.train_ui.modelComboBox.currentIndexChanged.connect(
+            self.check_model_frame_visibility
+        )
 
         # Update the code generation text whenever a UI element changes
-        self.train_ui.modelComboBox.currentIndexChanged.connect(self.update_code_gen_text)
+        self.train_ui.modelComboBox.currentIndexChanged.connect(
+            self.update_code_gen_text
+        )
         self.train_ui.treesSpinBox.valueChanged.connect(self.update_code_gen_text)
         self.train_ui.burnInSpinBox.valueChanged.connect(self.update_code_gen_text)
         self.train_ui.drawsSpinBox.valueChanged.connect(self.update_code_gen_text)
         self.train_ui.thinningSpinBox.valueChanged.connect(self.update_code_gen_text)
-        self.train_ui.outcomeComboBox.currentIndexChanged.connect(self.update_code_gen_text)
-        self.train_ui.treatmentComboBox.currentIndexChanged.connect(self.update_code_gen_text)
+        self.train_ui.outcomeComboBox.currentIndexChanged.connect(
+            self.update_code_gen_text
+        )
+        self.train_ui.treatmentComboBox.currentIndexChanged.connect(
+            self.update_code_gen_text
+        )
 
     def check_model_frame_visibility(self):
         """Show or hide the treatmentFrame based on the selected tab and model."""
@@ -407,7 +469,9 @@ class Arborist(QMainWindow):
         source_index = self.file_model.index(desktop_path)
         self.current_root_index = self.proxy_model.mapFromSource(source_index)
         self.tree.setRootIndex(self.current_root_index)
-        self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)  # Auto-adjust column width
+        self.tree.header().setSectionResizeMode(
+            QHeaderView.ResizeToContents
+        )  # Auto-adjust column width
         self.tree.header().setMinimumSectionSize(100)
 
         # Double click to open the file or enter directory
@@ -422,7 +486,9 @@ class Arborist(QMainWindow):
 
         # "Train Dataset" button setup
         self.open_button = self.browse_ui.openDatasetButton
-        self.open_button.setVisible(False)  # Initially hidden until a dataset is selected
+        self.open_button.setVisible(
+            False
+        )  # Initially hidden until a dataset is selected
         self.open_button.clicked.connect(self.open_in_analytics_view)
 
         # Back and Forward buttons
@@ -484,11 +550,15 @@ class Arborist(QMainWindow):
     def generate_code(self):
         """Generate Python code to reproduce the analysis based on the current UI settings."""
         # Ensure a dataset is loaded
-        if not hasattr(self, 'current_file_path'):
+        if not hasattr(self, "current_file_path"):
             return "No dataset loaded."
 
         outcome_var = self.train_ui.outcomeComboBox.currentText()
-        treatment_var = self.train_ui.treatmentComboBox.currentText() if self.train_ui.treatmentFrame.isVisible() else None
+        treatment_var = (
+            self.train_ui.treatmentComboBox.currentText()
+            if self.train_ui.treatmentFrame.isVisible()
+            else None
+        )
         model_name = self.train_ui.modelComboBox.currentText()
 
         # Retrieve model parameters from the UI
@@ -610,17 +680,21 @@ class Arborist(QMainWindow):
         elif file_path.endswith((".csv", ".sav", ".dta")):
             # Open the file
             self.load_csv_file(file_path, self.file_viewer)
-            self.open_button.setVisible(True)  # Show the 'Open' button after a dataset is loaded
+            self.open_button.setVisible(
+                True
+            )  # Show the 'Open' button after a dataset is loaded
         else:
             self.file_viewer.setModel(None)  # Clear the table if non-dataset file
-            self.open_button.setVisible(False)  # Hide the 'Open' button if no dataset is loaded
+            self.open_button.setVisible(
+                False
+            )  # Hide the 'Open' button if no dataset is loaded
 
     def navigate_to_directory(self, directory_path):
         """Navigate to the directory represented by the given path."""
         # Update navigation history
         if self.history_index < len(self.history) - 1:
             # If we have moved back in history and then navigate to a new directory
-            self.history = self.history[:self.history_index + 1]
+            self.history = self.history[: self.history_index + 1]
         self.history.append(directory_path)
         self.history_index += 1
 
@@ -683,11 +757,15 @@ class Arborist(QMainWindow):
             self.current_file_path = file_path  # Store the current file path
             chunk_iter = pd.read_csv(file_path, chunksize=CHUNK_SIZE)  # Load in chunks
             first_chunk = next(chunk_iter)
-            headers = first_chunk.columns.tolist()  # Extract headers from the first chunk
+            headers = (
+                first_chunk.columns.tolist()
+            )  # Extract headers from the first chunk
 
             # Re-create chunk_iter including the first chunk
             chunk_iter = itertools.chain([first_chunk], chunk_iter)
-            model = PandasTableModel(chunk_iter, headers, predictions=None)  # Explicitly pass None
+            model = PandasTableModel(
+                chunk_iter, headers, predictions=None
+            )  # Explicitly pass None
             table_view.setModel(model)
 
             # Enable sorting
@@ -725,7 +803,7 @@ class Arborist(QMainWindow):
 
     def open_in_analytics_view(self):
         """Open the dataset in the analytics view (second tab)."""
-        if hasattr(self, 'current_file_path'):
+        if hasattr(self, "current_file_path"):
             # Reload the dataset with initial chunk for the analytics view
             try:
                 chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
@@ -770,9 +848,9 @@ class Arborist(QMainWindow):
         """Train the model using threading and progress tracking."""
         self.train_button.setEnabled(False)
         # self.statusBar.showMessage("Training model...")
-    
-        try: 
-            if not hasattr(self, 'current_file_path'):
+
+        try:
+            if not hasattr(self, "current_file_path"):
                 return
 
             outcome_var = self.train_ui.outcomeComboBox.currentText()
@@ -784,15 +862,17 @@ class Arborist(QMainWindow):
 
             # Get model parameters from UI
             model_params = {
-                'model_name': self.train_ui.modelComboBox.currentText(),
-                'num_trees': self.train_ui.treesSpinBox.value(),
-                'burn_in': self.train_ui.burnInSpinBox.value(),
-                'num_draws': self.train_ui.drawsSpinBox.value(),
-                'thinning': self.train_ui.thinningSpinBox.value()
+                "model_name": self.train_ui.modelComboBox.currentText(),
+                "num_trees": self.train_ui.treesSpinBox.value(),
+                "burn_in": self.train_ui.burnInSpinBox.value(),
+                "num_draws": self.train_ui.drawsSpinBox.value(),
+                "thinning": self.train_ui.thinningSpinBox.value(),
             }
 
             # Create and configure progress dialog
-            self.progress_dialog = QProgressDialog("Training model...", "Cancel", 0, 100, self)
+            self.progress_dialog = QProgressDialog(
+                "Training model...", "Cancel", 0, 100, self
+            )
             self.progress_dialog.setWindowModality(Qt.WindowModal)
             self.progress_dialog.setAutoClose(False)
             self.progress_dialog.setAutoReset(False)
@@ -802,7 +882,7 @@ class Arborist(QMainWindow):
             self.training_worker.progress.connect(self.update_progress)
             self.training_worker.finished.connect(self.handle_training_finished)
             self.training_worker.error.connect(self.handle_training_error)
-            
+
             # Connect cancel button
             self.progress_dialog.canceled.connect(self.cancel_training)
 
@@ -827,12 +907,16 @@ class Arborist(QMainWindow):
 
         # Update training time display
         self.train_ui.trainingTimeValue.setText(f"{training_time:.2f} seconds")
-            
+
         try:
             # Reload the data with predictions
             chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
             first_chunk = next(chunk_iter)
-            headers = ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']
+            headers = [
+                "Posterior Average ŷ",
+                "2.5th percentile ŷ",
+                "97.5th percentile ŷ",
+            ]
             headers.extend(first_chunk.columns.tolist())
             # Re-create chunk_iter including the first chunk
             chunk_iter = itertools.chain([first_chunk], chunk_iter)
@@ -845,7 +929,7 @@ class Arborist(QMainWindow):
 
             # Print the number of observations removed
             # print(f"Number of observations removed due to missing data: {observations_removed}")
-            
+
         except Exception as e:
             print(f"Error updating predictions: {e}")
 
@@ -854,7 +938,7 @@ class Arborist(QMainWindow):
         """Handle training errors with a proper dialog."""
         if self.progress_dialog:
             self.progress_dialog.close()
-        
+
         error_dialog = QMessageBox(self)
         error_dialog.setIcon(QMessageBox.Critical)
         error_dialog.setWindowTitle("Training Error")
@@ -868,7 +952,7 @@ class Arborist(QMainWindow):
             self.training_worker.stop()
             self.training_worker.wait()
             self.training_worker = None
-    
+
     def closeEvent(self, event):
         """Handle application shutdown."""
         if self.training_worker:
@@ -878,7 +962,7 @@ class Arborist(QMainWindow):
 
     def save_results(self, file_path):
         """Save predictions and model parameters."""
-        if hasattr(self, 'predictions'):
+        if hasattr(self, "predictions"):
             # Save implementation
             pass
 
