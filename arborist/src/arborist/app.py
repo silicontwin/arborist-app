@@ -55,6 +55,10 @@ class PandasTableModel(QAbstractTableModel):
         self.selected_column_name = None  # Outcome variable column to highlight
         self.predictions = predictions
 
+        # Zebra stripe colors
+        self.alternate_row_color = QColor("#F5F5F5")  # Light gray for alternate rows
+        self.base_row_color = QColor("#FFFFFF")  # White for base rows
+
         if isinstance(data, pd.DataFrame):
             self._data = data
             self.has_more_chunks = False
@@ -74,6 +78,9 @@ class PandasTableModel(QAbstractTableModel):
         return len(self.headers)
 
     def data(self, index, role=Qt.DisplayRole):
+        if not index.isValid():
+            return None
+
         if role == Qt.DisplayRole:
             # Return data from the loaded dataset
             value = self._data.iloc[index.row(), index.column()]
@@ -81,17 +88,24 @@ class PandasTableModel(QAbstractTableModel):
                 return ""
             return str(value)
 
-        # Highlight the selected outcome variable column and prediction columns
-        if role == Qt.BackgroundRole:
+        elif role == Qt.BackgroundRole:
+            # Apply zebra striping
+            base_color = (
+                self.alternate_row_color if index.row() % 2 else self.base_row_color
+            )
+
+            # Then check for special column highlighting
             column_name = self.headers[index.column()]
             if self.selected_column_name == column_name:
-                return QColor("#FFFFCB")  # Light yellow
+                return QColor("#FFFFCB")  # Light yellow for selected column
             elif column_name in [
                 "Posterior Average ŷ",
                 "2.5th percentile ŷ",
                 "97.5th percentile ŷ",
             ]:
-                return QColor("#CCCCFF")  # Light blue
+                return QColor("#CCCCFF")  # Light blue for prediction columns
+            else:
+                return base_color
 
         return None
 
