@@ -416,7 +416,7 @@ border-radius: 4px;</string>
         </property>
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <property name="spacing">
-          <number>0</number>
+          <number>10</number>
          </property>
          <property name="leftMargin">
           <number>0</number>
@@ -431,6 +431,23 @@ border-radius: 4px;</string>
           <number>0</number>
          </property>
          <item>
+          <widget class="QPushButton" name="codeGenPushButton">
+           <property name="minimumSize">
+            <size>
+             <width>80</width>
+             <height>30</height>
+            </size>
+           </property>
+           <property name="styleSheet">
+            <string notr="true">background-color: #DDDDDD;
+border-radius: 4px;</string>
+           </property>
+           <property name="text">
+            <string>Code Gen</string>
+           </property>
+          </widget>
+         </item>
+         <item>
           <widget class="QPushButton" name="parametersPushButton">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
@@ -440,7 +457,7 @@ border-radius: 4px;</string>
            </property>
            <property name="minimumSize">
             <size>
-             <width>130</width>
+             <width>100</width>
              <height>30</height>
             </size>
            </property>

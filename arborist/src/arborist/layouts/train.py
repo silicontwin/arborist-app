@@ -197,14 +197,22 @@ class Ui_TrainTab(object):
         self.frame_4.setFrameShape(QFrame.Shape.NoFrame)
         self.frame_4.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_4 = QHBoxLayout(self.frame_4)
-        self.horizontalLayout_4.setSpacing(0)
+        self.horizontalLayout_4.setSpacing(10)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
+        self.codeGenPushButton = QPushButton(self.frame_4)
+        self.codeGenPushButton.setObjectName(u"codeGenPushButton")
+        self.codeGenPushButton.setMinimumSize(QSize(80, 30))
+        self.codeGenPushButton.setStyleSheet(u"background-color: #DDDDDD;\n"
+"border-radius: 4px;")
+
+        self.horizontalLayout_4.addWidget(self.codeGenPushButton)
+
         self.parametersPushButton = QPushButton(self.frame_4)
         self.parametersPushButton.setObjectName(u"parametersPushButton")
         sizePolicy.setHeightForWidth(self.parametersPushButton.sizePolicy().hasHeightForWidth())
         self.parametersPushButton.setSizePolicy(sizePolicy)
-        self.parametersPushButton.setMinimumSize(QSize(130, 30))
+        self.parametersPushButton.setMinimumSize(QSize(100, 30))
         self.parametersPushButton.setStyleSheet(u"background-color: #DDDDDD;\n"
 "border-radius: 4px;")
 
@@ -456,6 +464,7 @@ class Ui_TrainTab(object):
         self.trainButton.setText(QCoreApplication.translate("TrainTab", u"Train Model", None))
         self.trainingTimeLabel.setText(QCoreApplication.translate("TrainTab", u"Training time:", None))
         self.trainingTimeValue.setText(QCoreApplication.translate("TrainTab", u"0 seconds", None))
+        self.codeGenPushButton.setText(QCoreApplication.translate("TrainTab", u"Code Gen", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Parameters", None))
         self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Browse\" tab", None))
         self.parametersTitleLabel.setText(QCoreApplication.translate("TrainTab", u"Model Parameters", None))
