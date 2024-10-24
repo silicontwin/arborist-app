@@ -844,7 +844,7 @@ class Arborist(QMainWindow):
             self.highlight_selected_column()
 
             # Print the number of observations removed
-            print(f"Number of observations removed due to missing data: {observations_removed}")
+            # print(f"Number of observations removed due to missing data: {observations_removed}")
             
         except Exception as e:
             print(f"Error updating predictions: {e}")
