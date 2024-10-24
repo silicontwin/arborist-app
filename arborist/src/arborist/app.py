@@ -512,7 +512,7 @@ class Arborist(QMainWindow):
             # Read the first row to get headers
             first_chunk = pd.read_csv(self.current_file_path, nrows=0)
             all_columns = first_chunk.columns.tolist()
-            
+
             # Define the columns to read (all columns to maintain original order)
             columns_to_read = all_columns
 
@@ -529,8 +529,8 @@ class Arborist(QMainWindow):
             categorical_columns = df.select_dtypes(include=['object', 'category']).columns
             if len(categorical_columns) > 0:
                 ohe = OneHotEncoder(sparse_output=False, drop='first')
-                ohe_df = pd.DataFrame(ohe.fit_transform(df[categorical_columns]), 
-                                      columns=ohe.get_feature_names_out(categorical_columns))
+                ohe_df = pd.DataFrame(ohe.fit_transform(df[categorical_columns]),
+                                    columns=ohe.get_feature_names_out(categorical_columns))
                 df = pd.concat([df.drop(categorical_columns, axis=1), ohe_df], axis=1)
 
             # Proceed with data cleaning and model training
@@ -560,18 +560,37 @@ class Arborist(QMainWindow):
             y_std = np.std(y)
             y_standardized = (y - y_mean) / y_std
 
-            # Train the BART model
-            bart_model = BARTModel()
+            # Retrieve model parameters from UI
+            num_trees = self.train_ui.treesSpinBox.value()
+            burn_in = self.train_ui.burnInSpinBox.value()
+            num_draws = self.train_ui.drawsSpinBox.value()
 
-            # Sample from the posterior
-            bart_model.sample(
-                X_train=X,
-                y_train=y_standardized,
-                X_test=X,
-                num_gfr=0,
-                num_burnin=100,
-                num_mcmc=100
-            )
+            # Check which model is selected
+            selected_model = self.train_ui.modelComboBox.currentText()
+
+            if selected_model == "BART":
+                # Train the BART model
+                bart_model = BARTModel()
+
+                # Call BARTModel.sample()
+                bart_model.sample(
+                    X_train=X,
+                    y_train=y_standardized,
+                    X_test=X,
+                    num_gfr=5,  # Add UI control
+                    num_burnin=burn_in,
+                    num_mcmc=num_draws
+                )
+
+            elif selected_model == "BCF":
+                # Placeholder for BCF training logic
+                bcf_model = BCFModel()
+
+                # Prepare propensity scores and other BCF-specific parameters (e.g., Z, pi)
+                # Add similar logic for BCF-specific training
+
+                print("BCF model training is yet to be implemented.")
+                return
 
             # Get predictions
             y_pred_samples = bart_model.predict(covariates=X)
