@@ -263,6 +263,15 @@ class Arborist(QMainWindow):
         # Connect signal for model selection change
         self.train_ui.modelComboBox.currentIndexChanged.connect(self.check_model_frame_visibility)
 
+        # Update the code generation text whenever a UI element changes
+        self.train_ui.modelComboBox.currentIndexChanged.connect(self.update_code_gen_text)
+        self.train_ui.treesSpinBox.valueChanged.connect(self.update_code_gen_text)
+        self.train_ui.burnInSpinBox.valueChanged.connect(self.update_code_gen_text)
+        self.train_ui.drawsSpinBox.valueChanged.connect(self.update_code_gen_text)
+        self.train_ui.thinningSpinBox.valueChanged.connect(self.update_code_gen_text)
+        self.train_ui.outcomeComboBox.currentIndexChanged.connect(self.update_code_gen_text)
+        self.train_ui.treatmentComboBox.currentIndexChanged.connect(self.update_code_gen_text)
+
     def check_model_frame_visibility(self):
         """Show or hide the treatmentFrame based on the selected tab and model."""
         # Check if the current tab is "Train"
@@ -339,7 +348,7 @@ class Arborist(QMainWindow):
         self.train_ui = Ui_TrainTab()
         self.train_ui.setupUi(self.train_tab)
 
-        # Initially hide the treatment frame
+        # Initially hide the treatment frame and parameters menu
         self.train_ui.treatmentFrame.setVisible(False)
 
         # Initially hide the parameters menu
@@ -381,8 +390,8 @@ class Arborist(QMainWindow):
         if not hasattr(self, 'current_file_path'):
             return "No dataset loaded."
 
-        outcome_var = self.outcome_combo.currentText()
-        treatment_var = self.treatment_combo.currentText() if self.train_ui.treatmentFrame.isVisible() else None
+        outcome_var = self.train_ui.outcomeComboBox.currentText()
+        treatment_var = self.train_ui.treatmentComboBox.currentText() if self.train_ui.treatmentFrame.isVisible() else None
         model_name = self.train_ui.modelComboBox.currentText()
 
         # Retrieve model parameters from the UI
@@ -461,17 +470,18 @@ class Arborist(QMainWindow):
         """Toggle the visibility of the code generation text box."""
         is_visible = self.train_ui.codeGenTextEdit.isVisible()
         self.train_ui.codeGenTextEdit.setVisible(not is_visible)
-
         if not is_visible:
-            # Generate the code and display it in the text box
-            code = self.generate_code()
-            self.train_ui.codeGenTextEdit.setPlainText(code)
-
+            self.update_code_gen_text()
 
     def toggle_parameters_menu(self):
         """Toggle the visibility of the parameters menu."""
         is_visible = self.train_ui.parametersMenu.isVisible()
         self.train_ui.parametersMenu.setVisible(not is_visible)
+
+    def update_code_gen_text(self):
+        """Update the code generation text box whenever a UI element changes."""
+        code = self.generate_code()
+        self.train_ui.codeGenTextEdit.setPlainText(code)
 
     def load_predict_tab_ui(self):
         """Load and set up the predict tab UI."""
