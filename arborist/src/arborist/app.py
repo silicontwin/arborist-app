@@ -11,36 +11,29 @@ import pyarrow.dataset as ds
 import pyarrow as pa
 from sklearn.preprocessing import OneHotEncoder
 from PySide6.QtWidgets import (
-    QApplication,
-    QMainWindow,
-    QTreeView,
-    QTableView,
-    QFileSystemModel,
-    QLabel,
-    QPushButton,
-    QTabWidget,
-    QWidget,
-    QSplitter,
-    QHeaderView,
-    QComboBox,
+    QApplication, QMainWindow, QTreeView, QTableView, QFileSystemModel,
+    QLabel, QPushButton, QTabWidget, QWidget, QSplitter, QHeaderView,
+    QComboBox, QProgressDialog, QMessageBox
 )
-from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel
+from PySide6.QtCore import Qt, QAbstractTableModel, QModelIndex, QSortFilterProxyModel, QThread, Signal, Slot
 from PySide6.QtGui import QColor
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.train import Ui_TrainTab
 from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
+import time
 
-CHUNK_SIZE = 10000  # Number of rows to load per chunk
+CHUNK_SIZE = 1000  # Number of rows to load per chunk
 
 # Lazy loading for handling large datasets in chunks with sorting enabled
 class PandasTableModel(QAbstractTableModel):
-    def __init__(self, data, headers):
+    def __init__(self, data, headers, predictions=None):
         super().__init__()
         self.headers = headers
         self._sort_order = Qt.AscendingOrder  # Default sort order
         self._sort_column = None  # No sort initially
         self.selected_column_name = None  # Outcome variable column to highlight
+        self.predictions = predictions
 
         if isinstance(data, pd.DataFrame):
             self._data = data
@@ -49,6 +42,7 @@ class PandasTableModel(QAbstractTableModel):
             self.chunk_iter = data
             self._data = pd.DataFrame()  # Store all loaded data
             self.has_more_chunks = True
+            self.chunks_loaded = 0  # Track number of chunks loaded
             self.load_next_chunk()  # Load the first chunk
 
     def rowCount(self, parent=QModelIndex()):
@@ -95,7 +89,29 @@ class PandasTableModel(QAbstractTableModel):
             chunk = next(self.chunk_iter)
             old_row_count = self.rowCount()
             self.beginInsertRows(QModelIndex(), old_row_count, old_row_count + len(chunk) - 1)
-            self._data = pd.concat([self._data, chunk], ignore_index=True)
+            
+            if self.predictions is not None:
+                start_idx = self.chunks_loaded * CHUNK_SIZE
+                end_idx = start_idx + len(chunk)
+                
+                # Create a new DataFrame with predictions and original data
+                prediction_data = {
+                    'Posterior Average ŷ': self.predictions['Posterior Mean'][start_idx:end_idx],
+                    '2.5th percentile ŷ': self.predictions['2.5th Percentile'][start_idx:end_idx],
+                    '97.5th percentile ŷ': self.predictions['97.5th Percentile'][start_idx:end_idx]
+                }
+                
+                # Combine predictions with chunk data
+                combined_chunk = pd.concat([
+                    pd.DataFrame(prediction_data),
+                    chunk.reset_index(drop=True)
+                ], axis=1)
+                
+                self._data = pd.concat([self._data, combined_chunk], ignore_index=True)
+            else:
+                self._data = pd.concat([self._data, chunk], ignore_index=True)
+            
+            self.chunks_loaded += 1
             self.endInsertRows()
 
             # Apply sorting to new chunk if already sorted
@@ -156,29 +172,99 @@ class DatasetFileFilterProxyModel(QSortFilterProxyModel):
         _, ext = os.path.splitext(file_name)
         return ext.lower() in self.dataset_extensions
 
+class ModelTrainingWorker(QThread):
+    """Worker thread for model training to prevent UI freezing."""
+    
+    progress = Signal(int)
+    finished = Signal(dict, float)
+    error = Signal(str)
+    
+    def __init__(self, trainer, model_params):
+        super().__init__()
+        self.trainer = trainer
+        self.model_params = model_params
+        self._is_running = True
+
+    def run(self):
+        """Main method that runs in the separate thread."""
+        try:
+            start_time = time.time()
+            
+            self.progress.emit(10)
+            print("Loading data...")
+            self.trainer.load_data()
+            
+            self.progress.emit(30)
+            print("Preparing features...")
+            self.trainer.prepare_features()
+            
+            self.progress.emit(40)
+            print("Training model...")
+            self.trainer.train_model(**self.model_params)
+            
+            self.progress.emit(80)
+            print("Generating predictions...")
+            predictions = self.trainer.predict()
+            
+            self.progress.emit(100)
+            training_time = time.time() - start_time
+            self.finished.emit(predictions, training_time)
+            
+        except Exception as e:
+            self.error.emit(str(e))
+
+    def stop(self):
+        """Stop the training process."""
+        self._is_running = False
 
 # Shared class for model training and preprocessing
 class ModelTrainer:
+    """ModelTrainer class with error handling and progress tracking."""
+    
     def __init__(self, file_path: str, outcome_var: str, treatment_var: str = None):
         self.file_path = file_path
         self.outcome_var = outcome_var
         self.treatment_var = treatment_var
+        self.data = None
+        self.data_cleaned = None
+        self.X = None
+        self.y = None
+        self.model = None
 
     def load_data(self):
         """Load the dataset and preprocess categorical variables."""
-        # Load the dataset
-        self.data = pd.read_csv(self.file_path)
+        # Check file size before loading
+        file_size = os.path.getsize(self.file_path) / (1024 * 1024)
+        if file_size > 1000:
+            warning = QMessageBox()
+            warning.setIcon(QMessageBox.Warning)
+            warning.setText(f"Large file detected ({file_size:.1f} MB)")
+            warning.setInformativeText("This may consume significant memory. Continue?")
+            warning.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            if warning.exec() == QMessageBox.No:
+                raise Exception("Operation cancelled by user")
+
+        # Load the dataset in chunks to handle large files
+        chunks = []
+        for chunk in pd.read_csv(self.file_path, chunksize=CHUNK_SIZE):
+            chunks.append(chunk)
+        self.data = pd.concat(chunks)
+
+        # Store original column order and row count
+        self.original_columns = self.data.columns.tolist()
+        original_row_count = len(self.data)
 
         # One-hot encode non-numeric columns
         categorical_columns = self.data.select_dtypes(include=['object', 'category']).columns
         if len(categorical_columns) > 0:
             ohe = OneHotEncoder(sparse_output=False, drop='first')
             ohe_df = pd.DataFrame(ohe.fit_transform(self.data[categorical_columns]),
-                                  columns=ohe.get_feature_names_out(categorical_columns))
+                                columns=ohe.get_feature_names_out(categorical_columns))
             self.data = pd.concat([self.data.drop(categorical_columns, axis=1), ohe_df], axis=1)
 
         # Drop missing values
         self.data_cleaned = self.data.dropna()
+        self.observations_removed = original_row_count - len(self.data_cleaned)
 
     def prepare_features(self):
         """Prepare features (X) and outcome (y) for model training."""
@@ -196,40 +282,52 @@ class ModelTrainer:
 
     def train_model(self, model_name: str, num_trees: int, burn_in: int, num_draws: int, thinning: int):
         """Train the model based on the selected type."""
-        if model_name == "BART":
-            self.model = BARTModel()
-            self.model.sample(
-                X_train=self.X,
-                y_train=self.y_standardized,
-                X_test=self.X,
-                num_trees=num_trees,
-                num_burnin=burn_in,
-                num_mcmc=num_draws,
-            )
-        elif model_name == "BCF":
-            self.model = BCFModel()
-            # Add BCF-specific training logic here
+        try:
+            if model_name == "BART":
+                self.model = BARTModel()
+                self.model.sample(
+                    X_train=self.X,
+                    y_train=self.y_standardized,
+                    X_test=self.X,
+                    num_trees=num_trees,
+                    num_burnin=burn_in,
+                    num_mcmc=num_draws,
+                )
+            elif model_name == "BCF":
+                self.model = BCFModel()
+                # Add BCF-specific training logic here
+        except Exception as e:
+            raise RuntimeError(f"Error during model training: {str(e)}")
 
     def predict(self):
         """Generate predictions and convert them back to the original scale."""
         self.y_pred_samples = self.model.predict(covariates=self.X)
         self.y_pred_samples = self.y_pred_samples * self.y_std + self.y_mean  # Convert back to original scale
+        
+        # Verify prediction length matches data length
+        if len(self.y_pred_samples) != len(self.data_cleaned):
+            raise ValueError(f"Prediction length ({len(self.y_pred_samples)}) doesn't match data length ({len(self.data_cleaned)})")
+        
         return {
             'Posterior Mean': np.mean(self.y_pred_samples, axis=1),
             '2.5th Percentile': np.percentile(self.y_pred_samples, 2.5, axis=1),
             '97.5th Percentile': np.percentile(self.y_pred_samples, 97.5, axis=1),
         }
 
-
 class Arborist(QMainWindow):
     def __init__(self):
         super().__init__()
-
-        # Initialize UI components
+        self.training_worker = None
+        self.progress_dialog = None
+        self.full_predictions = None
+        self.current_prediction_idx = 0
         self.init_ui()
 
     def init_ui(self):
         self.setWindowTitle("Arborist")
+
+        self.statusBar = self.statusBar()
+        self.statusBar.showMessage("Ready")
 
         # Set the default window size
         self.resize(1600, 900)
@@ -586,9 +684,10 @@ class Arborist(QMainWindow):
             chunk_iter = pd.read_csv(file_path, chunksize=CHUNK_SIZE)  # Load in chunks
             first_chunk = next(chunk_iter)
             headers = first_chunk.columns.tolist()  # Extract headers from the first chunk
+
             # Re-create chunk_iter including the first chunk
             chunk_iter = itertools.chain([first_chunk], chunk_iter)
-            model = PandasTableModel(chunk_iter, headers)
+            model = PandasTableModel(chunk_iter, headers, predictions=None)  # Explicitly pass None
             table_view.setModel(model)
 
             # Enable sorting
@@ -668,51 +767,76 @@ class Arborist(QMainWindow):
         self.tabs.setCurrentIndex(1)
 
     def train_model(self):
-        """Train the model using the ModelTrainer class and update the dataset."""
-        if not hasattr(self, 'current_file_path'):
-            print("No dataset loaded.")
-            return
+        """Train the model using threading and progress tracking."""
+        self.train_button.setEnabled(False)
+        # self.statusBar.showMessage("Training model...")
+    
+        try: 
+            if not hasattr(self, 'current_file_path'):
+                return
 
-        outcome_var = self.outcome_combo.currentText()
+            outcome_var = self.train_ui.outcomeComboBox.currentText()
+            if not outcome_var:
+                return
 
-        if not outcome_var:
-            print("Please select an outcome variable.")
-            return
-
-        try:
-            # Create an instance of ModelTrainer and train the model
+            # Create trainer instance
             trainer = ModelTrainer(self.current_file_path, outcome_var)
-            trainer.load_data()
-            trainer.prepare_features()
 
-            # Retrieve model parameters from the UI
-            num_trees = self.train_ui.treesSpinBox.value()
-            burn_in = self.train_ui.burnInSpinBox.value()
-            num_draws = self.train_ui.drawsSpinBox.value()
-            thinning = self.train_ui.thinningSpinBox.value()
-            selected_model = self.train_ui.modelComboBox.currentText()
+            # Get model parameters from UI
+            model_params = {
+                'model_name': self.train_ui.modelComboBox.currentText(),
+                'num_trees': self.train_ui.treesSpinBox.value(),
+                'burn_in': self.train_ui.burnInSpinBox.value(),
+                'num_draws': self.train_ui.drawsSpinBox.value(),
+                'thinning': self.train_ui.thinningSpinBox.value()
+            }
 
-            # Train the model
-            trainer.train_model(selected_model, num_trees, burn_in, num_draws, thinning)
+            # Create and configure progress dialog
+            self.progress_dialog = QProgressDialog("Training model...", "Cancel", 0, 100, self)
+            self.progress_dialog.setWindowModality(Qt.WindowModal)
+            self.progress_dialog.setAutoClose(False)
+            self.progress_dialog.setAutoReset(False)
 
-            # Get predictions
-            predictions = trainer.predict()
+            # Create and configure worker thread
+            self.training_worker = ModelTrainingWorker(trainer, model_params)
+            self.training_worker.progress.connect(self.update_progress)
+            self.training_worker.finished.connect(self.handle_training_finished)
+            self.training_worker.error.connect(self.handle_training_error)
+            
+            # Connect cancel button
+            self.progress_dialog.canceled.connect(self.cancel_training)
 
-            # Add predictions to the DataFrame
-            df_cleaned = trainer.data_cleaned
-            df_cleaned['Posterior Average ŷ'] = predictions['Posterior Mean']
-            df_cleaned['2.5th percentile ŷ'] = predictions['2.5th Percentile']
-            df_cleaned['97.5th percentile ŷ'] = predictions['97.5th Percentile']
+            # Start training
+            self.training_worker.start()
+            self.progress_dialog.show()
+        finally:
+            self.train_button.setEnabled(True)
+            # self.statusBar.showMessage("Training complete", 3000)  # Show for 3 seconds
 
-            # Reorder the columns to show predictions first
-            prediction_cols = ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']
-            existing_cols = [col for col in df_cleaned.columns if col not in prediction_cols]
-            df_cleaned = df_cleaned[prediction_cols + existing_cols]
+    @Slot(int)
+    def update_progress(self, value):
+        """Update progress dialog."""
+        if self.progress_dialog:
+            self.progress_dialog.setValue(value)
 
-            # Update the model and the view
-            headers = df_cleaned.columns.tolist()
-            self.dataframe = df_cleaned  # Update the dataframe with predictions
-            model = PandasTableModel(self.dataframe, headers)
+    @Slot(dict, float)
+    def handle_training_finished(self, predictions, training_time):
+        """Handle successful model training completion."""
+        if self.progress_dialog:
+            self.progress_dialog.close()
+
+        # Update training time display
+        self.train_ui.trainingTimeValue.setText(f"{training_time:.2f} seconds")
+            
+        try:
+            # Reload the data with predictions
+            chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
+            first_chunk = next(chunk_iter)
+            headers = ['Posterior Average ŷ', '2.5th percentile ŷ', '97.5th percentile ŷ']
+            headers.extend(first_chunk.columns.tolist())
+            # Re-create chunk_iter including the first chunk
+            chunk_iter = itertools.chain([first_chunk], chunk_iter)
+            model = PandasTableModel(chunk_iter, headers, predictions)
             self.analytics_viewer.setModel(model)
             self.analytics_viewer.resizeColumnsToContents()
 
@@ -721,9 +845,42 @@ class Arborist(QMainWindow):
 
             # Print the number of observations removed
             print(f"Number of observations removed due to missing data: {observations_removed}")
-
+            
         except Exception as e:
-            print(f"Error during model training: {e}")
+            print(f"Error updating predictions: {e}")
+
+    @Slot(str)
+    def handle_training_error(self, error_message):
+        """Handle training errors with a proper dialog."""
+        if self.progress_dialog:
+            self.progress_dialog.close()
+        
+        error_dialog = QMessageBox(self)
+        error_dialog.setIcon(QMessageBox.Critical)
+        error_dialog.setWindowTitle("Training Error")
+        error_dialog.setText("An error occurred during model training")
+        error_dialog.setDetailedText(error_message)
+        error_dialog.exec()
+
+    def cancel_training(self):
+        """Cancel the training process."""
+        if self.training_worker:
+            self.training_worker.stop()
+            self.training_worker.wait()
+            self.training_worker = None
+    
+    def closeEvent(self, event):
+        """Handle application shutdown."""
+        if self.training_worker:
+            self.training_worker.stop()
+            self.training_worker.wait()
+        event.accept()
+
+    def save_results(self, file_path):
+        """Save predictions and model parameters."""
+        if hasattr(self, 'predictions'):
+            # Save implementation
+            pass
 
 
 # Main function to start the application
