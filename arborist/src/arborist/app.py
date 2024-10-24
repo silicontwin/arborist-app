@@ -205,7 +205,6 @@ class ModelTrainer:
                 num_trees=num_trees,
                 num_burnin=burn_in,
                 num_mcmc=num_draws,
-                thinning=thinning
             )
         elif model_name == "BCF":
             self.model = BCFModel()
@@ -398,7 +397,6 @@ class Arborist(QMainWindow):
         num_trees = self.train_ui.treesSpinBox.value()
         burn_in = self.train_ui.burnInSpinBox.value()
         num_draws = self.train_ui.drawsSpinBox.value()
-        thinning = self.train_ui.thinningSpinBox.value()
 
         # Generate the Python code as a string, ensuring proper formatting
         code = f"""
@@ -443,8 +441,7 @@ class Arborist(QMainWindow):
         X_test=X,
         num_trees={num_trees},
         num_burnin={burn_in},
-        num_mcmc={num_draws},
-        thinning={thinning}
+        num_mcmc={num_draws}
     )
 
     # Generate predictions
