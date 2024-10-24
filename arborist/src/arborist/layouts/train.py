@@ -45,7 +45,6 @@ class Ui_TrainTab(object):
         sizePolicy.setHeightForWidth(self.frame_3.sizePolicy().hasHeightForWidth())
         self.frame_3.setSizePolicy(sizePolicy)
         self.frame_3.setBaseSize(QSize(0, 0))
-        self.frame_3.setStyleSheet(u"background-color: none;")
         self.frame_3.setFrameShape(QFrame.Shape.NoFrame)
         self.frame_3.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_3 = QHBoxLayout(self.frame_3)
@@ -56,7 +55,6 @@ class Ui_TrainTab(object):
         self.frame_5.setObjectName(u"frame_5")
         sizePolicy.setHeightForWidth(self.frame_5.sizePolicy().hasHeightForWidth())
         self.frame_5.setSizePolicy(sizePolicy)
-        self.frame_5.setStyleSheet(u"background-color: #DDDDDD;")
         self.frame_5.setFrameShape(QFrame.Shape.NoFrame)
         self.frame_5.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_5 = QHBoxLayout(self.frame_5)
@@ -91,7 +89,6 @@ class Ui_TrainTab(object):
         self.frame_2.setObjectName(u"frame_2")
         sizePolicy.setHeightForWidth(self.frame_2.sizePolicy().hasHeightForWidth())
         self.frame_2.setSizePolicy(sizePolicy)
-        self.frame_2.setStyleSheet(u"background-color: #DDDDDD;")
         self.frame_2.setFrameShape(QFrame.Shape.NoFrame)
         self.frame_2.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_2 = QHBoxLayout(self.frame_2)
@@ -119,7 +116,6 @@ class Ui_TrainTab(object):
         self.treatmentFrame.setObjectName(u"treatmentFrame")
         sizePolicy.setHeightForWidth(self.treatmentFrame.sizePolicy().hasHeightForWidth())
         self.treatmentFrame.setSizePolicy(sizePolicy)
-        self.treatmentFrame.setStyleSheet(u"background-color: #DDDDDD;")
         self.treatmentFrame.setFrameShape(QFrame.Shape.NoFrame)
         self.treatmentFrame.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_9 = QHBoxLayout(self.treatmentFrame)
@@ -148,9 +144,6 @@ class Ui_TrainTab(object):
         sizePolicy.setHeightForWidth(self.trainButton.sizePolicy().hasHeightForWidth())
         self.trainButton.setSizePolicy(sizePolicy)
         self.trainButton.setMinimumSize(QSize(100, 30))
-        self.trainButton.setStyleSheet(u"background-color: #FF0000;\n"
-"color: #FFFFFF;\n"
-"border-radius: 4px;")
 
         self.horizontalLayout_3.addWidget(self.trainButton)
 
@@ -158,7 +151,6 @@ class Ui_TrainTab(object):
         self.frame_7.setObjectName(u"frame_7")
         sizePolicy.setHeightForWidth(self.frame_7.sizePolicy().hasHeightForWidth())
         self.frame_7.setSizePolicy(sizePolicy)
-        self.frame_7.setStyleSheet(u"background-color: #DDDDDD;")
         self.frame_7.setFrameShape(QFrame.Shape.NoFrame)
         self.frame_7.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_8 = QHBoxLayout(self.frame_7)
@@ -203,8 +195,6 @@ class Ui_TrainTab(object):
         self.codeGenPushButton = QPushButton(self.frame_4)
         self.codeGenPushButton.setObjectName(u"codeGenPushButton")
         self.codeGenPushButton.setMinimumSize(QSize(80, 30))
-        self.codeGenPushButton.setStyleSheet(u"background-color: #DDDDDD;\n"
-"border-radius: 4px;")
 
         self.horizontalLayout_4.addWidget(self.codeGenPushButton)
 
@@ -213,8 +203,6 @@ class Ui_TrainTab(object):
         sizePolicy.setHeightForWidth(self.parametersPushButton.sizePolicy().hasHeightForWidth())
         self.parametersPushButton.setSizePolicy(sizePolicy)
         self.parametersPushButton.setMinimumSize(QSize(100, 30))
-        self.parametersPushButton.setStyleSheet(u"background-color: #DDDDDD;\n"
-"border-radius: 4px;")
 
         self.horizontalLayout_4.addWidget(self.parametersPushButton)
 
@@ -247,7 +235,6 @@ class Ui_TrainTab(object):
         self.codeGenTextEdit = QTextEdit(self.frame_6)
         self.codeGenTextEdit.setObjectName(u"codeGenTextEdit")
         self.codeGenTextEdit.setVisible(False)
-        self.codeGenTextEdit.setStyleSheet(u"background-color: #FFFFFF;")
 
         self.horizontalLayout_6.addWidget(self.codeGenTextEdit)
 
@@ -255,14 +242,12 @@ class Ui_TrainTab(object):
         self.parametersMenu.setObjectName(u"parametersMenu")
         self.parametersMenu.setMinimumSize(QSize(300, 0))
         self.parametersMenu.setVisible(False)
-        self.parametersMenu.setStyleSheet(u"background-color: #FFFFFF;")
         self.verticalLayout_Parameters = QVBoxLayout(self.parametersMenu)
         self.verticalLayout_Parameters.setSpacing(10)
         self.verticalLayout_Parameters.setObjectName(u"verticalLayout_Parameters")
         self.verticalLayout_Parameters.setContentsMargins(10, 10, 10, 10)
         self.parametersTitleLabel = QLabel(self.parametersMenu)
         self.parametersTitleLabel.setObjectName(u"parametersTitleLabel")
-        self.parametersTitleLabel.setStyleSheet(u"font-weight: bold; border-bottom: 1px solid lightgray; padding-bottom: 5px;")
         self.parametersTitleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.verticalLayout_Parameters.addWidget(self.parametersTitleLabel)
