@@ -385,10 +385,21 @@ class ModelTrainer:
 class Arborist(QMainWindow):
     def __init__(self):
         super().__init__()
+
         self.training_worker = None
         self.progress_dialog = None
         self.full_predictions = None
         self.current_prediction_idx = 0
+
+        # Load the stylesheet
+        try:
+            current_dir = os.path.dirname(os.path.abspath(__file__))
+            style_path = os.path.join(current_dir, "style.qss")
+            with open(style_path, "r") as f:
+                self.setStyleSheet(f.read())
+        except Exception as e:
+            print(f"Error loading stylesheet: {e}")
+
         self.init_ui()
 
     def init_ui(self):
