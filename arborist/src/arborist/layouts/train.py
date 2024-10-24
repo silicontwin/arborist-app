@@ -18,7 +18,7 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QComboBox, QDoubleSpinBox, QFrame,
     QHBoxLayout, QHeaderView, QLabel, QPushButton,
     QSizePolicy, QSpacerItem, QSpinBox, QTableView,
-    QVBoxLayout, QWidget)
+    QTextEdit, QVBoxLayout, QWidget)
 
 class Ui_TrainTab(object):
     def setupUi(self, TrainTab):
@@ -243,6 +243,13 @@ class Ui_TrainTab(object):
         self.analytics_viewer.setSortingEnabled(True)
 
         self.horizontalLayout_6.addWidget(self.analytics_viewer)
+
+        self.codeGenTextEdit = QTextEdit(self.frame_6)
+        self.codeGenTextEdit.setObjectName(u"codeGenTextEdit")
+        self.codeGenTextEdit.setVisible(False)
+        self.codeGenTextEdit.setStyleSheet(u"background-color: #FFFFFF;")
+
+        self.horizontalLayout_6.addWidget(self.codeGenTextEdit)
 
         self.parametersMenu = QFrame(self.frame_6)
         self.parametersMenu.setObjectName(u"parametersMenu")

@@ -518,6 +518,16 @@ border-radius: 4px;</string>
        </widget>
       </item>
       <item>
+       <widget class="QTextEdit" name="codeGenTextEdit">
+        <property name="visible">
+         <bool>false</bool>
+        </property>
+        <property name="styleSheet">
+         <string notr="true">background-color: #FFFFFF;</string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QFrame" name="parametersMenu">
         <property name="minimumSize">
          <size>
