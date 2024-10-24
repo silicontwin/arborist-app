@@ -277,11 +277,17 @@ class Arborist(QMainWindow):
         # Initially hide the treatment frame
         self.train_ui.treatmentFrame.setVisible(False)
 
-         # Initially hide the parameters menu
+        # Initially hide the parameters menu
         self.train_ui.parametersMenu.setVisible(False)
+
+        # Initially hide the code generation text edit
+        self.train_ui.codeGenTextEdit.setVisible(False)
 
         # Connect button to toggle parameters menu
         self.train_ui.parametersPushButton.clicked.connect(self.toggle_parameters_menu)
+
+        # Connect button to toggle code generation text edit
+        self.train_ui.codeGenPushButton.clicked.connect(self.toggle_code_gen_text)
 
         # No dataset label and analytics viewer
         self.no_dataset_label = self.train_ui.no_dataset_label
@@ -303,6 +309,15 @@ class Arborist(QMainWindow):
 
         # Outcome and treatment variable selection
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
+
+    def toggle_code_gen_text(self):
+        """Toggle the visibility of the code generation text box."""
+        is_visible = self.train_ui.codeGenTextEdit.isVisible()
+        self.train_ui.codeGenTextEdit.setVisible(not is_visible)
+
+        if not is_visible:
+            # Display the generated code in the text box
+            self.train_ui.codeGenTextEdit.setPlainText("Generated code will be shown here...")
 
     def toggle_parameters_menu(self):
         """Toggle the visibility of the parameters menu."""
