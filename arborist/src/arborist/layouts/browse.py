@@ -75,8 +75,6 @@ class Ui_BrowseTab(object):
         sizePolicy1.setHeightForWidth(self.back_button.sizePolicy().hasHeightForWidth())
         self.back_button.setSizePolicy(sizePolicy1)
         self.back_button.setMinimumSize(QSize(80, 30))
-        self.back_button.setStyleSheet(u"background-color: #DDDDDD;\n"
-"border-radius: 4px;")
 
         self.navigationLayout.addWidget(self.back_button)
 
@@ -86,8 +84,6 @@ class Ui_BrowseTab(object):
         sizePolicy1.setHeightForWidth(self.forward_button.sizePolicy().hasHeightForWidth())
         self.forward_button.setSizePolicy(sizePolicy1)
         self.forward_button.setMinimumSize(QSize(80, 30))
-        self.forward_button.setStyleSheet(u"background-color: #DDDDDD;\n"
-"border-radius: 4px;")
 
         self.navigationLayout.addWidget(self.forward_button)
 
@@ -104,9 +100,6 @@ class Ui_BrowseTab(object):
         self.openDatasetButton.setSizePolicy(sizePolicy1)
         self.openDatasetButton.setMinimumSize(QSize(120, 30))
         self.openDatasetButton.setVisible(True)
-        self.openDatasetButton.setStyleSheet(u"background-color: #FF0000;\n"
-"color: #FFFFFF;\n"
-"border-radius: 4px;")
 
         self.horizontalLayout.addWidget(self.openDatasetButton)
 
