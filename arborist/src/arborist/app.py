@@ -1006,6 +1006,22 @@ class Arborist(QMainWindow):
             # Save implementation
             pass
 
+    def select_predict_file(self):
+        """Open a file dialog to select a file for prediction."""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Dataset for Prediction",
+            os.path.expanduser("~"),  # Start in the home directory
+            "CSV Files (*.csv);;All Files (*)",
+        )
+        if file_path:
+            self.predict_file_path = file_path  # Store the path for later use
+            self.statusBar.showMessage(f"Selected prediction file: {file_path}")
+
+            self.predict_ui.selectedFileLabel.setText(file_path)
+        else:
+            self.statusBar.showMessage("No file selected for prediction.")
+
 
 # Main function to start the application
 def main():
