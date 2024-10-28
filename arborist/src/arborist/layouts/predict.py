@@ -15,13 +15,26 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QSizePolicy, QWidget)
+from PySide6.QtWidgets import (QApplication, QHeaderView, QLabel, QPushButton,
+    QSizePolicy, QTableView, QWidget)
 
 class Ui_PredictTab(object):
     def setupUi(self, PredictTab):
         if not PredictTab.objectName():
             PredictTab.setObjectName(u"PredictTab")
         PredictTab.resize(800, 600)
+        self.selectFileButton = QPushButton(PredictTab)
+        self.selectFileButton.setObjectName(u"selectFileButton")
+        self.selectFileButton.setGeometry(QRect(27, 15, 100, 32))
+        self.predictButton = QPushButton(PredictTab)
+        self.predictButton.setObjectName(u"predictButton")
+        self.predictButton.setGeometry(QRect(41, 117, 100, 32))
+        self.selectedFileLabel = QLabel(PredictTab)
+        self.selectedFileLabel.setObjectName(u"selectedFileLabel")
+        self.selectedFileLabel.setGeometry(QRect(165, 21, 200, 16))
+        self.tableView = QTableView(PredictTab)
+        self.tableView.setObjectName(u"tableView")
+        self.tableView.setGeometry(QRect(27, 160, 750, 400))
 
         self.retranslateUi(PredictTab)
 
@@ -30,5 +43,8 @@ class Ui_PredictTab(object):
 
     def retranslateUi(self, PredictTab):
         PredictTab.setWindowTitle(QCoreApplication.translate("PredictTab", u"Predict", None))
+        self.selectFileButton.setText(QCoreApplication.translate("PredictTab", u"Load File", None))
+        self.predictButton.setText(QCoreApplication.translate("PredictTab", u"Predict", None))
+        self.selectedFileLabel.setText(QCoreApplication.translate("PredictTab", u"Selected file will appear here", None))
     # retranslateUi
 

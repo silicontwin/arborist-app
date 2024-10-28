@@ -13,7 +13,55 @@
   <property name="windowTitle">
    <string>Predict</string>
   </property>
-  <!-- Add your other UI elements here -->
+  <widget class="QPushButton" name="selectFileButton">
+   <property name="geometry">
+    <rect>
+     <x>27</x>
+     <y>15</y>
+     <width>100</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Load File</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="predictButton">
+   <property name="geometry">
+    <rect>
+     <x>41</x>
+     <y>117</y>
+     <width>100</width>
+     <height>32</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Predict</string>
+   </property>
+  </widget>
+  <widget class="QLabel" name="selectedFileLabel">
+   <property name="geometry">
+    <rect>
+     <x>165</x>
+     <y>21</y>
+     <width>200</width>
+     <height>16</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>Selected file will appear here</string>
+   </property>
+  </widget>
+  <widget class="QTableView" name="tableView">
+   <property name="geometry">
+    <rect>
+     <x>27</x>
+     <y>160</y>
+     <width>750</width>
+     <height>400</height>
+    </rect>
+   </property>
+  </widget>
  </widget>
  <resources/>
  <connections/>
