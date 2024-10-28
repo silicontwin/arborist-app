@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QComboBox,
     QProgressDialog,
     QMessageBox,
+    QFileDialog,
 )
 from PySide6.QtCore import (
     Qt,
@@ -59,15 +60,26 @@ class PandasTableModel(QAbstractTableModel):
         self.alternate_row_color = QColor("#F5F5F5")  # Light gray for alternate rows
         self.base_row_color = QColor("#FFFFFF")  # White for base rows
 
+        print("Initializing PandasTableModel with data type:", type(data))
+        print("Headers:", headers)
+        print("Predictions provided:", predictions is not None)
+
+        print("Initializing PandasTableModel with data type:", type(data))
+
         if isinstance(data, pd.DataFrame):
             self._data = data
             self.has_more_chunks = False
+            print("DataFrame loaded directly with shape:", self._data.shape)
         else:
-            self.chunk_iter = data
+            if isinstance(data, (list, tuple)):
+                self.chunk_iter = iter(data)
+            else:
+                self.chunk_iter = data
             self._data = pd.DataFrame()  # Store all loaded data
             self.has_more_chunks = True
             self.chunks_loaded = 0  # Track number of chunks loaded
             self.load_next_chunk()  # Load the first chunk
+            print("Loaded first chunk, current data shape:", self._data.shape)
 
     def rowCount(self, parent=QModelIndex()):
         # Return the number of rows in the current data
@@ -120,11 +132,13 @@ class PandasTableModel(QAbstractTableModel):
         return None
 
     def load_next_chunk(self):
-        """Load the next chunk of data and append it to the model."""
+        """Load the next chunk of data with original prediction handling and debug info."""
         if not self.has_more_chunks:
             return
         try:
             chunk = next(self.chunk_iter)
+            print(f"Loading chunk {self.chunks_loaded + 1} with shape:", chunk.shape)
+
             old_row_count = self.rowCount()
             self.beginInsertRows(
                 QModelIndex(), old_row_count, old_row_count + len(chunk) - 1
@@ -133,8 +147,9 @@ class PandasTableModel(QAbstractTableModel):
             if self.predictions is not None:
                 start_idx = self.chunks_loaded * CHUNK_SIZE
                 end_idx = start_idx + len(chunk)
+                print(f"Processing predictions for indices {start_idx} to {end_idx}")
 
-                # Create a new DataFrame with predictions and original data
+                # Create prediction DataFrame
                 prediction_data = {
                     "Posterior Average ŷ": self.predictions["Posterior Mean"][
                         start_idx:end_idx
@@ -146,18 +161,25 @@ class PandasTableModel(QAbstractTableModel):
                         start_idx:end_idx
                     ],
                 }
+                print("Created prediction data with keys:", prediction_data.keys())
 
                 # Combine predictions with chunk data
                 combined_chunk = pd.concat(
                     [pd.DataFrame(prediction_data), chunk.reset_index(drop=True)],
                     axis=1,
                 )
+                print("Combined chunk shape:", combined_chunk.shape)
 
                 self._data = pd.concat([self._data, combined_chunk], ignore_index=True)
             else:
                 self._data = pd.concat([self._data, chunk], ignore_index=True)
 
             self.chunks_loaded += 1
+            print(
+                f"After loading chunk {self.chunks_loaded}, total data shape:",
+                self._data.shape,
+            )
+
             self.endInsertRows()
 
             # Apply sorting to new chunk if already sorted
@@ -165,8 +187,14 @@ class PandasTableModel(QAbstractTableModel):
                 self.sort(self._sort_column, self._sort_order)
 
         except StopIteration:
-            print("No more chunks available.")
+            print("No more chunks available")
             self.has_more_chunks = False  # No more chunks to load
+        except Exception as e:
+            import traceback
+
+            print("Error loading chunk:", str(e))
+            print("Traceback:", traceback.format_exc())
+            self.has_more_chunks = False
 
     def can_fetch_more(self):
         """Check if there are more chunks to fetch."""
@@ -223,7 +251,7 @@ class ModelTrainingWorker(QThread):
     """Worker thread for model training to prevent UI freezing."""
 
     progress = Signal(int)
-    finished = Signal(dict, float)
+    finished = Signal(dict, float, object)
     error = Signal(str)
 
     def __init__(self, trainer, model_params):
@@ -255,7 +283,8 @@ class ModelTrainingWorker(QThread):
 
             self.progress.emit(100)
             training_time = time.time() - start_time
-            self.finished.emit(predictions, training_time)
+            # Emit predictions, training time, and trained model object
+            self.finished.emit(predictions, training_time, self.trainer.model)
 
         except Exception as e:
             self.error.emit(str(e))
@@ -281,16 +310,18 @@ class ModelTrainer:
 
     def load_data(self):
         """Load the dataset and preprocess categorical variables."""
-        # Check file size before loading
-        file_size = os.path.getsize(self.file_path) / (1024 * 1024)
-        if file_size > 1000:
-            warning = QMessageBox()
-            warning.setIcon(QMessageBox.Warning)
-            warning.setText(f"Large file detected ({file_size:.1f} MB)")
-            warning.setInformativeText("This may consume significant memory. Continue?")
-            warning.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-            if warning.exec() == QMessageBox.No:
-                raise Exception("Operation cancelled by user")
+        # # Check file size before loading
+        # file_size = os.path.getsize(self.file_path) / (1024 * 1024)
+        # if file_size > 1000:
+        #     warning = QMessageBox()
+        #     warning.setIcon(QMessageBox.Warning)
+        #     warning.setText(f"Large file detected ({file_size:.1f} MB)")
+        #     warning.setInformativeText("This may consume significant memory. Continue?")
+        #     warning.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        #     if warning.exec() == QMessageBox.No:
+        #         raise Exception("Operation cancelled by user")
+
+        print(f"Loading data from: {self.file_path}")
 
         # Load the dataset in chunks to handle large files
         chunks = []
@@ -298,27 +329,67 @@ class ModelTrainer:
             chunks.append(chunk)
         self.data = pd.concat(chunks)
 
+        print(f"Initial data shape: {self.data.shape}")
+        print("Columns:", self.data.columns.tolist())
+
         # Store original column order and row count
         self.original_columns = self.data.columns.tolist()
         original_row_count = len(self.data)
 
-        # One-hot encode non-numeric columns
-        categorical_columns = self.data.select_dtypes(
-            include=["object", "category"]
-        ).columns
-        if len(categorical_columns) > 0:
-            ohe = OneHotEncoder(sparse_output=False, drop="first")
-            ohe_df = pd.DataFrame(
-                ohe.fit_transform(self.data[categorical_columns]),
-                columns=ohe.get_feature_names_out(categorical_columns),
-            )
-            self.data = pd.concat(
-                [self.data.drop(categorical_columns, axis=1), ohe_df], axis=1
-            )
+        # # One-hot encode non-numeric columns
+        # categorical_columns = self.data.select_dtypes(
+        #     include=["object", "category"]
+        # ).columns
+        # if len(categorical_columns) > 0:
+        #     ohe = OneHotEncoder(sparse_output=False, drop="first")
+        #     ohe_df = pd.DataFrame(
+        #         ohe.fit_transform(self.data[categorical_columns]),
+        #         columns=ohe.get_feature_names_out(categorical_columns),
+        #     )
+        #     self.data = pd.concat(
+        #         [self.data.drop(categorical_columns, axis=1), ohe_df], axis=1
+        #     )
 
-        # Drop missing values
-        self.data_cleaned = self.data.dropna()
-        self.observations_removed = original_row_count - len(self.data_cleaned)
+        # Make copy to avoid modifying original
+        self.data_cleaned = self.data.copy()
+
+        # Print column info
+        print("\nColumn types:")
+        print(self.data.dtypes)
+        print("\nMissing values per column:")
+        print(self.data.isnull().sum())
+
+        # Convert everything to numeric if possible
+        for col in self.data_cleaned.columns:
+            try:
+                self.data_cleaned[col] = pd.to_numeric(
+                    self.data_cleaned[col], errors="coerce"
+                )
+            except Exception as e:
+                print(f"Could not convert column {col} to numeric: {str(e)}")
+
+        print(f"\nData shape after numeric conversion: {self.data_cleaned.shape}")
+
+        # Drop any completely missing columns
+        empty_cols = [
+            col
+            for col in self.data_cleaned.columns
+            if self.data_cleaned[col].isnull().all()
+        ]
+        if empty_cols:
+            print(f"Dropping empty columns: {empty_cols}")
+            self.data_cleaned = self.data_cleaned.drop(columns=empty_cols)
+
+        # Drop rows with any missing values
+        rows_before = len(self.data_cleaned)
+        self.data_cleaned = self.data_cleaned.dropna()
+        rows_removed = rows_before - len(self.data_cleaned)
+
+        print(f"\nFinal cleaned data shape: {self.data_cleaned.shape}")
+        if rows_removed > 0:
+            print(f"Removed {rows_removed} rows with missing values")
+
+        self.observations_removed = rows_removed
 
     def prepare_features(self):
         """Prepare features (X) and outcome (y) for model training."""
@@ -381,11 +452,63 @@ class ModelTrainer:
             "97.5th Percentile": np.percentile(self.y_pred_samples, 97.5, axis=1),
         }
 
+    def predict_outcome(self, model):
+        """Predict outcomes for new data."""
+        if self.data_cleaned is None:
+            raise ValueError("No data loaded for prediction.")
+        if len(self.data_cleaned) == 0:
+            raise ValueError("No valid rows remaining after cleaning data.")
+        if model is None:
+            raise ValueError("No trained model provided.")
+
+        try:
+            print("\nPrediction data info:")
+            print("Data shape:", self.data_cleaned.shape)
+            print("Columns:", self.data_cleaned.columns.tolist())
+
+            # Get feature columns (all numeric columns)
+            feature_cols = self.data_cleaned.select_dtypes(
+                include=["int64", "float64"]
+            ).columns
+            print(f"\nUsing features: {feature_cols.tolist()}")
+
+            X_new = self.data_cleaned[feature_cols].to_numpy()
+            print("Feature matrix shape:", X_new.shape)
+
+            # Generate predictions
+            print("\nGenerating predictions...")
+            y_pred_samples = model.predict(covariates=X_new)
+            print("Prediction samples shape:", y_pred_samples.shape)
+
+            # Calculate summary statistics
+            predictions = {
+                "Posterior Mean": np.mean(y_pred_samples, axis=1),
+                "2.5th Percentile": np.percentile(y_pred_samples, 2.5, axis=1),
+                "97.5th Percentile": np.percentile(y_pred_samples, 97.5, axis=1),
+            }
+
+            print("\nPrediction summary:")
+            for key, value in predictions.items():
+                print(
+                    f"{key} shape: {value.shape if hasattr(value, 'shape') else len(value)}"
+                )
+
+            return predictions
+
+        except Exception as e:
+            import traceback
+
+            print(f"\nError in predict_outcome: {str(e)}")
+            print("Traceback:")
+            print(traceback.format_exc())
+            raise RuntimeError(f"Error during prediction: {str(e)}")
+
 
 class Arborist(QMainWindow):
     def __init__(self):
         super().__init__()
 
+        self.trained_model = None  # Attribute to store the trained model instance
         self.training_worker = None
         self.progress_dialog = None
         self.full_predictions = None
@@ -679,6 +802,149 @@ class Arborist(QMainWindow):
         self.predict_ui = Ui_PredictTab()
         self.predict_ui.setupUi(self.predict_tab)
 
+        # File selection for the prediction dataset
+        self.predict_ui.selectFileButton.clicked.connect(self.select_predict_file)
+        self.predict_ui.predictButton.clicked.connect(self.run_prediction)
+
+    def run_prediction(self):
+        """Run prediction on a new dataset with the trained model."""
+        if self.trained_model is None:
+            QMessageBox.warning(
+                self,
+                "Prediction Error",
+                "No trained model available. Please train a model first.",
+            )
+            return
+
+        try:
+            if not hasattr(self, "predict_file_path"):
+                QMessageBox.warning(
+                    self, "File Error", "Please select a file for prediction."
+                )
+                return
+
+            # Create progress dialog
+            progress = QProgressDialog(
+                "Generating predictions...", "Cancel", 0, 100, self
+            )
+            progress.setWindowModality(Qt.WindowModal)
+            progress.setMinimumDuration(0)
+            progress.setValue(0)
+
+            # Initialize trainer and load data
+            trainer = ModelTrainer(self.predict_file_path, outcome_var=None)
+            progress.setValue(30)
+
+            trainer.load_data()
+            progress.setValue(60)
+
+            # Generate predictions
+            predictions = trainer.predict_outcome(self.trained_model)
+            progress.setValue(90)
+
+            # Display predictions
+            self.display_predictions(predictions)
+            progress.setValue(100)
+
+            self.statusBar.showMessage("Predictions generated successfully")
+
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Prediction Error",
+                f"An error occurred during prediction:\n{str(e)}",
+            )
+            self.statusBar.showMessage("Prediction failed")
+        finally:
+            if "progress" in locals():
+                progress.close()
+
+    def display_predictions(self, predictions):
+        """Display predictions prepended to the prediction dataset."""
+        try:
+            print("\nDisplaying predictions:")
+            print("Prediction keys:", predictions.keys())
+            print("Prediction lengths:", {k: len(v) for k, v in predictions.items()})
+
+            # First, load prediction dataset in chunks
+            chunks = []
+            chunk_iter = pd.read_csv(self.predict_file_path, chunksize=CHUNK_SIZE)
+            first_chunk = next(chunk_iter)
+
+            # Get original headers
+            original_headers = first_chunk.columns.tolist()
+            print("Original dataset headers:", original_headers)
+
+            # Create combined headers with predictions first
+            prediction_headers = [
+                "Posterior Average ŷ",
+                "2.5th percentile ŷ",
+                "97.5th percentile ŷ",
+            ]
+            combined_headers = prediction_headers + original_headers
+            print("Combined headers:", combined_headers)
+
+            # Create new chunk iterator that includes predictions
+            def combine_chunk_with_predictions(chunk, start_idx):
+                end_idx = start_idx + len(chunk)
+                prediction_data = {
+                    "Posterior Average ŷ": predictions["Posterior Mean"][
+                        start_idx:end_idx
+                    ],
+                    "2.5th percentile ŷ": predictions["2.5th Percentile"][
+                        start_idx:end_idx
+                    ],
+                    "97.5th percentile ŷ": predictions["97.5th Percentile"][
+                        start_idx:end_idx
+                    ],
+                }
+                prediction_df = pd.DataFrame(prediction_data)
+                return pd.concat([prediction_df, chunk.reset_index(drop=True)], axis=1)
+
+            # Combine first chunk with its predictions
+            combined_first_chunk = combine_chunk_with_predictions(first_chunk, 0)
+
+            # Create iterator for remaining chunks
+            remaining_chunks = []
+            chunk_idx = CHUNK_SIZE
+            for chunk in chunk_iter:
+                combined_chunk = combine_chunk_with_predictions(chunk, chunk_idx)
+                remaining_chunks.append(combined_chunk)
+                chunk_idx += len(chunk)
+
+            # Create final chunk iterator
+            final_chunks = itertools.chain([combined_first_chunk], remaining_chunks)
+
+            # Create table model with combined data
+            model = PandasTableModel(final_chunks, combined_headers)
+
+            # Configure the table view
+            self.predict_ui.tableView.setModel(model)
+            self.predict_ui.tableView.horizontalHeader().setSectionResizeMode(
+                QHeaderView.ResizeToContents
+            )
+            self.predict_ui.tableView.verticalHeader().setVisible(True)
+
+            # Enable sorting
+            self.predict_ui.tableView.setSortingEnabled(True)
+
+            print(
+                f"TableView configured with initial chunk showing {model.rowCount()} rows and {model.columnCount()} columns"
+            )
+            self.statusBar.showMessage(
+                f"Successfully displaying predictions with original data"
+            )
+
+        except Exception as e:
+            import traceback
+
+            print("Error in display_predictions:", str(e))
+            print("Traceback:", traceback.format_exc())
+            QMessageBox.critical(
+                self, "Display Error", f"Error displaying predictions: {str(e)}"
+            )
+            self.statusBar.showMessage("Error displaying predictions")
+
     def center_window(self):
         """Center the window on the screen."""
         screen = self.screen()  # Get the current screen
@@ -935,8 +1201,8 @@ class Arborist(QMainWindow):
         elif value == 100:
             self.statusBar.showMessage("Training complete.")
 
-    @Slot(dict, float)
-    def handle_training_finished(self, predictions, training_time):
+    @Slot(dict, float, object)
+    def handle_training_finished(self, predictions, training_time, model):
         """Handle successful model training completion."""
         if self.progress_dialog:
             self.progress_dialog.close()
@@ -944,7 +1210,8 @@ class Arborist(QMainWindow):
             f"Model training finished in {training_time:.2f} seconds."
         )
 
-        # Update training time display
+        # Store the trained model for later use in predictions
+        self.trained_model = model  # Directly set the trained model
         self.train_ui.trainingTimeValue.setText(f"{training_time:.2f} seconds")
 
         try:
