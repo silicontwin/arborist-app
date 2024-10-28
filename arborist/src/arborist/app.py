@@ -872,18 +872,21 @@ class Arborist(QMainWindow):
     def train_model(self):
         """Train the model using threading and progress tracking."""
         self.train_button.setEnabled(False)
-        # self.statusBar.showMessage("Training model...")
+        self.statusBar.showMessage("Initializing training...")
 
         try:
             if not hasattr(self, "current_file_path"):
+                self.statusBar.showMessage("No dataset selected.")
                 return
 
             outcome_var = self.train_ui.outcomeComboBox.currentText()
             if not outcome_var:
+                self.statusBar.showMessage("Outcome variable not selected.")
                 return
 
             # Create trainer instance
             trainer = ModelTrainer(self.current_file_path, outcome_var)
+            self.statusBar.showMessage("Loading dataset...")
 
             # Get model parameters from UI
             model_params = {
@@ -894,7 +897,7 @@ class Arborist(QMainWindow):
                 "thinning": self.train_ui.thinningSpinBox.value(),
             }
 
-            # Create and configure progress dialog
+            # Progress dialog
             self.progress_dialog = QProgressDialog(
                 "Training model...", "Cancel", 0, 100, self
             )
@@ -902,33 +905,44 @@ class Arborist(QMainWindow):
             self.progress_dialog.setAutoClose(False)
             self.progress_dialog.setAutoReset(False)
 
-            # Create and configure worker thread
+            # Worker thread setup
             self.training_worker = ModelTrainingWorker(trainer, model_params)
             self.training_worker.progress.connect(self.update_progress)
             self.training_worker.finished.connect(self.handle_training_finished)
             self.training_worker.error.connect(self.handle_training_error)
-
-            # Connect cancel button
             self.progress_dialog.canceled.connect(self.cancel_training)
 
-            # Start training
             self.training_worker.start()
             self.progress_dialog.show()
+            self.statusBar.showMessage("Training model...")
+
         finally:
             self.train_button.setEnabled(True)
-            # self.statusBar.showMessage("Training complete", 3000)  # Show for 3 seconds
 
     @Slot(int)
     def update_progress(self, value):
-        """Update progress dialog."""
+        """Update progress dialog and status bar based on progress value."""
         if self.progress_dialog:
             self.progress_dialog.setValue(value)
+        if value == 10:
+            self.statusBar.showMessage("Loading data...")
+        elif value == 30:
+            self.statusBar.showMessage("Preparing features...")
+        elif value == 40:
+            self.statusBar.showMessage("Training model...")
+        elif value == 80:
+            self.statusBar.showMessage("Generating predictions...")
+        elif value == 100:
+            self.statusBar.showMessage("Training complete.")
 
     @Slot(dict, float)
     def handle_training_finished(self, predictions, training_time):
         """Handle successful model training completion."""
         if self.progress_dialog:
             self.progress_dialog.close()
+        self.statusBar.showMessage(
+            f"Model training finished in {training_time:.2f} seconds."
+        )
 
         # Update training time display
         self.train_ui.trainingTimeValue.setText(f"{training_time:.2f} seconds")
@@ -960,9 +974,10 @@ class Arborist(QMainWindow):
 
     @Slot(str)
     def handle_training_error(self, error_message):
-        """Handle training errors with a proper dialog."""
+        """Handle training errors with a proper dialog and status bar update."""
         if self.progress_dialog:
             self.progress_dialog.close()
+        self.statusBar.showMessage("Training error encountered.")
 
         error_dialog = QMessageBox(self)
         error_dialog.setIcon(QMessageBox.Critical)
