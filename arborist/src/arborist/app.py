@@ -1275,10 +1275,11 @@ class Arborist(QMainWindow):
 
     def select_predict_file(self):
         """Open a file dialog to select a file for prediction."""
+        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
         file_path, _ = QFileDialog.getOpenFileName(
             self,
             "Select Dataset for Prediction",
-            os.path.expanduser("~"),  # Start in the home directory
+            desktop_path,  # Start in the Desktop directory
             "CSV Files (*.csv);;All Files (*)",
         )
         if file_path:
