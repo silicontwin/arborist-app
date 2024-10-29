@@ -106,7 +106,7 @@ class PandasTableModel(QAbstractTableModel):
                 self.alternate_row_color if index.row() % 2 else self.base_row_color
             )
 
-            # Then check for special column highlighting
+            # Check for special column highlighting
             column_name = self.headers[index.column()]
             if self.selected_column_name == column_name:
                 return QColor("#FFFFCB")  # Light yellow for selected column
@@ -115,7 +115,13 @@ class PandasTableModel(QAbstractTableModel):
                 "2.5th percentile ŷ",
                 "97.5th percentile ŷ",
             ]:
-                return QColor("#CCCCFF")  # Light blue for prediction columns
+                return QColor("#CCCCFF")  # Light blue for outcome predictions
+            elif column_name in [
+                "CATE",
+                "2.5th percentile CATE",
+                "97.5th percentile CATE",
+            ]:
+                return QColor("#FFE5CC")  # Light orange for CATE predictions
             else:
                 return base_color
 
@@ -132,7 +138,7 @@ class PandasTableModel(QAbstractTableModel):
         return None
 
     def load_next_chunk(self):
-        """Load the next chunk of data with original prediction handling and debug info."""
+        """Load the next chunk of data with CATE predictions first, followed by outcome predictions."""
         if not self.has_more_chunks:
             return
         try:
@@ -151,6 +157,15 @@ class PandasTableModel(QAbstractTableModel):
 
                 # Create prediction DataFrame
                 prediction_data = {
+                    # CATE predictions first
+                    "CATE": self.predictions["Posterior Mean CATE"][start_idx:end_idx],
+                    "2.5th percentile CATE": self.predictions["2.5th Percentile CATE"][
+                        start_idx:end_idx
+                    ],
+                    "97.5th percentile CATE": self.predictions[
+                        "97.5th Percentile CATE"
+                    ][start_idx:end_idx],
+                    # Then outcome predictions
                     "Posterior Average ŷ": self.predictions["Posterior Mean"][
                         start_idx:end_idx
                     ],
@@ -306,6 +321,7 @@ class ModelTrainer:
         self.data_cleaned = None
         self.X = None
         self.y = None
+        self.Z = None
         self.model = None
 
     def load_data(self):
@@ -370,6 +386,13 @@ class ModelTrainer:
 
         print(f"\nData shape after numeric conversion: {self.data_cleaned.shape}")
 
+        # Check if treatment variable exists
+        if self.treatment_var is not None:
+            if self.treatment_var not in self.data_cleaned.columns:
+                raise ValueError(
+                    f"Treatment variable '{self.treatment_var}' not found in the data."
+                )
+
         # Drop any completely missing columns
         empty_cols = [
             col
@@ -392,65 +415,175 @@ class ModelTrainer:
         self.observations_removed = rows_removed
 
     def prepare_features(self):
-        """Prepare features (X) and outcome (y) for model training."""
+        """Prepare features (X), outcome (y), and treatment (Z) for model training."""
         if self.outcome_var not in self.data_cleaned.columns:
             raise ValueError(
                 f"Outcome variable '{self.outcome_var}' not found in the data."
             )
 
-        # Features (all columns except outcome variable)
-        self.X = self.data_cleaned.drop(columns=[self.outcome_var]).to_numpy()
+        if (
+            self.treatment_var is not None
+            and self.treatment_var not in self.data_cleaned.columns
+        ):
+            raise ValueError(
+                f"Treatment variable '{self.treatment_var}' not found in the data."
+            )
+
+        # Features (all columns except outcome and treatment variables if treatment_var is provided)
+        if self.treatment_var is not None:
+            self.X = self.data_cleaned.drop(
+                columns=[self.outcome_var, self.treatment_var]
+            ).to_numpy()
+            self.Z = self.data_cleaned[self.treatment_var].to_numpy()
+        else:
+            self.X = self.data_cleaned.drop(columns=[self.outcome_var]).to_numpy()
+            self.Z = None
+
         self.y = self.data_cleaned[self.outcome_var].to_numpy()
+
+        # Flatten `self.y` to ensure it's a 1D array
+        self.y = self.y.ravel()
 
         # Standardize the outcome variable
         self.y_mean = np.mean(self.y)
         self.y_std = np.std(self.y)
         self.y_standardized = (self.y - self.y_mean) / self.y_std
 
-    def train_model(
-        self,
-        model_name: str,
-        num_trees: int,
-        burn_in: int,
-        num_draws: int,
-        thinning: int,
-    ):
-        """Train the model based on the selected type."""
+    def train_model(self, model_name, num_trees, burn_in, num_draws, thinning):
+        """Train the BCF model with proper array shapes."""
         try:
             if model_name == "BART":
                 self.model = BARTModel()
+            elif model_name == "BCF":
+                if self.Z is None:
+                    raise ValueError(
+                        "Treatment variable must be specified for BCF model."
+                    )
+
+                # Ensure Z is properly shaped
+                Z_train = self.Z.astype(np.float64)
+                Z_test = Z_train
+
+                # Estimate propensity scores
+                from sklearn.linear_model import LogisticRegression
+
+                propensity_model = LogisticRegression()
+                propensity_model.fit(self.X, Z_train)
+                pi_train = propensity_model.predict_proba(self.X)[:, 1]
+                pi_test = pi_train
+
+                # Store propensity scores
+                self.pi_train = pi_train
+                self.pi_test = pi_test
+
+                # Initialize BCF model
+                self.model = BCFModel()
+
+                # Set up parameters
+                params = {
+                    "num_trees_mu": num_trees,
+                    "num_trees_tau": max(int(num_trees / 4), 10),
+                    "num_burnin": burn_in,
+                    "num_mcmc": num_draws,
+                    "keep_burnin": False,
+                    "keep_gfr": False,
+                    "random_seed": 42,  # Add this to the params menu later
+                }
+
+                print("\nTraining BCF model with parameters:")
+                for key, value in params.items():
+                    print(f"{key}: {value}")
+
+                # Train model
                 self.model.sample(
                     X_train=self.X,
+                    Z_train=Z_train,
                     y_train=self.y_standardized,
+                    pi_train=pi_train,
                     X_test=self.X,
-                    num_trees=num_trees,
-                    num_burnin=burn_in,
-                    num_mcmc=num_draws,
+                    Z_test=Z_test,
+                    pi_test=pi_test,
+                    **params,
                 )
-            elif model_name == "BCF":
-                self.model = BCFModel()
-                # Add BCF-specific training logic here
+
+            else:
+                raise ValueError(f"Unsupported model: {model_name}")
+
         except Exception as e:
-            raise RuntimeError(f"Error during model training: {str(e)}")
+            import traceback
 
-    def predict(self):
-        """Generate predictions and convert them back to the original scale."""
-        self.y_pred_samples = self.model.predict(covariates=self.X)
-        self.y_pred_samples = (
-            self.y_pred_samples * self.y_std + self.y_mean
-        )  # Convert back to original scale
-
-        # Verify prediction length matches data length
-        if len(self.y_pred_samples) != len(self.data_cleaned):
-            raise ValueError(
-                f"Prediction length ({len(self.y_pred_samples)}) doesn't match data length ({len(self.data_cleaned)})"
+            traceback_str = traceback.format_exc()
+            raise RuntimeError(
+                f"Error during model training: {str(e)}\n{traceback_str}"
             )
 
-        return {
-            "Posterior Mean": np.mean(self.y_pred_samples, axis=1),
-            "2.5th Percentile": np.percentile(self.y_pred_samples, 2.5, axis=1),
-            "97.5th Percentile": np.percentile(self.y_pred_samples, 97.5, axis=1),
-        }
+    def predict(self):
+        """Generate predictions using stored model predictions."""
+        if not isinstance(self.model, BCFModel):
+            raise ValueError("No trained BCF model available")
+
+        try:
+            if self.Z is None:
+                raise ValueError(
+                    "Treatment variable 'Z' must be provided for BCF prediction."
+                )
+
+            print("\nAccessing stored predictions...")
+            print(f"Number of MCMC samples: {self.model.num_samples}")
+
+            # Get stored predictions
+            yhat_samples = self.model.y_hat_test
+            tau_samples = self.model.tau_hat_test
+
+            print("\nPrediction shapes:")
+            print(f"yhat_samples shape: {yhat_samples.shape}")
+            print(f"tau_samples shape: {tau_samples.shape}")
+
+            # Remove singleton dimensions if present
+            if yhat_samples.ndim == 3:
+                yhat_samples = yhat_samples.squeeze(-1)
+            if tau_samples.ndim == 3:
+                tau_samples = tau_samples.squeeze(-1)
+
+            print("\nAfter squeezing:")
+            print(f"yhat_samples shape: {yhat_samples.shape}")
+            print(f"tau_samples shape: {tau_samples.shape}")
+
+            # Convert predictions back to original scale
+            yhat_samples = yhat_samples * self.y_std + self.y_mean
+
+            # Calculate summary statistics
+            result = {
+                "Posterior Mean": np.mean(yhat_samples, axis=1),
+                "2.5th Percentile": np.percentile(yhat_samples, 2.5, axis=1),
+                "97.5th Percentile": np.percentile(yhat_samples, 97.5, axis=1),
+                "Posterior Mean CATE": np.mean(tau_samples, axis=1),
+                "2.5th Percentile CATE": np.percentile(tau_samples, 2.5, axis=1),
+                "97.5th Percentile CATE": np.percentile(tau_samples, 97.5, axis=1),
+            }
+
+            print("\nSummary statistic shapes:")
+            for key, value in result.items():
+                print(f"{key}: {value.shape}")
+
+            return result
+
+        except Exception as e:
+            import traceback
+
+            print(f"\nError in predict method: {str(e)}")
+            print("Traceback:")
+            print(traceback.format_exc())
+            print("\nModel attributes:")
+            print(f"Has y_hat_test: {'y_hat_test' in dir(self.model)}")
+            print(f"Has tau_hat_test: {'tau_hat_test' in dir(self.model)}")
+            if hasattr(self.model, "y_hat_test"):
+                print(f"y_hat_test type: {type(self.model.y_hat_test)}")
+                print(f"y_hat_test shape: {self.model.y_hat_test.shape}")
+            if hasattr(self.model, "tau_hat_test"):
+                print(f"tau_hat_test type: {type(self.model.tau_hat_test)}")
+                print(f"tau_hat_test shape: {self.model.tau_hat_test.shape}")
+            raise RuntimeError(f"Error during prediction: {str(e)}")
 
     def predict_outcome(self, model):
         """Predict outcomes for new data."""
@@ -715,7 +848,74 @@ class Arborist(QMainWindow):
         num_draws = self.train_ui.drawsSpinBox.value()
 
         # Generate the Python code as a string, ensuring proper formatting
-        code = f"""
+        if model_name == "BART":
+            code = f"""
+        # Python script to reproduce the analysis
+        # Generated by Arborist Version 0.0.1 (arborist.app) on {pd.Timestamp.now()}
+
+        import pandas as pd
+        import numpy as np
+        from sklearn.preprocessing import OneHotEncoder
+        from stochtree import {model_name}Model
+
+        # Load the dataset
+        data = pd.read_csv(r'{self.current_file_path}')
+
+        # Outcome variable: {outcome_var}
+        outcome_var = data['{outcome_var}']
+
+        # Preprocess categorical variables
+        categorical_columns = data.select_dtypes(include=['object', 'category']).columns
+        if len(categorical_columns) > 0:
+            ohe = OneHotEncoder(sparse_output=False, drop='first')
+            ohe_df = pd.DataFrame(ohe.fit_transform(data[categorical_columns]), columns=ohe.get_feature_names_out(categorical_columns))
+            data = pd.concat([data.drop(categorical_columns, axis=1), ohe_df], axis=1)
+
+        # Drop missing values
+        data_cleaned = data.dropna()
+
+        # Feature variables (all except outcome variable)
+        X = data_cleaned.drop(columns=['{outcome_var}']).to_numpy()
+        y = data_cleaned['{outcome_var}'].to_numpy()
+
+        # Standardize the outcome variable
+        y_mean = np.mean(y)
+        y_std = np.std(y)
+        y_standardized = (y - y_mean) / y_std
+
+        # Model training
+        model = {model_name}Model()
+        model.sample(
+            X_train=X,
+            y_train=y_standardized,
+            X_test=X,
+            num_trees={num_trees},
+            num_burnin={burn_in},
+            num_mcmc={num_draws}
+        )
+
+        # Generate predictions
+        y_pred_samples = model.predict(covariates=X)
+        y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
+
+        # Compute posterior summaries
+        posterior_mean = np.mean(y_pred_samples, axis=1)
+        percentile_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
+        percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
+
+        # Display results
+        results = pd.DataFrame({{
+            'Posterior Mean': posterior_mean,
+            '2.5th Percentile': percentile_2_5,
+            '97.5th Percentile': percentile_97_5
+        }})
+        print(results.head())
+        """
+        elif model_name == "BCF":
+            if not treatment_var:
+                return "Treatment variable not selected."
+
+            code = f"""
     # Python script to reproduce the analysis
     # Generated by Arborist Version 0.0.1 (arborist.app) on {pd.Timestamp.now()}
 
@@ -723,60 +923,72 @@ class Arborist(QMainWindow):
     import numpy as np
     from sklearn.preprocessing import OneHotEncoder
     from stochtree import {model_name}Model
+    from sklearn.linear_model import LogisticRegression
 
     # Load the dataset
     data = pd.read_csv(r'{self.current_file_path}')
 
     # Outcome variable: {outcome_var}
-    outcome_var = data['{outcome_var}']
-
-    # Preprocess categorical variables
-    categorical_columns = data.select_dtypes(include=['object', 'category']).columns
-    if len(categorical_columns) > 0:
-        ohe = OneHotEncoder(sparse_output=False, drop='first')
-        ohe_df = pd.DataFrame(ohe.fit_transform(data[categorical_columns]), columns=ohe.get_feature_names_out(categorical_columns))
-        data = pd.concat([data.drop(categorical_columns, axis=1), ohe_df], axis=1)
-
-    # Drop missing values
-    data_cleaned = data.dropna()
-
-    # Feature variables (all except outcome variable)
-    X = data_cleaned.drop(columns=['{outcome_var}']).to_numpy()
-    y = data_cleaned['{outcome_var}'].to_numpy()
+    # Treatment variable: {treatment_var}
+    y = data['{outcome_var}'].values
+    Z = data['{treatment_var}'].values
+    X = data.drop(columns=['{outcome_var}', '{treatment_var}']).values
 
     # Standardize the outcome variable
     y_mean = np.mean(y)
     y_std = np.std(y)
     y_standardized = (y - y_mean) / y_std
 
+    # Estimate propensity scores
+    propensity_model = LogisticRegression()
+    propensity_model.fit(X, Z)
+    pi_train = propensity_model.predict_proba(X)[:, 1]
+    pi_test = pi_train  # Using the same data for testing
+
     # Model training
     model = {model_name}Model()
     model.sample(
         X_train=X,
+        Z_train=Z,
         y_train=y_standardized,
+        pi_train=pi_train,
         X_test=X,
-        num_trees={num_trees},
+        Z_test=Z,
+        pi_test=pi_test,
         num_burnin={burn_in},
-        num_mcmc={num_draws}
+        num_mcmc={num_draws},
+        num_trees_mu={num_trees},
+        num_trees_tau={int(num_trees / 4)},
     )
 
     # Generate predictions
-    y_pred_samples = model.predict(covariates=X)
-    y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
+    tau_samples, mu_samples, yhat_samples = model.predict(X=X, Z=Z, propensity=pi_test)
+    yhat_samples = yhat_samples * y_std + y_mean  # Convert back to original scale
 
     # Compute posterior summaries
-    posterior_mean = np.mean(y_pred_samples, axis=1)
-    percentile_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
-    percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
+    posterior_mean = np.mean(yhat_samples, axis=1)
+    percentile_2_5 = np.percentile(yhat_samples, 2.5, axis=1)
+    percentile_97_5 = np.percentile(yhat_samples, 97.5, axis=1)
+
+    posterior_cate_mean = np.mean(tau_samples, axis=1)
+    cate_percentile_2_5 = np.percentile(tau_samples, 2.5, axis=1)
+    cate_percentile_97_5 = np.percentile(tau_samples, 97.5, axis=1)
 
     # Display results
     results = pd.DataFrame({{
         'Posterior Mean': posterior_mean,
         '2.5th Percentile': percentile_2_5,
-        '97.5th Percentile': percentile_97_5
+        '97.5th Percentile': percentile_97_5,
+        'Posterior Mean CATE': posterior_cate_mean,
+        '2.5th Percentile CATE': cate_percentile_2_5,
+        '97.5th Percentile CATE': cate_percentile_97_5
     }})
     print(results.head())
     """
+
+        else:
+            code = "Model not recognized."
+
         return code
 
     def toggle_code_gen_text(self):
@@ -860,7 +1072,7 @@ class Arborist(QMainWindow):
                 progress.close()
 
     def display_predictions(self, predictions):
-        """Display predictions prepended to the prediction dataset."""
+        """Display predictions including both outcome and CATE predictions."""
         try:
             print("\nDisplaying predictions:")
             print("Prediction keys:", predictions.keys())
@@ -875,11 +1087,16 @@ class Arborist(QMainWindow):
             original_headers = first_chunk.columns.tolist()
             print("Original dataset headers:", original_headers)
 
-            # Create combined headers with predictions first
+            # Create combined headers with both outcome and CATE predictions first
             prediction_headers = [
+                # Outcome predictions
                 "Posterior Average ŷ",
                 "2.5th percentile ŷ",
                 "97.5th percentile ŷ",
+                # CATE predictions
+                "CATE",
+                "2.5th percentile CATE",
+                "97.5th percentile CATE",
             ]
             combined_headers = prediction_headers + original_headers
             print("Combined headers:", combined_headers)
@@ -888,6 +1105,7 @@ class Arborist(QMainWindow):
             def combine_chunk_with_predictions(chunk, start_idx):
                 end_idx = start_idx + len(chunk)
                 prediction_data = {
+                    # Outcome predictions
                     "Posterior Average ŷ": predictions["Posterior Mean"][
                         start_idx:end_idx
                     ],
@@ -895,6 +1113,14 @@ class Arborist(QMainWindow):
                         start_idx:end_idx
                     ],
                     "97.5th percentile ŷ": predictions["97.5th Percentile"][
+                        start_idx:end_idx
+                    ],
+                    # CATE predictions
+                    "CATE": predictions["Posterior Mean CATE"][start_idx:end_idx],
+                    "2.5th percentile CATE": predictions["2.5th Percentile CATE"][
+                        start_idx:end_idx
+                    ],
+                    "97.5th percentile CATE": predictions["97.5th Percentile CATE"][
                         start_idx:end_idx
                     ],
                 }
@@ -1141,6 +1367,7 @@ class Arborist(QMainWindow):
         self.statusBar.showMessage("Initializing training...")
 
         try:
+            # Ensure a dataset is loaded and an outcome variable is selected
             if not hasattr(self, "current_file_path"):
                 self.statusBar.showMessage("No dataset selected.")
                 return
@@ -1150,39 +1377,55 @@ class Arborist(QMainWindow):
                 self.statusBar.showMessage("Outcome variable not selected.")
                 return
 
-            # Create trainer instance
-            trainer = ModelTrainer(self.current_file_path, outcome_var)
-            self.statusBar.showMessage("Loading dataset...")
+            # Retrieve model parameters from UI elements
+            model_name = self.train_ui.modelComboBox.currentText()
+            num_trees = self.train_ui.treesSpinBox.value()
+            burn_in = self.train_ui.burnInSpinBox.value()
+            num_draws = self.train_ui.drawsSpinBox.value()
+            thinning = self.train_ui.thinningSpinBox.value()
 
-            # Get model parameters from UI
+            # Check for treatment variable if needed
+            treatment_var = (
+                self.train_ui.treatmentComboBox.currentText()
+                if self.train_ui.treatmentFrame.isVisible()
+                else None
+            )
+
+            # Initialize the ModelTrainer
+            self.trainer = ModelTrainer(
+                file_path=self.current_file_path,
+                outcome_var=outcome_var,
+                treatment_var=treatment_var,
+            )
+
+            # Model training parameters
             model_params = {
-                "model_name": self.train_ui.modelComboBox.currentText(),
-                "num_trees": self.train_ui.treesSpinBox.value(),
-                "burn_in": self.train_ui.burnInSpinBox.value(),
-                "num_draws": self.train_ui.drawsSpinBox.value(),
-                "thinning": self.train_ui.thinningSpinBox.value(),
+                "model_name": model_name,
+                "num_trees": num_trees,
+                "burn_in": burn_in,
+                "num_draws": num_draws,
+                "thinning": thinning,
             }
 
-            # Progress dialog
+            # Initialize and start the training worker
+            self.training_worker = ModelTrainingWorker(
+                trainer=self.trainer, model_params=model_params
+            )
+            self.training_worker.progress.connect(self.update_progress)
+            self.training_worker.finished.connect(self.handle_training_finished)
+            self.training_worker.error.connect(self.handle_training_error)
+            self.training_worker.start()
+
+            # Set up a progress dialog to track model training
             self.progress_dialog = QProgressDialog(
                 "Training model...", "Cancel", 0, 100, self
             )
             self.progress_dialog.setWindowModality(Qt.WindowModal)
-            self.progress_dialog.setAutoClose(False)
-            self.progress_dialog.setAutoReset(False)
-
-            # Worker thread setup
-            self.training_worker = ModelTrainingWorker(trainer, model_params)
-            self.training_worker.progress.connect(self.update_progress)
-            self.training_worker.finished.connect(self.handle_training_finished)
-            self.training_worker.error.connect(self.handle_training_error)
             self.progress_dialog.canceled.connect(self.cancel_training)
+            self.progress_dialog.setValue(0)
 
-            self.training_worker.start()
-            self.progress_dialog.show()
-            self.statusBar.showMessage("Training model...")
-
-        finally:
+        except Exception as e:
+            self.statusBar.showMessage(f"Error initializing training: {str(e)}")
             self.train_button.setEnabled(True)
 
     @Slot(int)
@@ -1203,7 +1446,7 @@ class Arborist(QMainWindow):
 
     @Slot(dict, float, object)
     def handle_training_finished(self, predictions, training_time, model):
-        """Handle successful model training completion."""
+        """Handle successful model training completion with reordered prediction columns."""
         if self.progress_dialog:
             self.progress_dialog.close()
         self.statusBar.showMessage(
@@ -1211,19 +1454,28 @@ class Arborist(QMainWindow):
         )
 
         # Store the trained model for later use in predictions
-        self.trained_model = model  # Directly set the trained model
+        self.trained_model = model
         self.train_ui.trainingTimeValue.setText(f"{training_time:.2f} seconds")
 
         try:
             # Reload the data with predictions
             chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
             first_chunk = next(chunk_iter)
+
+            # Define headers with CATE predictions first, then outcome predictions
             headers = [
+                # CATE predictions
+                "CATE",
+                "2.5th percentile CATE",
+                "97.5th percentile CATE",
+                # Outcome predictions
                 "Posterior Average ŷ",
                 "2.5th percentile ŷ",
                 "97.5th percentile ŷ",
             ]
+            # Add original data columns
             headers.extend(first_chunk.columns.tolist())
+
             # Re-create chunk_iter including the first chunk
             chunk_iter = itertools.chain([first_chunk], chunk_iter)
             model = PandasTableModel(chunk_iter, headers, predictions)
@@ -1241,17 +1493,70 @@ class Arborist(QMainWindow):
 
     @Slot(str)
     def handle_training_error(self, error_message):
-        """Handle training errors with a proper dialog and status bar update."""
-        if self.progress_dialog:
-            self.progress_dialog.close()
-        self.statusBar.showMessage("Training error encountered.")
+        """Handle training errors with detailed error reporting."""
+        try:
+            # Ensure progress dialog is closed
+            if self.progress_dialog:
+                self.progress_dialog.close()
+                self.progress_dialog = None
 
-        error_dialog = QMessageBox(self)
-        error_dialog.setIcon(QMessageBox.Critical)
-        error_dialog.setWindowTitle("Training Error")
-        error_dialog.setText("An error occurred during model training")
-        error_dialog.setDetailedText(error_message)
-        error_dialog.exec()
+            # Reset training worker
+            if self.training_worker:
+                self.training_worker.stop()
+                self.training_worker = None
+
+            # Re-enable train button
+            self.train_button.setEnabled(True)
+
+            # Update status
+            self.statusBar.showMessage("Training error encountered")
+
+            # Create detailed error dialog
+            error_dialog = QMessageBox(self)
+            error_dialog.setIcon(QMessageBox.Critical)
+            error_dialog.setWindowTitle("Training Error")
+            error_dialog.setText("An error occurred during model training")
+
+            # Add detailed error information
+            detailed_text = [
+                "Error Details:",
+                "-------------",
+                str(error_message),
+                "",
+                "Debug Information:",
+                "-----------------",
+            ]
+
+            # Add model parameters if available
+            if hasattr(self, "trainer"):
+                detailed_text.extend(
+                    [
+                        "Model Configuration:",
+                        f"- Outcome variable: {self.trainer.outcome_var}",
+                        f"- Treatment variable: {self.trainer.treatment_var}",
+                        f"- Data shape: {self.trainer.X.shape if hasattr(self.trainer, 'X') else 'Not available'}",
+                        "",
+                    ]
+                )
+
+            error_dialog.setDetailedText("\n".join(detailed_text))
+
+            # Set minimum width for better readability
+            error_dialog.setMinimumWidth(400)
+
+            # Show the dialog
+            error_dialog.exec()
+
+        except Exception as e:
+            # Fallback error handling
+            print(f"Error in error handler: {str(e)}")
+            QMessageBox.critical(
+                self,
+                "Error",
+                "An error occurred while handling the training error.\n"
+                f"Original error: {error_message}\n"
+                f"Handler error: {str(e)}",
+            )
 
     def cancel_training(self):
         """Cancel the training process."""
