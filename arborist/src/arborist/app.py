@@ -1284,8 +1284,6 @@ class Arborist(QMainWindow):
         if file_path:
             self.predict_file_path = file_path  # Store the path for later use
             self.statusBar.showMessage(f"Selected prediction file: {file_path}")
-
-            self.predict_ui.selectedFileLabel.setText(file_path)
         else:
             self.statusBar.showMessage("No file selected for prediction.")
 
