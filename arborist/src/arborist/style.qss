@@ -151,13 +151,31 @@ QSplitter {
 }
 
 QScrollBar:vertical, QScrollBar:horizontal {
-    background: #F0F0F0;
-    width: 10px;
+    background: #E0E0E0;
+    width: 12px;
+    height: 12px;
+    border-radius: 6px;
 }
 
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
-    background: #B0B0B0;
-    border-radius: 5px;
+    background: #A0A0A0;
+    min-width: 20px;
+    min-height: 20px;
+    border-radius: 6px;
+}
+
+QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
+    background: #808080;
+}
+
+QScrollBar::handle:vertical:pressed, QScrollBar::handle:horizontal:pressed {
+    background: #606060;
+}
+
+QScrollBar::add-line, QScrollBar::sub-line {
+    background: none;
+    width: 0px;
+    height: 0px;
 }
 
 QScrollBar::add-line, QScrollBar::sub-line {
