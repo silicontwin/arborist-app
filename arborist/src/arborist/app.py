@@ -138,7 +138,7 @@ class PandasTableModel(QAbstractTableModel):
         return None
 
     def load_next_chunk(self):
-        """Load the next chunk of data with CATE predictions first, followed by outcome predictions."""
+        """Load the next chunk of data with proper prediction handling for both BART and BCF."""
         if not self.has_more_chunks:
             return
         try:
@@ -155,33 +155,46 @@ class PandasTableModel(QAbstractTableModel):
                 end_idx = start_idx + len(chunk)
                 print(f"Processing predictions for indices {start_idx} to {end_idx}")
 
-                # Create prediction DataFrame
-                prediction_data = {
-                    # CATE predictions first
-                    "CATE": self.predictions["Posterior Mean CATE"][start_idx:end_idx],
-                    "2.5th percentile CATE": self.predictions["2.5th Percentile CATE"][
-                        start_idx:end_idx
-                    ],
-                    "97.5th percentile CATE": self.predictions[
-                        "97.5th Percentile CATE"
-                    ][start_idx:end_idx],
-                    # Then outcome predictions
-                    "Posterior Average ŷ": self.predictions["Posterior Mean"][
-                        start_idx:end_idx
-                    ],
-                    "2.5th percentile ŷ": self.predictions["2.5th Percentile"][
-                        start_idx:end_idx
-                    ],
-                    "97.5th percentile ŷ": self.predictions["97.5th Percentile"][
-                        start_idx:end_idx
-                    ],
-                }
+                # Create prediction DataFrame based on available predictions
+                prediction_data = {}
+
+                # Check if we have CATE predictions (BCF model)
+                if "Posterior Mean CATE" in self.predictions:
+                    prediction_data.update(
+                        {
+                            "CATE": self.predictions["Posterior Mean CATE"][
+                                start_idx:end_idx
+                            ],
+                            "2.5th percentile CATE": self.predictions[
+                                "2.5th Percentile CATE"
+                            ][start_idx:end_idx],
+                            "97.5th percentile CATE": self.predictions[
+                                "97.5th Percentile CATE"
+                            ][start_idx:end_idx],
+                        }
+                    )
+
+                # Add outcome predictions (both BART and BCF)
+                prediction_data.update(
+                    {
+                        "Posterior Average ŷ": self.predictions["Posterior Mean"][
+                            start_idx:end_idx
+                        ],
+                        "2.5th percentile ŷ": self.predictions["2.5th Percentile"][
+                            start_idx:end_idx
+                        ],
+                        "97.5th percentile ŷ": self.predictions["97.5th Percentile"][
+                            start_idx:end_idx
+                        ],
+                    }
+                )
+
                 print("Created prediction data with keys:", prediction_data.keys())
 
                 # Combine predictions with chunk data
+                prediction_df = pd.DataFrame(prediction_data)
                 combined_chunk = pd.concat(
-                    [pd.DataFrame(prediction_data), chunk.reset_index(drop=True)],
-                    axis=1,
+                    [prediction_df, chunk.reset_index(drop=True)], axis=1
                 )
                 print("Combined chunk shape:", combined_chunk.shape)
 
@@ -450,12 +463,20 @@ class ModelTrainer:
         self.y_standardized = (self.y - self.y_mean) / self.y_std
 
     def train_model(self, model_name, num_trees, burn_in, num_draws, thinning):
-        """Train the BCF model with proper array shapes."""
+        """Train the model based on the selected type."""
         try:
             if model_name == "BART":
                 self.model = BARTModel()
+                self.model.sample(
+                    X_train=self.X,
+                    y_train=self.y_standardized,
+                    X_test=self.X,
+                    num_trees=num_trees,
+                    num_burnin=burn_in,
+                    num_mcmc=num_draws,
+                )
             elif model_name == "BCF":
-                if self.Z is None:
+                if self.treatment_var is None:
                     raise ValueError(
                         "Treatment variable must be specified for BCF model."
                     )
@@ -505,7 +526,6 @@ class ModelTrainer:
                     pi_test=pi_test,
                     **params,
                 )
-
             else:
                 raise ValueError(f"Unsupported model: {model_name}")
 
@@ -518,55 +538,64 @@ class ModelTrainer:
             )
 
     def predict(self):
-        """Generate predictions using stored model predictions."""
-        if not isinstance(self.model, BCFModel):
-            raise ValueError("No trained BCF model available")
-
+        """Generate predictions using the trained model."""
         try:
-            if self.Z is None:
-                raise ValueError(
-                    "Treatment variable 'Z' must be provided for BCF prediction."
-                )
+            if isinstance(self.model, BARTModel):
+                # BART prediction handling
+                self.y_pred_samples = self.model.predict(covariates=self.X)
+                # Convert back to original scale
+                y_pred_samples_original = self.y_pred_samples * self.y_std + self.y_mean
 
-            print("\nAccessing stored predictions...")
-            print(f"Number of MCMC samples: {self.model.num_samples}")
+                # Calculate summary statistics (no CATE for BART)
+                return {
+                    "Posterior Mean": np.mean(y_pred_samples_original, axis=1),
+                    "2.5th Percentile": np.percentile(
+                        y_pred_samples_original, 2.5, axis=1
+                    ),
+                    "97.5th Percentile": np.percentile(
+                        y_pred_samples_original, 97.5, axis=1
+                    ),
+                }
+            elif isinstance(self.model, BCFModel):
+                # BCF prediction handling
+                if not hasattr(self.model, "y_hat_test"):
+                    raise ValueError("No trained BCF model available")
 
-            # Get stored predictions
-            yhat_samples = self.model.y_hat_test
-            tau_samples = self.model.tau_hat_test
+                print("\nAccessing stored predictions...")
+                print(f"Number of MCMC samples: {self.model.num_samples}")
 
-            print("\nPrediction shapes:")
-            print(f"yhat_samples shape: {yhat_samples.shape}")
-            print(f"tau_samples shape: {tau_samples.shape}")
+                # Get stored predictions
+                yhat_samples = self.model.y_hat_test
+                tau_samples = self.model.tau_hat_test
 
-            # Remove singleton dimensions if present
-            if yhat_samples.ndim == 3:
-                yhat_samples = yhat_samples.squeeze(-1)
-            if tau_samples.ndim == 3:
-                tau_samples = tau_samples.squeeze(-1)
+                print("\nPrediction shapes:")
+                print(f"yhat_samples shape: {yhat_samples.shape}")
+                print(f"tau_samples shape: {tau_samples.shape}")
 
-            print("\nAfter squeezing:")
-            print(f"yhat_samples shape: {yhat_samples.shape}")
-            print(f"tau_samples shape: {tau_samples.shape}")
+                # Remove singleton dimensions if present
+                if yhat_samples.ndim == 3:
+                    yhat_samples = yhat_samples.squeeze(-1)
+                if tau_samples.ndim == 3:
+                    tau_samples = tau_samples.squeeze(-1)
 
-            # Convert predictions back to original scale
-            yhat_samples = yhat_samples * self.y_std + self.y_mean
+                print("\nAfter squeezing:")
+                print(f"yhat_samples shape: {yhat_samples.shape}")
+                print(f"tau_samples shape: {tau_samples.shape}")
 
-            # Calculate summary statistics
-            result = {
-                "Posterior Mean": np.mean(yhat_samples, axis=1),
-                "2.5th Percentile": np.percentile(yhat_samples, 2.5, axis=1),
-                "97.5th Percentile": np.percentile(yhat_samples, 97.5, axis=1),
-                "Posterior Mean CATE": np.mean(tau_samples, axis=1),
-                "2.5th Percentile CATE": np.percentile(tau_samples, 2.5, axis=1),
-                "97.5th Percentile CATE": np.percentile(tau_samples, 97.5, axis=1),
-            }
+                # Convert predictions back to original scale
+                yhat_samples = yhat_samples * self.y_std + self.y_mean
 
-            print("\nSummary statistic shapes:")
-            for key, value in result.items():
-                print(f"{key}: {value.shape}")
-
-            return result
+                # Calculate summary statistics including CATE for BCF
+                return {
+                    "Posterior Mean": np.mean(yhat_samples, axis=1),
+                    "2.5th Percentile": np.percentile(yhat_samples, 2.5, axis=1),
+                    "97.5th Percentile": np.percentile(yhat_samples, 97.5, axis=1),
+                    "Posterior Mean CATE": np.mean(tau_samples, axis=1),
+                    "2.5th Percentile CATE": np.percentile(tau_samples, 2.5, axis=1),
+                    "97.5th Percentile CATE": np.percentile(tau_samples, 97.5, axis=1),
+                }
+            else:
+                raise ValueError("No trained model available")
 
         except Exception as e:
             import traceback
@@ -583,6 +612,7 @@ class ModelTrainer:
             if hasattr(self.model, "tau_hat_test"):
                 print(f"tau_hat_test type: {type(self.model.tau_hat_test)}")
                 print(f"tau_hat_test shape: {self.model.tau_hat_test.shape}")
+            print(f"Model type: {type(self.model)}")
             raise RuntimeError(f"Error during prediction: {str(e)}")
 
     def predict_outcome(self, model):
@@ -1072,7 +1102,7 @@ class Arborist(QMainWindow):
                 progress.close()
 
     def display_predictions(self, predictions):
-        """Display predictions including both outcome and CATE predictions."""
+        """Display predictions including appropriate columns based on model type."""
         try:
             print("\nDisplaying predictions:")
             print("Prediction keys:", predictions.keys())
@@ -1087,43 +1117,68 @@ class Arborist(QMainWindow):
             original_headers = first_chunk.columns.tolist()
             print("Original dataset headers:", original_headers)
 
-            # Create combined headers with both outcome and CATE predictions first
-            prediction_headers = [
-                # Outcome predictions
-                "Posterior Average ŷ",
-                "2.5th percentile ŷ",
-                "97.5th percentile ŷ",
-                # CATE predictions
-                "CATE",
-                "2.5th percentile CATE",
-                "97.5th percentile CATE",
-            ]
+            # Check if we have CATE predictions (BCF model)
+            is_bcf = "Posterior Mean CATE" in predictions
+
+            # Create combined headers based on model type
+            if is_bcf:
+                prediction_headers = [
+                    # CATE predictions first (BCF only)
+                    "CATE",
+                    "2.5th percentile CATE",
+                    "97.5th percentile CATE",
+                    # Then outcome predictions
+                    "Posterior Average ŷ",
+                    "2.5th percentile ŷ",
+                    "97.5th percentile ŷ",
+                ]
+            else:
+                # Only outcome predictions (BART)
+                prediction_headers = [
+                    "Posterior Average ŷ",
+                    "2.5th percentile ŷ",
+                    "97.5th percentile ŷ",
+                ]
+
             combined_headers = prediction_headers + original_headers
             print("Combined headers:", combined_headers)
 
             # Create new chunk iterator that includes predictions
             def combine_chunk_with_predictions(chunk, start_idx):
                 end_idx = start_idx + len(chunk)
-                prediction_data = {
-                    # Outcome predictions
-                    "Posterior Average ŷ": predictions["Posterior Mean"][
-                        start_idx:end_idx
-                    ],
-                    "2.5th percentile ŷ": predictions["2.5th Percentile"][
-                        start_idx:end_idx
-                    ],
-                    "97.5th percentile ŷ": predictions["97.5th Percentile"][
-                        start_idx:end_idx
-                    ],
-                    # CATE predictions
-                    "CATE": predictions["Posterior Mean CATE"][start_idx:end_idx],
-                    "2.5th percentile CATE": predictions["2.5th Percentile CATE"][
-                        start_idx:end_idx
-                    ],
-                    "97.5th percentile CATE": predictions["97.5th Percentile CATE"][
-                        start_idx:end_idx
-                    ],
-                }
+                prediction_data = {}
+
+                if is_bcf:
+                    # Add CATE predictions for BCF
+                    prediction_data.update(
+                        {
+                            "CATE": predictions["Posterior Mean CATE"][
+                                start_idx:end_idx
+                            ],
+                            "2.5th percentile CATE": predictions[
+                                "2.5th Percentile CATE"
+                            ][start_idx:end_idx],
+                            "97.5th percentile CATE": predictions[
+                                "97.5th Percentile CATE"
+                            ][start_idx:end_idx],
+                        }
+                    )
+
+                # Add outcome predictions for both models
+                prediction_data.update(
+                    {
+                        "Posterior Average ŷ": predictions["Posterior Mean"][
+                            start_idx:end_idx
+                        ],
+                        "2.5th percentile ŷ": predictions["2.5th Percentile"][
+                            start_idx:end_idx
+                        ],
+                        "97.5th percentile ŷ": predictions["97.5th Percentile"][
+                            start_idx:end_idx
+                        ],
+                    }
+                )
+
                 prediction_df = pd.DataFrame(prediction_data)
                 return pd.concat([prediction_df, chunk.reset_index(drop=True)], axis=1)
 
@@ -1446,7 +1501,7 @@ class Arborist(QMainWindow):
 
     @Slot(dict, float, object)
     def handle_training_finished(self, predictions, training_time, model):
-        """Handle successful model training completion with reordered prediction columns."""
+        """Handle successful model training completion."""
         if self.progress_dialog:
             self.progress_dialog.close()
         self.statusBar.showMessage(
@@ -1462,17 +1517,26 @@ class Arborist(QMainWindow):
             chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
             first_chunk = next(chunk_iter)
 
-            # Define headers with CATE predictions first, then outcome predictions
-            headers = [
-                # CATE predictions
-                "CATE",
-                "2.5th percentile CATE",
-                "97.5th percentile CATE",
-                # Outcome predictions
-                "Posterior Average ŷ",
-                "2.5th percentile ŷ",
-                "97.5th percentile ŷ",
-            ]
+            # Define headers based on model type
+            if isinstance(model, BCFModel):
+                headers = [
+                    # CATE predictions first (BCF only)
+                    "CATE",
+                    "2.5th percentile CATE",
+                    "97.5th percentile CATE",
+                    # Outcome predictions
+                    "Posterior Average ŷ",
+                    "2.5th percentile ŷ",
+                    "97.5th percentile ŷ",
+                ]
+            else:  # BART model
+                headers = [
+                    # Only outcome predictions for BART
+                    "Posterior Average ŷ",
+                    "2.5th percentile ŷ",
+                    "97.5th percentile ŷ",
+                ]
+
             # Add original data columns
             headers.extend(first_chunk.columns.tolist())
 
@@ -1490,6 +1554,9 @@ class Arborist(QMainWindow):
 
         except Exception as e:
             print(f"Error updating predictions: {e}")
+            import traceback
+
+            print("Traceback:", traceback.format_exc())
 
     @Slot(str)
     def handle_training_error(self, error_message):
