@@ -76,7 +76,7 @@ class Ui_TrainTab(object):
         self.modelComboBox.setObjectName(u"modelComboBox")
         sizePolicy.setHeightForWidth(self.modelComboBox.sizePolicy().hasHeightForWidth())
         self.modelComboBox.setSizePolicy(sizePolicy)
-        self.modelComboBox.setMinimumSize(QSize(130, 0))
+        self.modelComboBox.setMinimumSize(QSize(100, 0))
         self.modelComboBox.setBaseSize(QSize(0, 0))
         self.modelComboBox.setFrame(True)
 
@@ -106,6 +106,7 @@ class Ui_TrainTab(object):
         self.outcomeComboBox.setObjectName(u"outcomeComboBox")
         sizePolicy.setHeightForWidth(self.outcomeComboBox.sizePolicy().hasHeightForWidth())
         self.outcomeComboBox.setSizePolicy(sizePolicy)
+        self.outcomeComboBox.setMinimumSize(QSize(200, 0))
 
         self.horizontalLayout_2.addWidget(self.outcomeComboBox)
 
