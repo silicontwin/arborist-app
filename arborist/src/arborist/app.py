@@ -792,6 +792,31 @@ class Arborist(QMainWindow):
         self.file_viewer = self.browse_ui.file_viewer
         self.file_viewer.setSortingEnabled(True)
 
+        # Add message label to file viewer
+        self.no_dataset_message = QLabel(
+            "Browse and open a dataset using the file browser on the left and it will appear here",
+            self.browse_ui.file_viewer,
+        )
+        self.no_dataset_message.setAlignment(Qt.AlignCenter)
+        self.no_dataset_message.setWordWrap(True)
+        self.no_dataset_message.setStyleSheet("color: gray; font-size: 14px;")
+        self.no_dataset_message.setGeometry(
+            0, 0, self.file_viewer.width(), self.file_viewer.height()
+        )
+        self.no_dataset_message.show()
+
+        # Adjust layout when resizing
+        original_resize_event = self.file_viewer.resizeEvent
+
+        def resize_event_override(event):
+            self.no_dataset_message.setGeometry(
+                0, 0, self.file_viewer.width(), self.file_viewer.height()
+            )
+            if callable(original_resize_event):
+                original_resize_event(event)
+
+        self.file_viewer.resizeEvent = resize_event_override
+
         # Set splitter sizes to 600 for the file browser, 1000 for the file viewer
         self.browse_ui.splitter.setSizes([600, 1000])
 
@@ -1250,16 +1275,14 @@ class Arborist(QMainWindow):
             # It's a directory, navigate into it by setting the root index
             self.navigate_to_directory(file_path)
         elif file_path.endswith((".csv", ".sav", ".dta")):
-            # Open the file
+            # Open the file if it is a supported dataset
             self.load_csv_file(file_path, self.file_viewer)
-            self.open_button.setVisible(
-                True
-            )  # Show the 'Open' button after a dataset is loaded
+            self.open_button.setVisible(True)  # Show the 'Open Dataset' button
         else:
-            self.file_viewer.setModel(None)  # Clear the table if non-dataset file
-            self.open_button.setVisible(
-                False
-            )  # Hide the 'Open' button if no dataset is loaded
+            # Clear the file viewer and hide the open button for unsupported files
+            self.file_viewer.setModel(None)
+            self.open_button.setVisible(False)
+            self.no_dataset_message.show()  # Show the "No dataset" message
 
     def navigate_to_directory(self, directory_path):
         """Navigate to the directory represented by the given path."""
@@ -1284,6 +1307,11 @@ class Arborist(QMainWindow):
         # Update navigation buttons
         self.back_button.setEnabled(self.history_index > 0)
         self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
+
+        # Show the "No dataset" message if no dataset is loaded in the new directory
+        self.file_viewer.setModel(None)
+        self.no_dataset_message.show()
+        self.open_button.setVisible(False)
 
     def navigate_back(self):
         """Navigate back in the directory history."""
@@ -1346,17 +1374,24 @@ class Arborist(QMainWindow):
             # Automatically adjust the column width to fit the content and header
             table_view.resizeColumnsToContents()
 
-            self.outcome_combo.clear()  # Clear the outcome variable dropdown
-            self.outcome_combo.addItems(headers)  # Add the column names to the dropdown
+            # Update the outcome combo box with column names
+            self.outcome_combo.clear()
+            self.outcome_combo.addItems(headers)
 
             # Connect the scroll event for lazy loading
             table_view.verticalScrollBar().valueChanged.connect(
                 lambda value: self.on_scroll(value, table_view)
             )
 
+            # Hide the "No dataset" message and show the open button
+            self.no_dataset_message.hide()
+            self.open_button.setVisible(True)
         except Exception as e:
             print(f"Error loading file: {e}")
             table_view.setModel(None)
+            # Show the "No dataset" message if loading fails
+            self.no_dataset_message.show()
+            self.open_button.setVisible(False)
 
     def on_scroll(self, value, table_view):
         """Handle scrolling to load more data."""
