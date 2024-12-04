@@ -1482,6 +1482,7 @@ class Arborist(QMainWindow):
         self.statusBar.showMessage("Initializing training...")
 
         try:
+            self.start_time = time.time()  # Start the timer
             # Ensure a dataset is loaded and an outcome variable is selected
             if not hasattr(self, "current_file_path"):
                 self.statusBar.showMessage("No dataset selected.")
@@ -1548,24 +1549,38 @@ class Arborist(QMainWindow):
         """Update progress dialog and status bar based on progress value."""
         if self.progress_dialog:
             self.progress_dialog.setValue(value)
+
+        elapsed_time = time.time() - self.start_time
         if value == 10:
-            self.statusBar.showMessage("Loading data...")
+            self.statusBar.showMessage(
+                f"Loading data... (Elapsed: {elapsed_time:.2f} seconds)"
+            )
         elif value == 30:
-            self.statusBar.showMessage("Preparing features...")
+            self.statusBar.showMessage(
+                f"Preparing features... (Elapsed: {elapsed_time:.2f} seconds)"
+            )
         elif value == 40:
-            self.statusBar.showMessage("Training model...")
+            self.statusBar.showMessage(
+                f"Training model... (Elapsed: {elapsed_time:.2f} seconds)"
+            )
         elif value == 80:
-            self.statusBar.showMessage("Generating predictions...")
+            self.statusBar.showMessage(
+                f"Generating predictions... (Elapsed: {elapsed_time:.2f} seconds)"
+            )
         elif value == 100:
-            self.statusBar.showMessage("Training complete.")
+            self.statusBar.showMessage(
+                f"Training complete in {elapsed_time:.2f} seconds."
+            )
 
     @Slot(dict, float, object)
     def handle_training_finished(self, predictions, training_time, model):
         """Handle successful model training completion."""
         if self.progress_dialog:
             self.progress_dialog.close()
+
+        elapsed_time = time.time() - self.start_time
         self.statusBar.showMessage(
-            f"Model training finished in {training_time:.2f} seconds."
+            f"Model training finished in {elapsed_time:.2f} seconds."
         )
 
         # Store the trained model for later use in predictions
