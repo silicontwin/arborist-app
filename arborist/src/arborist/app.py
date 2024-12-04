@@ -676,6 +676,7 @@ class Arborist(QMainWindow):
         self.progress_dialog = None
         self.full_predictions = None
         self.current_prediction_idx = 0
+        self.dataset_opened = False
 
         # Load the stylesheet
         try:
@@ -689,6 +690,7 @@ class Arborist(QMainWindow):
         self.init_ui()
 
     def init_ui(self):
+        """Initialize the main UI."""
         self.setWindowTitle("Arborist")
 
         self.statusBar = self.statusBar()
@@ -715,6 +717,10 @@ class Arborist(QMainWindow):
         self.tabs.addTab(self.browse_tab, "Browse")
         self.tabs.addTab(self.train_tab, "Train")
         self.tabs.addTab(self.predict_tab, "Predict")
+
+        # Initially disable Train and Predict tabs
+        self.tabs.setTabEnabled(1, False)  # Train tab
+        self.tabs.setTabEnabled(2, False)  # Predict ta
 
         # Set the central widget for the main window
         self.setCentralWidget(self.tabs)
@@ -799,7 +805,7 @@ class Arborist(QMainWindow):
         )
         self.no_dataset_message.setAlignment(Qt.AlignCenter)
         self.no_dataset_message.setWordWrap(True)
-        self.no_dataset_message.setStyleSheet("color: gray; font-size: 14px;")
+        self.no_dataset_message.setStyleSheet("color: gray; font-size: 16px;")
         self.no_dataset_message.setGeometry(
             0, 0, self.file_viewer.width(), self.file_viewer.height()
         )
@@ -1351,6 +1357,16 @@ class Arborist(QMainWindow):
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
 
+    def update_tab_states(self):
+        """Update the enabled/disabled state of the Train and Predict tabs."""
+        # Train tab should only be enabled after Open Dataset button is clicked
+        train_tab_enabled = hasattr(self, "dataset_opened") and self.dataset_opened
+        self.tabs.setTabEnabled(1, train_tab_enabled)
+
+        # Enable the Predict tab if a model has been trained
+        predict_tab_enabled = self.trained_model is not None
+        self.tabs.setTabEnabled(2, predict_tab_enabled)
+
     def load_csv_file(self, file_path, table_view):
         """Load the selected CSV file and display its contents in chunks."""
         try:
@@ -1386,6 +1402,9 @@ class Arborist(QMainWindow):
             # Hide the "No dataset" message and show the open button
             self.no_dataset_message.hide()
             self.open_button.setVisible(True)
+
+            # Update the Train tab state
+            self.update_tab_states()
         except Exception as e:
             print(f"Error loading file: {e}")
             table_view.setModel(None)
@@ -1409,13 +1428,14 @@ class Arborist(QMainWindow):
             model.set_highlighted_column(selected_var)
 
     def open_in_analytics_view(self):
-        """Open the dataset in the analytics view (second tab)."""
+        """Open the dataset in the analytics view (Train tab)."""
         if hasattr(self, "current_file_path"):
-            # Reload the dataset with initial chunk for the analytics view
             try:
+                # Reload dataset in analytics view
                 chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
                 first_chunk = next(chunk_iter)
                 headers = first_chunk.columns.tolist()
+
                 # Re-create chunk_iter including the first chunk
                 chunk_iter = itertools.chain([first_chunk], chunk_iter)
                 model = PandasTableModel(chunk_iter, headers)
@@ -1430,14 +1450,22 @@ class Arborist(QMainWindow):
                     lambda value: self.on_scroll(value, self.analytics_viewer)
                 )
 
-                # Clear the outcome variable dropdown and add the column names
+                # Update outcome and treatment variable dropdowns
                 self.outcome_combo.clear()
                 self.outcome_combo.addItems(headers)
                 self.treatment_combo.clear()
                 self.treatment_combo.addItems(headers)
 
+                # Display dataset
                 self.no_dataset_label.setVisible(False)
                 self.analytics_viewer.setVisible(True)
+
+                # Mark the dataset as opened
+                self.dataset_opened = True
+
+                # Enable the Train tab and switch to it
+                self.update_tab_states()
+                self.tabs.setCurrentIndex(1)
             except Exception as e:
                 print(f"Error loading file in analytics view: {e}")
                 self.analytics_viewer.setModel(None)
@@ -1447,9 +1475,6 @@ class Arborist(QMainWindow):
             # Show the "No dataset" message if no dataset is loaded
             self.no_dataset_label.setVisible(True)
             self.analytics_viewer.setVisible(False)
-
-        # Switch to the analytics tab
-        self.tabs.setCurrentIndex(1)
 
     def train_model(self):
         """Train the model using threading and progress tracking."""
@@ -1547,8 +1572,11 @@ class Arborist(QMainWindow):
         self.trained_model = model
         self.train_ui.trainingTimeValue.setText(f"{training_time:.2f} seconds")
 
+        # Update tab states to enable Predict tab
+        self.update_tab_states()
+
+        # Reload the data with predictions
         try:
-            # Reload the data with predictions
             chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
             first_chunk = next(chunk_iter)
 
