@@ -6,3 +6,4 @@ PySide6
 scikit-learn
 scipy
 stochtree
+urllib3<2.0
