@@ -207,6 +207,12 @@ class Ui_TrainTab(object):
 
         self.horizontalLayout_4.addWidget(self.parametersPushButton)
 
+        self.trainResetButton = QPushButton(self.frame_4)
+        self.trainResetButton.setObjectName(u"trainResetButton")
+        self.trainResetButton.setMinimumSize(QSize(80, 30))
+
+        self.horizontalLayout_4.addWidget(self.trainResetButton)
+
 
         self.horizontalLayout.addWidget(self.frame_4)
 
@@ -459,6 +465,7 @@ class Ui_TrainTab(object):
         self.trainingTimeValue.setText(QCoreApplication.translate("TrainTab", u"0 seconds", None))
         self.codeGenPushButton.setText(QCoreApplication.translate("TrainTab", u"Code Gen", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Parameters", None))
+        self.trainResetButton.setText(QCoreApplication.translate("TrainTab", u"Reset", None))
         self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Browse\" tab", None))
         self.parametersTitleLabel.setText(QCoreApplication.translate("TrainTab", u"Model Parameters", None))
         self.treesLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Trees (M)", None))
