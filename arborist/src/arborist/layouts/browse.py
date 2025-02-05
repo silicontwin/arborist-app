@@ -78,6 +78,15 @@ class Ui_BrowseTab(object):
 
         self.navigationLayout.addWidget(self.back_button)
 
+        self.up_button = QPushButton(self.navigationFrame)
+        self.up_button.setObjectName(u"up_button")
+        self.up_button.setEnabled(True)
+        sizePolicy1.setHeightForWidth(self.up_button.sizePolicy().hasHeightForWidth())
+        self.up_button.setSizePolicy(sizePolicy1)
+        self.up_button.setMinimumSize(QSize(80, 30))
+
+        self.navigationLayout.addWidget(self.up_button)
+
         self.forward_button = QPushButton(self.navigationFrame)
         self.forward_button.setObjectName(u"forward_button")
         self.forward_button.setEnabled(False)
@@ -114,6 +123,7 @@ class Ui_BrowseTab(object):
 
     def retranslateUi(self, BrowseTab):
         self.back_button.setText(QCoreApplication.translate("BrowseTab", u"Back", None))
+        self.up_button.setText(QCoreApplication.translate("BrowseTab", u"Up", None))
         self.forward_button.setText(QCoreApplication.translate("BrowseTab", u"Forward", None))
         self.openDatasetButton.setText(QCoreApplication.translate("BrowseTab", u"Open Dataset", None))
         pass

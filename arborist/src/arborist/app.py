@@ -827,7 +827,7 @@ class Arborist(QMainWindow):
         # Add message label to file viewer
         self.no_dataset_message = QLabel(
             "Browse and open a dataset using the file browser on the left and it will appear here",
-            self.browse_ui.file_viewer,
+            self.file_viewer,
         )
         self.no_dataset_message.setAlignment(Qt.AlignCenter)
         self.no_dataset_message.setWordWrap(True)
@@ -859,11 +859,13 @@ class Arborist(QMainWindow):
         )  # Initially hidden until a dataset is selected
         self.open_button.clicked.connect(self.open_in_analytics_view)
 
-        # Back and Forward buttons
+        # Back, Up, and Forward buttons
         self.back_button = self.browse_ui.back_button
         self.forward_button = self.browse_ui.forward_button
+        self.up_button = self.browse_ui.up_button
         self.back_button.clicked.connect(self.navigate_back)
         self.forward_button.clicked.connect(self.navigate_forward)
+        self.up_button.clicked.connect(self.navigate_up)
 
         # Keep track of navigation history using directory paths
         self.history = [self.current_directory]
@@ -1382,6 +1384,13 @@ class Arborist(QMainWindow):
             # Update navigation buttons
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
+
+    def navigate_up(self):
+        """Navigate up one directory level from the current directory."""
+        parent_directory = os.path.dirname(self.current_directory)
+        # Check if parent directory exists and is different from the current
+        if parent_directory and parent_directory != self.current_directory:
+            self.navigate_to_directory(parent_directory)
 
     def update_tab_states(self):
         """Update the enabled/disabled state of the Train and Predict tabs."""
