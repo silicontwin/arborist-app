@@ -5,6 +5,5 @@ pyarrow
 PySide6
 scikit-learn
 scipy
-#stochtree
 git+https://github.com/StochasticTree/stochtree.git@0a9352ff08d16704e89710d077b72c769f465b75
 urllib3<2.0
