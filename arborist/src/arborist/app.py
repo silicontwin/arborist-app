@@ -722,7 +722,7 @@ class Arborist(QMainWindow):
 
     def init_ui(self):
         """Initialize the main UI."""
-        self.setWindowTitle("Arborist | Version 0.0.1 Alpha | Not Ready for Production")
+        self.setWindowTitle("Arborist | v0.0.1")
 
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Ready")
