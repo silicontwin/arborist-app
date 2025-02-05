@@ -834,7 +834,7 @@ class Arborist(QMainWindow):
 
         # Add message label to file viewer
         self.no_dataset_message = QLabel(
-            "Browse and open a dataset using the file browser on the left and it will appear here",
+            "Browse for a dataset using the file browser on the left, then double-click it to have it appear here.",
             self.file_viewer,
         )
         self.no_dataset_message.setAlignment(Qt.AlignCenter)
