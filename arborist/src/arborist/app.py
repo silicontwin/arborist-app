@@ -297,29 +297,40 @@ class ModelTrainingWorker(QThread):
         self._is_running = True
 
     def run(self):
-        """Main method that runs in the separate thread."""
+        """Main method that runs in the separate thread with cancellation checks."""
         try:
             start_time = time.time()
 
             self.progress.emit(10)
             print("Loading data...")
             self.trainer.load_data()
+            if not self._is_running:
+                print("Training cancelled after loading data.")
+                return
 
             self.progress.emit(30)
             print("Preparing features...")
             self.trainer.prepare_features()
+            if not self._is_running:
+                print("Training cancelled after preparing features.")
+                return
 
             self.progress.emit(40)
             print("Training model...")
             self.trainer.train_model(**self.model_params)
+            if not self._is_running:
+                print("Training cancelled after training model.")
+                return
 
             self.progress.emit(80)
             print("Generating predictions...")
             predictions = self.trainer.predict()
+            if not self._is_running:
+                print("Training cancelled after generating predictions.")
+                return
 
             self.progress.emit(100)
             training_time = time.time() - start_time
-            # Emit predictions, training time, and trained model object
             self.finished.emit(predictions, training_time, self.trainer.model)
 
         except Exception as e:
