@@ -59,6 +59,11 @@ class Ui_PredictTab(object):
 
         self.horizontalLayout_2.addItem(self.horizontalSpacer)
 
+        self.resetButton = QPushButton(self.frame)
+        self.resetButton.setObjectName(u"resetButton")
+
+        self.horizontalLayout_2.addWidget(self.resetButton)
+
 
         self.horizontalLayout.addWidget(self.frame)
 
@@ -75,5 +80,6 @@ class Ui_PredictTab(object):
         PredictTab.setWindowTitle(QCoreApplication.translate("PredictTab", u"Predict", None))
         self.selectFileButton.setText(QCoreApplication.translate("PredictTab", u"Load File", None))
         self.predictButton.setText(QCoreApplication.translate("PredictTab", u"Predict", None))
+        self.resetButton.setText(QCoreApplication.translate("PredictTab", u"Reset", None))
     # retranslateUi
 
