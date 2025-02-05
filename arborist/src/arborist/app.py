@@ -33,7 +33,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
 )
-from PySide6.QtGui import QColor
+from PySide6.QtGui import QColor, QAction
 from arborist.layouts.browse import Ui_BrowseTab
 from arborist.layouts.train import Ui_TrainTab
 from arborist.layouts.predict import Ui_PredictTab
@@ -719,6 +719,24 @@ class Arborist(QMainWindow):
             print(f"Error loading stylesheet: {e}")
 
         self.init_ui()
+        self.create_menu_bar()
+
+    def create_menu_bar(self):
+        """Create the menu bar with File menu and Check for Updates option."""
+        menubar = self.menuBar()
+        file_menu = menubar.addMenu("File")
+
+        # Create Check for Updates action
+        check_updates_action = QAction("Check for Updates", self)
+        check_updates_action.setStatusTip("Check for application updates")
+        check_updates_action.triggered.connect(self.check_for_updates)
+        file_menu.addAction(check_updates_action)
+
+    def check_for_updates(self):
+        """Handle the Check for Updates action."""
+        QMessageBox.information(
+            self, "Check for Updates", "No updates available at this time."
+        )
 
     def init_ui(self):
         """Initialize the main UI."""
