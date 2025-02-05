@@ -39,8 +39,14 @@ from arborist.layouts.train import Ui_TrainTab
 from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
 import time
+import requests
+import webbrowser
 
 CHUNK_SIZE = 1000  # Number of rows to load per chunk
+
+# Current version and repo details
+CURRENT_VERSION = "v0.0.1"
+GITHUB_REPO = "silicontwin/arborist-app"
 
 
 # Lazy loading for handling large datasets in chunks with sorting enabled
@@ -733,14 +739,59 @@ class Arborist(QMainWindow):
         file_menu.addAction(check_updates_action)
 
     def check_for_updates(self):
-        """Handle the Check for Updates action."""
-        QMessageBox.information(
-            self, "Check for Updates", "No updates available at this time."
-        )
+        """Handle the Check for Updates action using the GitHub Releases API."""
+        try:
+            # Construct the API URL for the latest release
+            api_url = f"https://api.github.com/repos/{GITHUB_REPO}/releases/latest"
+            response = requests.get(api_url, timeout=10)
+            if response.status_code == 200:
+                release_info = response.json()
+                latest_version = release_info.get("tag_name", "")
+                print(f"Latest version from GitHub: {latest_version}")
+
+                # Parse a version string into a tuple for comparison
+                def parse_version(v: str):
+                    return tuple(map(int, v.lstrip("v").split(".")))
+
+                if latest_version and parse_version(latest_version) > parse_version(
+                    CURRENT_VERSION
+                ):
+                    # New update available
+                    reply = QMessageBox.question(
+                        self,
+                        "Update Available",
+                        f"A new version ({latest_version}) is available. Would you like to download it?",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.Yes,
+                    )
+                    if reply == QMessageBox.Yes:
+                        # Open the GitHub releases page
+                        releases_url = (
+                            f"https://github.com/{GITHUB_REPO}/releases/latest"
+                        )
+                        webbrowser.open(releases_url)
+                else:
+                    QMessageBox.information(
+                        self,
+                        "No Update Available",
+                        "You are running the latest version.",
+                    )
+            else:
+                QMessageBox.warning(
+                    self,
+                    "Update Check Failed",
+                    f"Failed to check for updates. (HTTP Status: {response.status_code})",
+                )
+        except Exception as e:
+            QMessageBox.warning(
+                self,
+                "Update Check Error",
+                f"An error occurred while checking for updates:\n{str(e)}",
+            )
 
     def init_ui(self):
         """Initialize the main UI."""
-        self.setWindowTitle("Arborist | v0.0.1")
+        self.setWindowTitle("Arborist | " + CURRENT_VERSION)
 
         self.statusBar = self.statusBar()
         self.statusBar.showMessage("Ready")
