@@ -60,6 +60,10 @@ class PandasTableModel(QAbstractTableModel):
         self.alternate_row_color = QColor("#F5F5F5")  # Light gray for alternate rows
         self.base_row_color = QColor("#FFFFFF")  # White for base rows
 
+        # For lazy loading, if data is not a DataFrame, we expect an iterator
+        # Initialize an offset to preserve the global row order
+        self.current_offset = 0
+
         print("Initializing PandasTableModel with data type:", type(data))
         print("Headers:", headers)
         print("Predictions provided:", predictions is not None)
@@ -143,6 +147,14 @@ class PandasTableModel(QAbstractTableModel):
             return
         try:
             chunk = next(self.chunk_iter)
+            chunk = chunk.copy()
+            # Assign a global order if not already present
+            if "orig_order" not in chunk.columns:
+                chunk["orig_order"] = range(
+                    self.current_offset, self.current_offset + len(chunk)
+                )
+            self.current_offset += len(chunk)
+
             print(f"Loading chunk {self.chunks_loaded + 1} with shape:", chunk.shape)
 
             old_row_count = self.rowCount()
@@ -192,15 +204,15 @@ class PandasTableModel(QAbstractTableModel):
                 print("Created prediction data with keys:", prediction_data.keys())
 
                 # Combine predictions with chunk data
-                prediction_df = pd.DataFrame(prediction_data)
-                combined_chunk = pd.concat(
-                    [prediction_df, chunk.reset_index(drop=True)], axis=1
+                prediction_df = pd.DataFrame(prediction_data, index=chunk.index)
+                # Do not reset the index so that the original order is preserved
+                self._data = pd.concat(
+                    [self._data, pd.concat([prediction_df, chunk], axis=1)],
+                    ignore_index=False,
                 )
-                print("Combined chunk shape:", combined_chunk.shape)
-
-                self._data = pd.concat([self._data, combined_chunk], ignore_index=True)
             else:
-                self._data = pd.concat([self._data, chunk], ignore_index=True)
+                # Use ignore_index=False to preserve the chunk indices
+                self._data = pd.concat([self._data, chunk], ignore_index=False)
 
             self.chunks_loaded += 1
             print(
@@ -243,8 +255,7 @@ class PandasTableModel(QAbstractTableModel):
             ascending=(order == Qt.AscendingOrder),
             inplace=True,
         )
-        self._data.reset_index(drop=True, inplace=True)
-
+        # self._data.reset_index(drop=True, inplace=True)
         self._sort_order = order
         self._sort_column = column
 
@@ -354,10 +365,14 @@ class ModelTrainer:
 
         # Load the dataset in chunks to handle large files
         chunks = []
+        global_order = 0  # Use a global order counter
         for chunk in pd.read_csv(self.file_path, chunksize=CHUNK_SIZE):
+            chunk = chunk.copy()
+            # Add a new column 'orig_order' to record the original row order
+            chunk["orig_order"] = range(global_order, global_order + len(chunk))
+            global_order += len(chunk)
             chunks.append(chunk)
-        self.data = pd.concat(chunks)
-
+        self.data = pd.concat(chunks, ignore_index=True)
         print(f"Initial data shape: {self.data.shape}")
         print("Columns:", self.data.columns.tolist())
 
@@ -720,7 +735,7 @@ class Arborist(QMainWindow):
 
         # Initially disable Train and Predict tabs
         self.tabs.setTabEnabled(1, False)  # Train tab
-        self.tabs.setTabEnabled(2, False)  # Predict ta
+        self.tabs.setTabEnabled(2, False)  # Predict tab
 
         # Set the central widget for the main window
         self.setCentralWidget(self.tabs)
@@ -797,6 +812,9 @@ class Arborist(QMainWindow):
         # Set up the file viewer
         self.file_viewer = self.browse_ui.file_viewer
         self.file_viewer.setSortingEnabled(True)
+        # Clear any sort indicator so the original order is preserved
+        self.file_viewer.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+        self.file_viewer.horizontalHeader().setSortIndicatorShown(False)
 
         # Add message label to file viewer
         self.no_dataset_message = QLabel(
@@ -1140,12 +1158,16 @@ class Arborist(QMainWindow):
             print("Prediction lengths:", {k: len(v) for k, v in predictions.items()})
 
             # First, load prediction dataset in chunks
+            # Load entire file with proper global row ordering and add 'orig_order'
             chunks = []
-            chunk_iter = pd.read_csv(self.predict_file_path, chunksize=CHUNK_SIZE)
-            first_chunk = next(chunk_iter)
-
-            # Get original headers
-            original_headers = first_chunk.columns.tolist()
+            global_order = 0
+            for chunk in pd.read_csv(self.predict_file_path, chunksize=CHUNK_SIZE):
+                chunk = chunk.copy()
+                chunk["orig_order"] = range(global_order, global_order + len(chunk))
+                global_order += len(chunk)
+                chunks.append(chunk)
+            df = pd.concat(chunks, ignore_index=True)
+            original_headers = df.columns.tolist()
             print("Original dataset headers:", original_headers)
 
             # Check if we have CATE predictions (BCF model)
@@ -1154,17 +1176,14 @@ class Arborist(QMainWindow):
             # Create combined headers based on model type
             if is_bcf:
                 prediction_headers = [
-                    # CATE predictions first (BCF only)
                     "CATE",
                     "2.5th percentile CATE",
                     "97.5th percentile CATE",
-                    # Then outcome predictions
                     "Posterior Average ŷ",
                     "2.5th percentile ŷ",
                     "97.5th percentile ŷ",
                 ]
             else:
-                # Only outcome predictions (BART)
                 prediction_headers = [
                     "Posterior Average ŷ",
                     "2.5th percentile ŷ",
@@ -1174,13 +1193,11 @@ class Arborist(QMainWindow):
             combined_headers = prediction_headers + original_headers
             print("Combined headers:", combined_headers)
 
-            # Create new chunk iterator that includes predictions
+            # Create new chunk iterator that includes predictions by combining per chunk
             def combine_chunk_with_predictions(chunk, start_idx):
                 end_idx = start_idx + len(chunk)
                 prediction_data = {}
-
                 if is_bcf:
-                    # Add CATE predictions for BCF
                     prediction_data.update(
                         {
                             "CATE": predictions["Posterior Mean CATE"][
@@ -1194,8 +1211,6 @@ class Arborist(QMainWindow):
                             ][start_idx:end_idx],
                         }
                     )
-
-                # Add outcome predictions for both models
                 prediction_data.update(
                     {
                         "Posterior Average ŷ": predictions["Posterior Mean"][
@@ -1209,28 +1224,21 @@ class Arborist(QMainWindow):
                         ],
                     }
                 )
+                prediction_df = pd.DataFrame(prediction_data, index=chunk.index)
+                # Concatenate horizontally without resetting the index
+                return pd.concat([prediction_df, chunk], axis=1)
 
-                prediction_df = pd.DataFrame(prediction_data)
-                return pd.concat([prediction_df, chunk.reset_index(drop=True)], axis=1)
-
-            # Combine first chunk with its predictions
-            combined_first_chunk = combine_chunk_with_predictions(first_chunk, 0)
-
-            # Create iterator for remaining chunks
-            remaining_chunks = []
-            chunk_idx = CHUNK_SIZE
-            for chunk in chunk_iter:
-                combined_chunk = combine_chunk_with_predictions(chunk, chunk_idx)
-                remaining_chunks.append(combined_chunk)
-                chunk_idx += len(chunk)
-
-            # Create final chunk iterator
-            final_chunks = itertools.chain([combined_first_chunk], remaining_chunks)
-
-            # Create table model with combined data
-            model = PandasTableModel(final_chunks, combined_headers)
-
-            # Configure the table view
+            # Combine all chunks using their proper global order
+            current_offset = 0
+            combined_chunks = []
+            for chunk in chunks:
+                combined_chunks.append(
+                    combine_chunk_with_predictions(chunk, current_offset)
+                )
+                current_offset += len(chunk)
+            # Create final DataFrame (we could also chain them as an iterator)
+            final_df = pd.concat(combined_chunks, ignore_index=True)
+            model = PandasTableModel(final_df, combined_headers, predictions)
             self.predict_ui.tableView.setModel(model)
             self.predict_ui.tableView.horizontalHeader().setSectionResizeMode(
                 QHeaderView.ResizeToContents
@@ -1239,12 +1247,22 @@ class Arborist(QMainWindow):
 
             # Enable sorting
             self.predict_ui.tableView.setSortingEnabled(True)
+            # Clear any sort indicator so that the original order is preserved
+            self.predict_ui.tableView.horizontalHeader().setSortIndicator(
+                -1, Qt.AscendingOrder
+            )
+            self.predict_ui.tableView.horizontalHeader().setSortIndicatorShown(False)
+
+            # Hide the "orig_order" column if it is present in the model's headers
+            if "orig_order" in model.headers:
+                col_index = model.headers.index("orig_order")
+                self.predict_ui.tableView.hideColumn(col_index)
 
             print(
                 f"TableView configured with initial chunk showing {model.rowCount()} rows and {model.columnCount()} columns"
             )
             self.statusBar.showMessage(
-                f"Successfully displaying predictions with original data"
+                "Successfully displaying predictions with original data"
             )
 
         except Exception as e:
@@ -1371,21 +1389,28 @@ class Arborist(QMainWindow):
         """Load the selected CSV file and display its contents in chunks."""
         try:
             self.current_file_path = file_path  # Store the current file path
-            chunk_iter = pd.read_csv(file_path, chunksize=CHUNK_SIZE)  # Load in chunks
-            first_chunk = next(chunk_iter)
-            headers = (
-                first_chunk.columns.tolist()
-            )  # Extract headers from the first chunk
-
-            # Re-create chunk_iter including the first chunk
-            chunk_iter = itertools.chain([first_chunk], chunk_iter)
-            model = PandasTableModel(
-                chunk_iter, headers, predictions=None
-            )  # Explicitly pass None
+            # Load CSV in chunks and assign a global 'orig_order' column
+            chunks = []
+            global_order = 0
+            for chunk in pd.read_csv(file_path, chunksize=CHUNK_SIZE):
+                chunk = chunk.copy()
+                chunk["orig_order"] = range(global_order, global_order + len(chunk))
+                global_order += len(chunk)
+                chunks.append(chunk)
+            df = pd.concat(chunks, ignore_index=True)
+            headers = df.columns.tolist()
+            model = PandasTableModel(df, headers, predictions=None)
             table_view.setModel(model)
 
             # Enable sorting
             table_view.setSortingEnabled(True)
+            # Clear any sort indicator so that the original order is preserved
+            table_view.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+            table_view.horizontalHeader().setSortIndicatorShown(False)
+            # Hide the orig_order column if present
+            if "orig_order" in model.headers:
+                col_index = model.headers.index("orig_order")
+                table_view.hideColumn(col_index)
 
             # Automatically adjust the column width to fit the content and header
             table_view.resizeColumnsToContents()
@@ -1431,19 +1456,31 @@ class Arborist(QMainWindow):
         """Open the dataset in the analytics view (Train tab)."""
         if hasattr(self, "current_file_path"):
             try:
-                # Reload dataset in analytics view
-                chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
-                first_chunk = next(chunk_iter)
-                headers = first_chunk.columns.tolist()
-
-                # Re-create chunk_iter including the first chunk
-                chunk_iter = itertools.chain([first_chunk], chunk_iter)
-                model = PandasTableModel(chunk_iter, headers)
+                # Load CSV with global order using chunks and assign 'orig_order'
+                chunks = []
+                global_order = 0
+                for chunk in pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE):
+                    chunk = chunk.copy()
+                    chunk["orig_order"] = range(global_order, global_order + len(chunk))
+                    global_order += len(chunk)
+                    chunks.append(chunk)
+                df = pd.concat(chunks, ignore_index=True)
+                headers = df.columns.tolist()
+                model = PandasTableModel(df, headers)
                 self.analytics_viewer.setModel(model)
                 self.analytics_viewer.resizeColumnsToContents()
 
                 # Enable sorting
                 self.analytics_viewer.setSortingEnabled(True)
+                # Clear any sort indicator so that the original order is preserved
+                self.analytics_viewer.horizontalHeader().setSortIndicator(
+                    -1, Qt.AscendingOrder
+                )
+                self.analytics_viewer.horizontalHeader().setSortIndicatorShown(False)
+                # Hide the orig_order column if present
+                if "orig_order" in model.headers:
+                    col_index = model.headers.index("orig_order")
+                    self.analytics_viewer.hideColumn(col_index)
 
                 # Connect scroll event for lazy loading in the analytics tab
                 self.analytics_viewer.verticalScrollBar().valueChanged.connect(
@@ -1593,34 +1630,44 @@ class Arborist(QMainWindow):
         # Reload the data with predictions
         try:
             chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
-            first_chunk = next(chunk_iter)
-
-            # Define headers based on model type
+            chunks = []
+            global_order = 0
+            for chunk in chunk_iter:
+                chunk = chunk.copy()
+                chunk["orig_order"] = range(global_order, global_order + len(chunk))
+                global_order += len(chunk)
+                chunks.append(chunk)
+            first_chunk = chunks[0]
+            headers = first_chunk.columns.tolist()
+            # Define additional headers for predictions based on model type
             if isinstance(model, BCFModel):
-                headers = [
-                    # CATE predictions first (BCF only)
+                pred_headers = [
                     "CATE",
                     "2.5th percentile CATE",
                     "97.5th percentile CATE",
-                    # Outcome predictions
                     "Posterior Average ŷ",
                     "2.5th percentile ŷ",
                     "97.5th percentile ŷ",
                 ]
-            else:  # BART model
-                headers = [
-                    # Only outcome predictions for BART
+            else:
+                pred_headers = [
                     "Posterior Average ŷ",
                     "2.5th percentile ŷ",
                     "97.5th percentile ŷ",
                 ]
+            full_headers = pred_headers + headers
 
-            # Add original data columns
-            headers.extend(first_chunk.columns.tolist())
+            def combined_chunks():
+                current_offset = 0
+                for chunk in chunks:
+                    yield self._combine_chunk_with_predictions(
+                        chunk, current_offset, predictions
+                    )
+                    current_offset += len(chunk)
 
-            # Re-create chunk_iter including the first chunk
-            chunk_iter = itertools.chain([first_chunk], chunk_iter)
-            model = PandasTableModel(chunk_iter, headers, predictions)
+            # Create the model using the combined chunks (here we concatenate all for simplicity)
+            combined_df = pd.concat(list(combined_chunks()), ignore_index=True)
+            model = PandasTableModel(combined_df, full_headers, predictions)
             self.analytics_viewer.setModel(model)
             self.analytics_viewer.resizeColumnsToContents()
 
@@ -1635,6 +1682,36 @@ class Arborist(QMainWindow):
             import traceback
 
             print("Traceback:", traceback.format_exc())
+
+    def _combine_chunk_with_predictions(self, chunk, start_idx, predictions):
+        # This helper does not reset the index so the global order is preserved
+        end_idx = start_idx + len(chunk)
+        pred_data = {}
+        if "Posterior Mean CATE" in predictions:
+            pred_data.update(
+                {
+                    "CATE": predictions["Posterior Mean CATE"][start_idx:end_idx],
+                    "2.5th percentile CATE": predictions["2.5th Percentile CATE"][
+                        start_idx:end_idx
+                    ],
+                    "97.5th percentile CATE": predictions["97.5th Percentile CATE"][
+                        start_idx:end_idx
+                    ],
+                }
+            )
+        pred_data.update(
+            {
+                "Posterior Average ŷ": predictions["Posterior Mean"][start_idx:end_idx],
+                "2.5th percentile ŷ": predictions["2.5th Percentile"][
+                    start_idx:end_idx
+                ],
+                "97.5th percentile ŷ": predictions["97.5th Percentile"][
+                    start_idx:end_idx
+                ],
+            }
+        )
+        pred_df = pd.DataFrame(pred_data, index=chunk.index)
+        return pd.concat([pred_df, chunk], axis=1)
 
     @Slot(str)
     def handle_training_error(self, error_message):
