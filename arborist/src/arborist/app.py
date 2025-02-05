@@ -638,6 +638,14 @@ class ModelTrainer:
             print(f"Model type: {type(self.model)}")
             raise RuntimeError(f"Error during prediction: {str(e)}")
 
+        except Exception as e:
+            import traceback
+
+            print(f"\nError in predict method: {str(e)}")
+            print("Traceback:")
+            print(traceback.format_exc())
+            raise RuntimeError(f"Error during prediction: {str(e)}")
+
     def predict_outcome(self, model):
         """Predict outcomes for new data."""
         if self.data_cleaned is None:
@@ -896,6 +904,9 @@ class Arborist(QMainWindow):
         # Connect button to toggle code generation text edit
         self.train_ui.codeGenPushButton.clicked.connect(self.toggle_code_gen_text)
 
+        # Connect the reset button for the train tab
+        self.train_ui.trainResetButton.clicked.connect(self.reset_train_tab)
+
         # No dataset label and analytics viewer
         self.no_dataset_label = self.train_ui.no_dataset_label
         self.analytics_viewer = self.train_ui.analytics_viewer
@@ -916,6 +927,28 @@ class Arborist(QMainWindow):
 
         # Outcome and treatment variable selection
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
+
+    def reset_train_tab(self):
+        """Reset the train tab to clear loaded dataset and training results.
+        This clears the analytics viewer, resets the outcome/treatment combo boxes,
+        resets the training time, and navigates the user back to the Browse tab."""
+        # Clear the analytics viewer
+        self.analytics_viewer.setModel(None)
+        # Clear the outcome and treatment variable selections
+        self.outcome_combo.clear()
+        self.treatment_combo.clear()
+        # Show the "No dataset" message and hide the analytics viewer
+        self.no_dataset_label.setVisible(True)
+        self.analytics_viewer.setVisible(False)
+        # Reset the internal state for dataset and trained model
+        self.dataset_opened = False
+        self.trained_model = None
+        self.train_ui.trainingTimeValue.setText("0 seconds")
+        self.statusBar.showMessage(
+            "Train tab reset. Please select a dataset from the Browse tab."
+        )
+        # Switch back to the Browse tab
+        self.tabs.setCurrentIndex(0)
 
     def generate_code(self):
         """Generate Python code to reproduce the analysis based on the current UI settings."""
@@ -1106,6 +1139,21 @@ class Arborist(QMainWindow):
         # File selection for the prediction dataset
         self.predict_ui.selectFileButton.clicked.connect(self.select_predict_file)
         self.predict_ui.predictButton.clicked.connect(self.run_prediction)
+        self.predict_ui.resetButton.clicked.connect(self.reset_predict_tab)
+
+    def reset_predict_tab(self):
+        """Reset the predict tab to allow re-running predictions.
+        This clears any loaded prediction data and navigates the user back to the Browse tab.
+        """
+        # Clear the table view
+        self.predict_ui.tableView.setModel(None)
+        # Unset the prediction file path so that a new file can be selected
+        self.predict_file_path = None
+        self.statusBar.showMessage(
+            "Predict tab reset. Please select a new file from the Browse tab."
+        )
+        # Switch to the Browse tab (index 0)
+        self.tabs.setCurrentIndex(0)
 
     def run_prediction(self):
         """Run prediction on a new dataset with the trained model."""
