@@ -6,9 +6,6 @@ import sys
 import os
 import pandas as pd
 import numpy as np
-import itertools
-import pyarrow.dataset as ds
-import pyarrow as pa
 from sklearn.preprocessing import OneHotEncoder
 from PySide6.QtWidgets import (
     QApplication,
