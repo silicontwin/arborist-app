@@ -26,6 +26,7 @@ requires = [
     "pyarrow",
     "PySide6",
     "PySide6-Essentials~=6.7",
+    "requests",
     "scikit-learn",
     "scipy",
     "stochtree",
