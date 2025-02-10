@@ -967,11 +967,11 @@ class Arborist(QMainWindow):
         percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
 
         # Display results
-        results = pd.DataFrame({{
+        results = pd.DataFrame({
             'Posterior Mean': posterior_mean,
             '2.5th Percentile': percentile_2_5,
             '97.5th Percentile': percentile_97_5
-        }})
+        })
         print(results.head())
         """
         elif model_name == "BCF":
@@ -1038,14 +1038,14 @@ class Arborist(QMainWindow):
     cate_percentile_97_5 = np.percentile(tau_samples, 97.5, axis=1)
 
     # Display results
-    results = pd.DataFrame({{
+    results = pd.DataFrame({
         'Posterior Mean': posterior_mean,
         '2.5th Percentile': percentile_2_5,
         '97.5th Percentile': percentile_97_5,
         'Posterior Mean CATE': posterior_cate_mean,
         '2.5th Percentile CATE': cate_percentile_2_5,
         '97.5th Percentile CATE': cate_percentile_97_5
-    }})
+    })
     print(results.head())
     """
 
@@ -1556,18 +1556,18 @@ class Arborist(QMainWindow):
             # Define additional headers for predictions based on model type
             if isinstance(model, BCFModel):
                 pred_headers = [
-                    "CATE",
-                    "2.5th percentile CATE",
-                    "97.5th percentile CATE",
-                    "Posterior Average ŷ",
-                    "2.5th percentile ŷ",
-                    "97.5th percentile ŷ",
+                    "Posterior Mean CATE",
+                    "2.5th Percentile CATE",
+                    "97.5th Percentile CATE",
+                    "Posterior Mean",
+                    "2.5th Percentile",
+                    "97.5th Percentile",
                 ]
             else:
                 pred_headers = [
-                    "Posterior Average ŷ",
-                    "2.5th percentile ŷ",
-                    "97.5th percentile ŷ",
+                    "Posterior Mean",
+                    "2.5th Percentile",
+                    "97.5th Percentile",
                 ]
             full_headers = pred_headers + headers
 
