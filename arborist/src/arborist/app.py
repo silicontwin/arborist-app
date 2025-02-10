@@ -521,14 +521,6 @@ class ModelTrainer:
             print(f"Model type: {type(self.model)}")
             raise RuntimeError(f"Error during prediction: {str(e)}")
 
-        except Exception as e:
-            import traceback
-
-            print(f"\nError in predict method: {str(e)}")
-            print("Traceback:")
-            print(traceback.format_exc())
-            raise RuntimeError(f"Error during prediction: {str(e)}")
-
     def predict_outcome(self, model):
         """Predict outcomes for new data."""
         if self.data_cleaned is None:
