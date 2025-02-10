@@ -74,22 +74,9 @@ class PandasTableModel(QAbstractTableModel):
             print("DataFrame loaded directly with shape:", self._data.shape)
         else:
             if isinstance(data, str):
-                # Add index column before reading to preserve order
-                read_options = pa_csv.ReadOptions(use_threads=True)
-                convert_options = pa_csv.ConvertOptions(include_columns=None)
-                parse_options = pa_csv.ParseOptions(ignore_empty_lines=True)
-
-                table = pa_csv.read_csv(
-                    data,
-                    read_options=read_options,
-                    convert_options=convert_options,
-                    parse_options=parse_options,
-                )
-                self._data = table.to_pandas()
-                self._data["_original_index"] = range(len(self._data))
+                self._data = pa_csv.read_csv(data).to_pandas()
             else:
                 self._data = pd.DataFrame(data)
-                self._data["_original_index"] = range(len(self._data))
 
             print("Data loaded with shape:", self._data.shape)
 
