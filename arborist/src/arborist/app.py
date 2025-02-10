@@ -93,16 +93,17 @@ class PandasTableModel(QAbstractTableModel):
             if self.predictions is not None:
                 # Create prediction DataFrame
                 prediction_data = {}
-
                 # Check if we have CATE predictions (BCF model)
                 if "Posterior Mean CATE" in self.predictions:
                     prediction_data.update(
                         {
-                            "CATE": self.predictions["Posterior Mean CATE"],
-                            "2.5th percentile CATE": self.predictions[
+                            "Posterior Mean CATE": self.predictions[
+                                "Posterior Mean CATE"
+                            ],
+                            "2.5th Percentile CATE": self.predictions[
                                 "2.5th Percentile CATE"
                             ],
-                            "97.5th percentile CATE": self.predictions[
+                            "97.5th Percentile CATE": self.predictions[
                                 "97.5th Percentile CATE"
                             ],
                         }
@@ -111,9 +112,9 @@ class PandasTableModel(QAbstractTableModel):
                 # Add outcome predictions (both BART and BCF)
                 prediction_data.update(
                     {
-                        "Posterior Average ŷ": self.predictions["Posterior Mean"],
-                        "2.5th percentile ŷ": self.predictions["2.5th Percentile"],
-                        "97.5th percentile ŷ": self.predictions["97.5th Percentile"],
+                        "Posterior Mean": self.predictions["Posterior Mean"],
+                        "2.5th Percentile": self.predictions["2.5th Percentile"],
+                        "97.5th Percentile": self.predictions["97.5th Percentile"],
                     }
                 )
 
