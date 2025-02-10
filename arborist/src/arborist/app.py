@@ -37,6 +37,7 @@ import time
 import requests
 import webbrowser
 import pyarrow.csv as pa_csv
+import traceback
 
 # Current version and repo details
 CURRENT_VERSION = "v0.0.1"
@@ -63,7 +64,9 @@ def auto_one_hot_encode(df: pd.DataFrame) -> pd.DataFrame:
 
 # PandasTableModel (the entire dataset is loaded)
 class PandasTableModel(QAbstractTableModel):
-    def __init__(self, data, headers, predictions=None):
+    def __init__(
+        self, data: pd.DataFrame, headers: list[str], predictions: dict = None
+    ):
         super().__init__()
         self.headers = headers
         self.selected_column_name = None
@@ -125,13 +128,13 @@ class PandasTableModel(QAbstractTableModel):
         if not self._data.index.equals(pd.RangeIndex(len(self._data))):
             self._data.reset_index(drop=True, inplace=True)
 
-    def rowCount(self, parent=QModelIndex()):
+    def rowCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return len(self._data)
 
-    def columnCount(self, parent=QModelIndex()):
+    def columnCount(self, parent: QModelIndex = QModelIndex()) -> int:
         return len(self.headers)
 
-    def data(self, index, role=Qt.DisplayRole):
+    def data(self, index: QModelIndex, role: int = Qt.DisplayRole):
         if not index.isValid():
             return None
 
@@ -167,7 +170,9 @@ class PandasTableModel(QAbstractTableModel):
 
         return None
 
-    def headerData(self, section, orientation, role=Qt.DisplayRole):
+    def headerData(
+        self, section: int, orientation: Qt.Orientation, role: int = Qt.DisplayRole
+    ):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
                 return self.headers[section]
@@ -176,7 +181,7 @@ class PandasTableModel(QAbstractTableModel):
                 return str(section + 1)
         return None
 
-    def set_highlighted_column(self, column_name):
+    def set_highlighted_column(self, column_name: str) -> None:
         """Set the column to highlight in yellow."""
         self.selected_column_name = column_name
         self.layoutChanged.emit()
@@ -184,11 +189,11 @@ class PandasTableModel(QAbstractTableModel):
 
 # FilterProxyModel to filter out non-dataset files like .csv, .sav, .dta
 class DatasetFileFilterProxyModel(QSortFilterProxyModel):
-    def __init__(self, dataset_extensions, parent=None):
+    def __init__(self, dataset_extensions: set[str], parent=None):
         super().__init__(parent)
         self.dataset_extensions = dataset_extensions
 
-    def filterAcceptsRow(self, sourceRow, sourceParent):
+    def filterAcceptsRow(self, sourceRow: int, sourceParent: QModelIndex) -> bool:
         index = self.sourceModel().index(sourceRow, 0, sourceParent)
         file_name = self.sourceModel().fileName(index)
 
@@ -201,9 +206,8 @@ class DatasetFileFilterProxyModel(QSortFilterProxyModel):
         return ext.lower() in self.dataset_extensions
 
 
+# Worker thread for model training to prevent UI freezing.
 class ModelTrainingWorker(QThread):
-    """Worker thread for model training to prevent UI freezing."""
-
     progress = Signal(int)
     finished = Signal(dict, float, object)
     error = Signal(str)
@@ -262,22 +266,27 @@ class ModelTrainingWorker(QThread):
 # Shared class for model training and preprocessing
 class ModelTrainer:
     def __init__(self, file_path: str, outcome_var: str, treatment_var: str = None):
-        self.file_path = file_path
-        self.outcome_var = outcome_var
-        self.treatment_var = treatment_var
-        self.data = None
-        self.data_cleaned = None
-        self.X = None
-        self.y = None
-        self.Z = None
+        self.file_path: str = file_path
+        self.outcome_var: str = outcome_var
+        self.treatment_var: str | None = treatment_var
+        self.data: pd.DataFrame | None = None
+        self.data_cleaned: pd.DataFrame | None = None
+        self.original_columns: list[str] = []
+        self.original_row_count: int = 0
+        self.cleaned_row_count: int = 0
+        self.observations_removed: int = 0
+        self.X: np.ndarray | None = None
+        self.y: np.ndarray | None = None
+        self.Z: np.ndarray | None = None
         self.model = None
 
-    def load_data(self):
+    def load_data(self) -> None:
         print(f"Loading data from: {self.file_path}")
 
         # Load the data using pyarrow
         table = pa_csv.read_csv(self.file_path)
         self.data = table.to_pandas()
+        self.original_row_count = len(self.data)
 
         print(f"Initial data shape: {self.data.shape}")
         print("Columns:", self.data.columns.tolist())
@@ -288,7 +297,7 @@ class ModelTrainer:
         # Apply auto-one hot encoding to transform all categorical columns
         self.data = auto_one_hot_encode(self.data)
 
-        # Make a copy to avoid modifying the original data after OHE
+        # Make a copy for cleaning
         self.data_cleaned = self.data.copy()
 
         # Print column info after OHE
@@ -328,15 +337,14 @@ class ModelTrainer:
         # Drop rows with any missing values
         rows_before = len(self.data_cleaned)
         self.data_cleaned = self.data_cleaned.dropna()
-        rows_removed = rows_before - len(self.data_cleaned)
+        self.observations_removed = rows_before - len(self.data_cleaned)
+        self.cleaned_row_count = len(self.data_cleaned)
 
         print(f"\nFinal cleaned data shape: {self.data_cleaned.shape}")
-        if rows_removed > 0:
-            print(f"Removed {rows_removed} rows with missing values")
+        if self.observations_removed > 0:
+            print(f"Removed {self.observations_removed} rows with missing values")
 
-        self.observations_removed = rows_removed
-
-    def prepare_features(self):
+    def prepare_features(self) -> None:
         """Prepare features (X), outcome (y), and treatment (Z) for model training."""
         if self.outcome_var not in self.data_cleaned.columns:
             raise ValueError(
@@ -366,13 +374,27 @@ class ModelTrainer:
         # Flatten `self.y` to ensure it's a 1D array
         self.y = self.y.ravel()
 
-        # Standardize the outcome variable
+        # Standardize the outcome variable; check for zero std to avoid division by zero
         self.y_mean = np.mean(self.y)
         self.y_std = np.std(self.y)
+        if self.y_std == 0:
+            raise ValueError(
+                "Outcome variable has zero variance. Standardization is not possible."
+            )
         self.y_standardized = (self.y - self.y_mean) / self.y_std
 
-    def train_model(self, model_name, num_trees, burn_in, num_draws, thinning):
-        """Train the model based on the selected type."""
+    def train_model(
+        self,
+        model_name: str,
+        num_trees: int,
+        burn_in: int,
+        num_draws: int,
+        thinning: int,
+    ) -> None:
+        """Train the model based on the selected type.
+
+        Train the model using threading and progress tracking.
+        """
         try:
             if model_name == "BART":
                 self.model = BARTModel()
@@ -406,7 +428,6 @@ class ModelTrainer:
                 self.pi_train = pi_train
                 self.pi_test = pi_test
 
-                # Initialize BCF model
                 self.model = BCFModel()
 
                 # Set up parameters
@@ -417,14 +438,13 @@ class ModelTrainer:
                     "num_mcmc": num_draws,
                     "keep_burnin": False,
                     "keep_gfr": False,
-                    "random_seed": 42,  # Add this to the params menu later
+                    "random_seed": 42,
                 }
 
                 print("\nTraining BCF model with parameters:")
                 for key, value in params.items():
                     print(f"{key}: {value}")
 
-                # Train model
                 self.model.sample(
                     X_train=self.X,
                     Z_train=Z_train,
@@ -439,14 +459,12 @@ class ModelTrainer:
                 raise ValueError(f"Unsupported model: {model_name}")
 
         except Exception as e:
-            import traceback
-
             traceback_str = traceback.format_exc()
             raise RuntimeError(
                 f"Error during model training: {str(e)}\n{traceback_str}"
             )
 
-    def predict(self):
+    def predict(self) -> dict:
         """Generate predictions using the trained model."""
         try:
             if isinstance(self.model, BARTModel):
@@ -505,10 +523,7 @@ class ModelTrainer:
                 }
             else:
                 raise ValueError("No trained model available")
-
         except Exception as e:
-            import traceback
-
             print(f"\nError in predict method: {str(e)}")
             print("Traceback:")
             print(traceback.format_exc())
@@ -524,7 +539,7 @@ class ModelTrainer:
             print(f"Model type: {type(self.model)}")
             raise RuntimeError(f"Error during prediction: {str(e)}")
 
-    def predict_outcome(self, model):
+    def predict_outcome(self, model) -> dict:
         """Predict outcomes for new data."""
         if self.data_cleaned is None:
             raise ValueError("No data loaded for prediction.")
@@ -547,7 +562,6 @@ class ModelTrainer:
             X_new = self.data_cleaned[feature_cols].to_numpy()
             print("Feature matrix shape:", X_new.shape)
 
-            # Generate predictions
             print("\nGenerating predictions...")
             y_pred_samples = model.predict(covariates=X_new)
             print("Prediction samples shape:", y_pred_samples.shape)
@@ -568,8 +582,6 @@ class ModelTrainer:
             return predictions
 
         except Exception as e:
-            import traceback
-
             print(f"\nError in predict_outcome: {str(e)}")
             print("Traceback:")
             print(traceback.format_exc())
@@ -599,7 +611,7 @@ class Arborist(QMainWindow):
         self.init_ui()
         self.create_menu_bar()
 
-    def create_menu_bar(self):
+    def create_menu_bar(self) -> None:
         """Create the menu bar with File menu and Check for Updates option."""
         menubar = self.menuBar()
         file_menu = menubar.addMenu("File")
@@ -610,7 +622,7 @@ class Arborist(QMainWindow):
         check_updates_action.triggered.connect(self.check_for_updates)
         file_menu.addAction(check_updates_action)
 
-    def check_for_updates(self):
+    def check_for_updates(self) -> None:
         """Handle the Check for Updates action using the GitHub Releases API."""
         try:
             # Construct the API URL for the latest release
@@ -661,7 +673,7 @@ class Arborist(QMainWindow):
                 f"An error occurred while checking for updates:\n{str(e)}",
             )
 
-    def init_ui(self):
+    def init_ui(self) -> None:
         """Initialize the main UI."""
         self.setWindowTitle("Arborist | " + CURRENT_VERSION)
 
@@ -720,7 +732,7 @@ class Arborist(QMainWindow):
             self.update_code_gen_text
         )
 
-    def check_model_frame_visibility(self):
+    def check_model_frame_visibility(self) -> None:
         """Show or hide the treatmentFrame based on the selected tab and model."""
         # Check if the current tab is "Train"
         is_train_tab = self.tabs.currentIndex() == 1
@@ -732,9 +744,8 @@ class Arborist(QMainWindow):
         # Show or hide the treatment frame
         self.train_ui.treatmentFrame.setVisible(is_train_tab and is_bcf_xbcf_model)
 
-    def load_browse_tab_ui(self):
+    def load_browse_tab_ui(self) -> None:
         """Load and set up the browse tab UI (for the file browser)."""
-        # Initialize the generated UI class for the Browse tab
         self.browse_tab = QWidget()
         self.browse_ui = Ui_BrowseTab()
         self.browse_ui.setupUi(self.browse_tab)
@@ -744,12 +755,10 @@ class Arborist(QMainWindow):
         desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
         self.file_model.setRootPath(desktop_path)
 
-        # Create a proxy model to filter by dataset extensions (.csv, .sav, .dta)
         dataset_extensions = {".csv", ".sav", ".dta"}
         self.proxy_model = DatasetFileFilterProxyModel(dataset_extensions)
         self.proxy_model.setSourceModel(self.file_model)
 
-        # Set up the tree view to use the filtered model
         self.tree = self.browse_ui.treeView
         self.tree.setModel(self.proxy_model)
 
@@ -824,7 +833,7 @@ class Arborist(QMainWindow):
         self.back_button.setEnabled(False)
         self.forward_button.setEnabled(False)
 
-    def load_train_tab_ui(self):
+    def load_train_tab_ui(self) -> None:
         """Load and set up the train tab UI (for the dataset analysis)."""
         self.train_tab = QWidget()
         self.train_ui = Ui_TrainTab()
@@ -832,11 +841,7 @@ class Arborist(QMainWindow):
 
         # Initially hide the treatment frame and parameters menu
         self.train_ui.treatmentFrame.setVisible(False)
-
-        # Initially hide the parameters menu
         self.train_ui.parametersMenu.setVisible(False)
-
-        # Initially hide the code generation text edit
         self.train_ui.codeGenTextEdit.setVisible(False)
 
         # Connect button to toggle parameters menu
@@ -869,10 +874,12 @@ class Arborist(QMainWindow):
         # Outcome and treatment variable selection
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
 
-    def reset_train_tab(self):
+    def reset_train_tab(self) -> None:
         """Reset the train tab to clear loaded dataset and training results.
+
         This clears the analytics viewer, resets the outcome/treatment combo boxes,
-        resets the training time, and navigates the user back to the Browse tab."""
+        resets the training time, and navigates the user back to the Browse tab.
+        """
         # Clear the analytics viewer
         self.analytics_viewer.setModel(None)
         # Clear the outcome and treatment variable selections
@@ -891,7 +898,7 @@ class Arborist(QMainWindow):
         # Switch back to the Browse tab
         self.tabs.setCurrentIndex(0)
 
-    def generate_code(self):
+    def generate_code(self) -> str:
         """Generate Python code to reproduce the analysis based on the current UI settings."""
         # Ensure a dataset is loaded
         if not hasattr(self, "current_file_path"):
@@ -914,7 +921,7 @@ class Arborist(QMainWindow):
         if model_name == "BART":
             code = f"""
         # Python script to reproduce the analysis
-        # Generated by Arborist Version 0.0.1 (https://arborist.app) on {pd.Timestamp.now()}
+        # Generated by Arborist Version {CURRENT_VERSION} (https://arborist.app) on {pd.Timestamp.now()}
 
         import pandas as pd
         import numpy as np
@@ -967,11 +974,11 @@ class Arborist(QMainWindow):
         percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
 
         # Display results
-        results = pd.DataFrame({
+        results = pd.DataFrame({{
             'Posterior Mean': posterior_mean,
             '2.5th Percentile': percentile_2_5,
             '97.5th Percentile': percentile_97_5
-        })
+        }})
         print(results.head())
         """
         elif model_name == "BCF":
@@ -980,7 +987,7 @@ class Arborist(QMainWindow):
 
             code = f"""
     # Python script to reproduce the analysis
-    # Generated by Arborist Version 0.0.1 (arborist.app) on {pd.Timestamp.now()}
+    # Generated by Arborist Version {CURRENT_VERSION} (https://arborist.app) on {pd.Timestamp.now()}
 
     import pandas as pd
     import numpy as np
@@ -1038,14 +1045,14 @@ class Arborist(QMainWindow):
     cate_percentile_97_5 = np.percentile(tau_samples, 97.5, axis=1)
 
     # Display results
-    results = pd.DataFrame({
+    results = pd.DataFrame({{
         'Posterior Mean': posterior_mean,
         '2.5th Percentile': percentile_2_5,
         '97.5th Percentile': percentile_97_5,
         'Posterior Mean CATE': posterior_cate_mean,
         '2.5th Percentile CATE': cate_percentile_2_5,
         '97.5th Percentile CATE': cate_percentile_97_5
-    })
+    }})
     print(results.head())
     """
 
@@ -1054,24 +1061,24 @@ class Arborist(QMainWindow):
 
         return code
 
-    def toggle_code_gen_text(self):
+    def toggle_code_gen_text(self) -> None:
         """Toggle the visibility of the code generation text box."""
         is_visible = self.train_ui.codeGenTextEdit.isVisible()
         self.train_ui.codeGenTextEdit.setVisible(not is_visible)
         if not is_visible:
             self.update_code_gen_text()
 
-    def toggle_parameters_menu(self):
+    def toggle_parameters_menu(self) -> None:
         """Toggle the visibility of the parameters menu."""
         is_visible = self.train_ui.parametersMenu.isVisible()
         self.train_ui.parametersMenu.setVisible(not is_visible)
 
-    def update_code_gen_text(self):
+    def update_code_gen_text(self) -> None:
         """Update the code generation text box whenever a UI element changes."""
         code = self.generate_code()
         self.train_ui.codeGenTextEdit.setPlainText(code)
 
-    def load_predict_tab_ui(self):
+    def load_predict_tab_ui(self) -> None:
         """Load and set up the predict tab UI."""
         self.predict_tab = QWidget()
         self.predict_ui = Ui_PredictTab()
@@ -1082,8 +1089,9 @@ class Arborist(QMainWindow):
         self.predict_ui.predictButton.clicked.connect(self.run_prediction)
         self.predict_ui.resetButton.clicked.connect(self.reset_predict_tab)
 
-    def reset_predict_tab(self):
+    def reset_predict_tab(self) -> None:
         """Reset the predict tab to allow re-running predictions.
+
         This clears any loaded prediction data and navigates the user back to the Browse tab.
         """
         # Clear the table view
@@ -1096,7 +1104,7 @@ class Arborist(QMainWindow):
         # Switch to the Browse tab (index 0)
         self.tabs.setCurrentIndex(0)
 
-    def run_prediction(self):
+    def run_prediction(self) -> None:
         """Run prediction on a new dataset with the trained model."""
         if self.trained_model is None:
             QMessageBox.warning(
@@ -1132,8 +1140,8 @@ class Arborist(QMainWindow):
             predictions = trainer.predict_outcome(self.trained_model)
             progress.setValue(90)
 
-            # Display predictions
-            self.display_predictions(predictions)
+            # Display predictions using the cleaned data
+            self.display_predictions(predictions, trainer.data_cleaned)
             progress.setValue(100)
 
             self.statusBar.showMessage("Predictions generated successfully")
@@ -1149,17 +1157,19 @@ class Arborist(QMainWindow):
             if "progress" in locals():
                 progress.close()
 
-    def display_predictions(self, predictions):
+    def display_predictions(
+        self, predictions: dict, cleaned_data: pd.DataFrame
+    ) -> None:
         """Display predictions including appropriate columns based on model type."""
         try:
             print("\nDisplaying predictions:")
             print("Prediction keys:", predictions.keys())
             print("Prediction lengths:", {k: len(v) for k, v in predictions.items()})
 
-            # Load the entire prediction dataset using pyarrow
-            df = pa_csv.read_csv(self.predict_file_path).to_pandas()
-            original_headers = df.columns.tolist()
-            print("Original dataset headers:", original_headers)
+            # Use the cleaned data from the trainer for consistency
+            df = cleaned_data
+            headers = df.columns.tolist()
+            print("Cleaned dataset headers:", headers)
 
             # Check if we have CATE predictions (BCF model)
             is_bcf = "Posterior Mean CATE" in predictions
@@ -1181,7 +1191,7 @@ class Arborist(QMainWindow):
                     "97.5th percentile ŷ",
                 ]
 
-            combined_headers = prediction_headers + original_headers
+            combined_headers = prediction_headers + headers
             print("Combined headers:", combined_headers)
 
             # Create prediction DataFrame
@@ -1224,12 +1234,10 @@ class Arborist(QMainWindow):
                 f"TableView configured with {model.rowCount()} rows and {model.columnCount()} columns"
             )
             self.statusBar.showMessage(
-                "Successfully displaying predictions with original data"
+                "Successfully displaying predictions with cleaned data"
             )
 
         except Exception as e:
-            import traceback
-
             print("Error in display_predictions:", str(e))
             print("Traceback:", traceback.format_exc())
             QMessageBox.critical(
@@ -1237,7 +1245,7 @@ class Arborist(QMainWindow):
             )
             self.statusBar.showMessage("Error displaying predictions")
 
-    def center_window(self):
+    def center_window(self) -> None:
         """Center the window on the screen."""
         screen = self.screen()  # Get the current screen
         screen_geometry = screen.availableGeometry()
@@ -1252,7 +1260,7 @@ class Arborist(QMainWindow):
         # Move the window's top-left corner to the calculated center
         self.move(window_geometry.topLeft())
 
-    def on_file_double_click(self, index):
+    def on_file_double_click(self, index: QModelIndex) -> None:
         """Handle double-click events on files and directories in the tree view."""
         source_index = self.proxy_model.mapToSource(index)
         file_path = self.file_model.filePath(source_index)
@@ -1270,7 +1278,7 @@ class Arborist(QMainWindow):
             self.open_button.setVisible(False)
             self.no_dataset_message.show()  # Show the "No dataset" message
 
-    def navigate_to_directory(self, directory_path):
+    def navigate_to_directory(self, directory_path: str) -> None:
         """Navigate to the directory represented by the given path."""
         # Update navigation history
         if self.history_index < len(self.history) - 1:
@@ -1299,7 +1307,7 @@ class Arborist(QMainWindow):
         self.no_dataset_message.show()
         self.open_button.setVisible(False)
 
-    def navigate_back(self):
+    def navigate_back(self) -> None:
         """Navigate back in the directory history."""
         if self.history_index > 0:
             self.history_index -= 1
@@ -1318,7 +1326,7 @@ class Arborist(QMainWindow):
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
 
-    def navigate_forward(self):
+    def navigate_forward(self) -> None:
         """Navigate forward in the directory history."""
         if self.history_index < len(self.history) - 1:
             self.history_index += 1
@@ -1337,14 +1345,14 @@ class Arborist(QMainWindow):
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
 
-    def navigate_up(self):
+    def navigate_up(self) -> None:
         """Navigate up one directory level from the current directory."""
         parent_directory = os.path.dirname(self.current_directory)
         # Check if parent directory exists and is different from the current
         if parent_directory and parent_directory != self.current_directory:
             self.navigate_to_directory(parent_directory)
 
-    def update_tab_states(self):
+    def update_tab_states(self) -> None:
         """Update the enabled/disabled state of the Train and Predict tabs."""
         # Train tab should only be enabled after Open Dataset button is clicked
         train_tab_enabled = hasattr(self, "dataset_opened") and self.dataset_opened
@@ -1354,36 +1362,43 @@ class Arborist(QMainWindow):
         predict_tab_enabled = self.trained_model is not None
         self.tabs.setTabEnabled(2, predict_tab_enabled)
 
-    def load_csv_file(self, file_path, table_view):
+    def load_csv_file(self, file_path: str, table_view) -> None:
         """Load the selected CSV file and display its contents."""
         try:
             self.current_file_path = file_path  # Store the current file path
 
-            # Load entire CSV with pyarrow
-            df = pa_csv.read_csv(file_path).to_pandas()
+            # Instead of reloading raw data, we use ModelTrainer to load and clean the data
+            if not hasattr(self, "trainer"):
+                # Create a temporary trainer to load the data
+                self.trainer = ModelTrainer(file_path, outcome_var="")
+            self.trainer.file_path = file_path  # update file path if necessary
+            self.trainer.load_data()
 
-            # Ensure index matches the file order
-            df.index = range(len(df))
-
+            df = self.trainer.data_cleaned
             headers = df.columns.tolist()
             model = PandasTableModel(df, headers, predictions=None)
             table_view.setModel(model)
             table_view.setSortingEnabled(False)
             table_view.horizontalHeader().setSortIndicatorShown(False)
-
-            # Automatically adjust the column width to fit the content and header
             table_view.resizeColumnsToContents()
 
             # Update the outcome combo box with column names
             self.outcome_combo.clear()
             self.outcome_combo.addItems(headers)
+            # Update the treatment combo box with column names
+            self.treatment_combo.clear()
+            self.treatment_combo.addItems(headers)
 
-            # Hide the "No dataset" message and show the open button
             self.no_dataset_message.hide()
             self.open_button.setVisible(True)
 
-            # Update the Train tab state
+            self.dataset_opened = True
             self.update_tab_states()
+
+            # Update status bar with cleaning stats
+            self.statusBar.showMessage(
+                f"Loaded dataset: original rows {self.trainer.original_row_count}, cleaned rows {self.trainer.cleaned_row_count} (removed {self.trainer.observations_removed} rows)"
+            )
         except Exception as e:
             print(f"Error loading file: {e}")
             table_view.setModel(None)
@@ -1391,22 +1406,23 @@ class Arborist(QMainWindow):
             self.no_dataset_message.show()
             self.open_button.setVisible(False)
 
-    def highlight_selected_column(self):
+    def highlight_selected_column(self) -> None:
         """Highlight the selected column in the analytics viewer."""
         selected_var = self.outcome_combo.currentText()
         model = self.analytics_viewer.model()
         if model and selected_var in model.headers:
             model.set_highlighted_column(selected_var)
 
-    def open_in_analytics_view(self):
+    def open_in_analytics_view(self) -> None:
         """Open the dataset in the analytics view (Train tab) with auto-one hot encoding."""
         if hasattr(self, "current_file_path"):
             try:
-                # Load entire CSV with pyarrow
-                df = pa_csv.read_csv(self.current_file_path).to_pandas()
-                # Apply auto-one hot encoding to the dataset
-                df = auto_one_hot_encode(df)
-
+                # Use the existing trainer to load and clean data
+                if not hasattr(self, "trainer"):
+                    self.trainer = ModelTrainer(self.current_file_path, outcome_var="")
+                self.trainer.file_path = self.current_file_path
+                self.trainer.load_data()
+                df = self.trainer.data_cleaned
                 headers = df.columns.tolist()
                 model = PandasTableModel(df, headers)
                 self.analytics_viewer.setModel(model)
@@ -1422,19 +1438,20 @@ class Arborist(QMainWindow):
                 self.no_dataset_label.setVisible(False)
                 self.analytics_viewer.setVisible(True)
 
-                # Mark the dataset as opened
                 self.dataset_opened = True
-
-                # Enable the Train tab and switch to it
                 self.update_tab_states()
                 self.tabs.setCurrentIndex(1)
+
+                self.statusBar.showMessage(
+                    f"Opened dataset: original rows {self.trainer.original_row_count}, cleaned rows {self.trainer.cleaned_row_count} (removed {self.trainer.observations_removed} rows)"
+                )
             except Exception as e:
                 print(f"Error loading file in analytics view: {e}")
                 self.analytics_viewer.setModel(None)
                 self.no_dataset_label.setVisible(True)
                 self.analytics_viewer.setVisible(False)
 
-    def train_model(self):
+    def train_model(self) -> None:
         """Train the model using threading and progress tracking."""
         self.train_button.setEnabled(False)
         self.statusBar.showMessage("Initializing training...")
@@ -1465,14 +1482,13 @@ class Arborist(QMainWindow):
                 else None
             )
 
-            # Initialize the ModelTrainer
+            # Initialize ModelTrainer using the current cleaned data
             self.trainer = ModelTrainer(
                 file_path=self.current_file_path,
                 outcome_var=outcome_var,
                 treatment_var=treatment_var,
             )
 
-            # Model training parameters
             model_params = {
                 "model_name": model_name,
                 "num_trees": num_trees,
@@ -1503,7 +1519,7 @@ class Arborist(QMainWindow):
             self.train_button.setEnabled(True)
 
     @Slot(int)
-    def update_progress(self, value):
+    def update_progress(self, value: int) -> None:
         """Update progress dialog and status bar based on progress value."""
         if self.progress_dialog:
             self.progress_dialog.setValue(value)
@@ -1531,14 +1547,16 @@ class Arborist(QMainWindow):
             )
 
     @Slot(dict, float, object)
-    def handle_training_finished(self, predictions, training_time, model):
+    def handle_training_finished(
+        self, predictions: dict, training_time: float, model: object
+    ) -> None:
         """Handle successful model training completion."""
         if self.progress_dialog:
             self.progress_dialog.close()
 
         elapsed_time = time.time() - self.start_time
         self.statusBar.showMessage(
-            f"Model training finished in {elapsed_time:.2f} seconds."
+            f"Model training finished in {elapsed_time:.2f} seconds. Data cleaning: removed {self.trainer.observations_removed} rows; cleaned data: {self.trainer.cleaned_row_count} rows out of {self.trainer.original_row_count}."
         )
 
         # Store the trained model for later use in predictions
@@ -1548,10 +1566,9 @@ class Arborist(QMainWindow):
         # Update tab states to enable Predict tab
         self.update_tab_states()
 
-        # Reload the data with predictions
         try:
-            # Load entire CSV with pyarrow
-            df = pa_csv.read_csv(self.current_file_path).to_pandas()
+            # Use the cleaned data from the trainer for predictions display
+            df = self.trainer.data_cleaned
             headers = df.columns.tolist()
             # Define additional headers for predictions based on model type
             if isinstance(model, BCFModel):
@@ -1590,7 +1607,7 @@ class Arborist(QMainWindow):
             )
             prediction_df = pd.DataFrame(prediction_data)
 
-            # Concatenate prediction columns with the original dataset
+            # Concatenate prediction columns with the cleaned dataset
             combined_df = pd.concat([prediction_df, df], axis=1)
             model_table = PandasTableModel(combined_df, full_headers, predictions)
             self.analytics_viewer.setModel(model_table)
@@ -1599,17 +1616,12 @@ class Arborist(QMainWindow):
             # Re-highlight the selected outcome variable column
             self.highlight_selected_column()
 
-            # Print the number of observations removed
-            # print(f"Number of observations removed due to missing data: {observations_removed}")
-
         except Exception as e:
             print(f"Error updating predictions: {e}")
-            import traceback
-
             print("Traceback:", traceback.format_exc())
 
     @Slot(str)
-    def handle_training_error(self, error_message):
+    def handle_training_error(self, error_message: str) -> None:
         """Handle training errors with detailed error reporting."""
         try:
             # Ensure progress dialog is closed
@@ -1634,7 +1646,6 @@ class Arborist(QMainWindow):
             error_dialog.setWindowTitle("Training Error")
             error_dialog.setText("An error occurred during model training")
 
-            # Add detailed error information
             detailed_text = [
                 "Error Details:",
                 "-------------",
@@ -1665,37 +1676,35 @@ class Arborist(QMainWindow):
             error_dialog.exec()
 
         except Exception as e:
-            # Fallback error handling
             print(f"Error in error handler: {str(e)}")
             QMessageBox.critical(
                 self,
                 "Error",
                 "An error occurred while handling the training error.\n"
-                f"Original error: {error_message}\n"
-                f"Handler error: {str(e)}",
+                f"Original error: {error_message}\nHandler error: {str(e)}",
             )
 
-    def cancel_training(self):
+    def cancel_training(self) -> None:
         """Cancel the training process."""
         if self.training_worker:
             self.training_worker.stop()
             self.training_worker.wait()
             self.training_worker = None
 
-    def closeEvent(self, event):
+    def closeEvent(self, event) -> None:
         """Handle application shutdown."""
         if self.training_worker:
             self.training_worker.stop()
             self.training_worker.wait()
         event.accept()
 
-    def save_results(self, file_path):
+    def save_results(self, file_path: str) -> None:
         """Save predictions and model parameters."""
         if hasattr(self, "predictions"):
             # Save implementation
             pass
 
-    def select_predict_file(self):
+    def select_predict_file(self) -> None:
         """Open a file dialog to select a file for prediction."""
         desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
         file_path, _ = QFileDialog.getOpenFileName(
@@ -1712,7 +1721,7 @@ class Arborist(QMainWindow):
 
 
 # Main function to start the application
-def main():
+def main() -> None:
     app = QApplication(sys.argv)
     main_window = Arborist()
     main_window.show()
