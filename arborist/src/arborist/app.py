@@ -618,6 +618,7 @@ class Arborist(QMainWindow):
         self.full_predictions = None
         self.current_prediction_idx = 0
         self.dataset_opened = False
+        self.trainer = None
 
         # Load the stylesheet.
         try:
@@ -837,20 +838,52 @@ class Arborist(QMainWindow):
 
     def reset_train_tab(self) -> None:
         """
-        Reset the Train tab by clearing the dataset, resetting dropdowns, and returning to the Browse tab.
+        Reset the application to its initial state, allowing the user to start over.
+        This resets the Train tab, Browse tab, and Predict tab.
         """
+        # Cancel any ongoing training
+        if self.training_worker:
+            self.cancel_training()
+
+        # Reset internal state variables
+        self.current_file_path = None
+        self.trainer = None
+        self.trained_model = None
+        self.dataset_opened = False
+        self.predict_file_path = None
+
+        # Reset the Browse tab:
+        # Clear the file viewer
+        self.file_viewer.setModel(None)
+        self.no_dataset_message.show()
+        # Reset navigation history to the initial directory (Desktop)
+        initial_dir = os.path.join(os.path.expanduser("~"), "Desktop")
+        self.history = [initial_dir]
+        self.history_index = 0
+        self.back_button.setEnabled(False)
+        self.forward_button.setEnabled(False)
+        source_index = self.file_model.index(initial_dir)
+        self.current_root_index = self.proxy_model.mapFromSource(source_index)
+        self.tree.setRootIndex(self.current_root_index)
+
+        # Reset the Train tab UI:
         self.analytics_viewer.setModel(None)
         self.outcome_combo.clear()
         self.treatment_combo.clear()
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
-        self.dataset_opened = False
-        self.trained_model = None
         self.train_ui.trainingTimeValue.setText("0 seconds")
-        self.statusBar.showMessage(
-            "Train tab reset. Please select a dataset from the Browse tab."
-        )
+        # Re-enable the train button so the user can run another analysis
+        self.train_button.setEnabled(True)
+
+        # Reset the Predict tab UI:
+        self.predict_ui.tableView.setModel(None)
+
+        # Switch back to the Browse tab
         self.tabs.setCurrentIndex(0)
+        self.statusBar.showMessage(
+            "Application reset. Please select a dataset from the Browse tab."
+        )
 
     def generate_code(self) -> str:
         """
@@ -1280,9 +1313,10 @@ class Arborist(QMainWindow):
         """
         try:
             self.current_file_path = file_path
-            if not hasattr(self, "trainer"):
+            if (not hasattr(self, "trainer")) or (self.trainer is None):
                 self.trainer = ModelTrainer(file_path, outcome_var="")
-            self.trainer.file_path = file_path
+            else:
+                self.trainer.file_path = file_path
             self.trainer.load_data()
             df = self.trainer.data_cleaned
             headers = df.columns.tolist()
@@ -1323,9 +1357,10 @@ class Arborist(QMainWindow):
         """
         if hasattr(self, "current_file_path"):
             try:
-                if not hasattr(self, "trainer"):
+                if (not hasattr(self, "trainer")) or (self.trainer is None):
                     self.trainer = ModelTrainer(self.current_file_path, outcome_var="")
-                self.trainer.file_path = self.current_file_path
+                else:
+                    self.trainer.file_path = self.current_file_path
                 self.trainer.load_data()
                 df = self.trainer.data_cleaned
                 headers = df.columns.tolist()
