@@ -751,8 +751,15 @@ class Arborist(QMainWindow):
         dataset_extensions = {".csv", ".sav", ".dta"}
         self.proxy_model = DatasetFileFilterProxyModel(dataset_extensions)
         self.proxy_model.setSourceModel(self.file_model)
+        # Disable dynamic sorting so that the proxy does not keep reordering
+        self.proxy_model.setDynamicSortFilter(False)
         self.tree = self.browse_ui.treeView
+        # Freeze updates to prevent visual jumps during the initial load.
+        self.tree.setUpdatesEnabled(False)
+        # Set the model on the tree view.
         self.tree.setModel(self.proxy_model)
+        # Disable the view’s own sorting to avoid reordering while items are added.
+        self.tree.setSortingEnabled(False)
         self.current_directory = desktop_path  # Store current directory path.
         source_index = self.file_model.index(desktop_path)
         self.current_root_index = self.proxy_model.mapFromSource(source_index)
@@ -760,6 +767,9 @@ class Arborist(QMainWindow):
         self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
         self.tree.header().setMinimumSectionSize(100)
         self.tree.doubleClicked.connect(self.on_file_double_click)
+        # Re-enable updates once the model is fully set.
+        self.tree.setUpdatesEnabled(True)
+
         self.file_viewer = self.browse_ui.file_viewer
         self.file_viewer.setSortingEnabled(False)
         self.file_viewer.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
