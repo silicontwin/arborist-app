@@ -274,9 +274,6 @@ class ModelTrainer:
     def load_data(self):
         print(f"Loading data from: {self.file_path}")
 
-        # Use pyarrow to efficiently read the CSV
-        import pyarrow.csv as pa_csv
-
         table = pa_csv.read_csv(self.file_path)
         self.data = table.to_pandas()
 
@@ -1176,15 +1173,10 @@ class Arborist(QMainWindow):
             print("Prediction keys:", predictions.keys())
             print("Prediction lengths:", {k: len(v) for k, v in predictions.items()})
 
-            # First, load prediction dataset in chunks
-            # Load entire file with proper global row ordering and add 'orig_order'
+            # Load prediction dataset in chunks
             chunks = []
-            global_order = 0
             for chunk in pd.read_csv(self.predict_file_path, chunksize=CHUNK_SIZE):
-                chunk = chunk.copy()
-                chunk["orig_order"] = range(global_order, global_order + len(chunk))
-                global_order += len(chunk)
-                chunks.append(chunk)
+                chunks.append(chunk.copy())
             df = pd.concat(chunks, ignore_index=True)
             original_headers = df.columns.tolist()
             print("Original dataset headers:", original_headers)
@@ -1271,11 +1263,6 @@ class Arborist(QMainWindow):
                 -1, Qt.AscendingOrder
             )
             self.predict_ui.tableView.horizontalHeader().setSortIndicatorShown(False)
-
-            # Hide the "orig_order" column if it is present in the model's headers
-            if "orig_order" in model.headers:
-                col_index = model.headers.index("orig_order")
-                self.predict_ui.tableView.hideColumn(col_index)
 
             print(
                 f"TableView configured with initial chunk showing {model.rowCount()} rows and {model.columnCount()} columns"
@@ -1415,14 +1402,10 @@ class Arborist(QMainWindow):
         """Load the selected CSV file and display its contents in chunks."""
         try:
             self.current_file_path = file_path  # Store the current file path
-            # Load CSV in chunks and assign a global 'orig_order' column
+            # Load CSV in chunks
             chunks = []
-            global_order = 0
             for chunk in pd.read_csv(file_path, chunksize=CHUNK_SIZE):
-                chunk = chunk.copy()
-                chunk["orig_order"] = range(global_order, global_order + len(chunk))
-                global_order += len(chunk)
-                chunks.append(chunk)
+                chunks.append(chunk.copy())
             df = pd.concat(chunks, ignore_index=True)
             headers = df.columns.tolist()
             model = PandasTableModel(df, headers, predictions=None)
@@ -1433,10 +1416,6 @@ class Arborist(QMainWindow):
             # Clear any sort indicator so that the original order is preserved
             table_view.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
             table_view.horizontalHeader().setSortIndicatorShown(False)
-            # Hide the orig_order column if present
-            if "orig_order" in model.headers:
-                col_index = model.headers.index("orig_order")
-                table_view.hideColumn(col_index)
 
             # Automatically adjust the column width to fit the content and header
             table_view.resizeColumnsToContents()
@@ -1482,14 +1461,10 @@ class Arborist(QMainWindow):
         """Open the dataset in the analytics view (Train tab)."""
         if hasattr(self, "current_file_path"):
             try:
-                # Load CSV with global order using chunks and assign 'orig_order'
+                # Load CSV in chunks
                 chunks = []
-                global_order = 0
                 for chunk in pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE):
-                    chunk = chunk.copy()
-                    chunk["orig_order"] = range(global_order, global_order + len(chunk))
-                    global_order += len(chunk)
-                    chunks.append(chunk)
+                    chunks.append(chunk.copy())
                 df = pd.concat(chunks, ignore_index=True)
                 headers = df.columns.tolist()
                 model = PandasTableModel(df, headers)
@@ -1503,10 +1478,6 @@ class Arborist(QMainWindow):
                     -1, Qt.AscendingOrder
                 )
                 self.analytics_viewer.horizontalHeader().setSortIndicatorShown(False)
-                # Hide the orig_order column if present
-                if "orig_order" in model.headers:
-                    col_index = model.headers.index("orig_order")
-                    self.analytics_viewer.hideColumn(col_index)
 
                 # Connect scroll event for lazy loading in the analytics tab
                 self.analytics_viewer.verticalScrollBar().valueChanged.connect(
@@ -1657,12 +1628,8 @@ class Arborist(QMainWindow):
         try:
             chunk_iter = pd.read_csv(self.current_file_path, chunksize=CHUNK_SIZE)
             chunks = []
-            global_order = 0
             for chunk in chunk_iter:
-                chunk = chunk.copy()
-                chunk["orig_order"] = range(global_order, global_order + len(chunk))
-                global_order += len(chunk)
-                chunks.append(chunk)
+                chunks.append(chunk.copy())
             first_chunk = chunks[0]
             headers = first_chunk.columns.tolist()
             # Define additional headers for predictions based on model type
