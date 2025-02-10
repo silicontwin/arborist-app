@@ -49,6 +49,24 @@ CURRENT_VERSION = "v0.0.1"
 GITHUB_REPO = "silicontwin/arborist-app"
 
 
+def auto_one_hot_encode(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Automatically perform one-hot encoding on all categorical columns
+    (columns of type 'object' or 'category') in the provided DataFrame.
+    """
+    categorical_columns = df.select_dtypes(include=["object", "category"]).columns
+    if len(categorical_columns) > 0:
+        ohe = OneHotEncoder(sparse_output=False, drop="first")
+        ohe_df = pd.DataFrame(
+            ohe.fit_transform(df[categorical_columns]),
+            columns=ohe.get_feature_names_out(categorical_columns),
+            index=df.index,
+        )
+        df = pd.concat([df.drop(categorical_columns, axis=1), ohe_df], axis=1)
+        print(f"Performed one-hot encoding on columns: {list(categorical_columns)}")
+    return df
+
+
 # PandasTableModel (the entire dataset is loaded)
 class PandasTableModel(QAbstractTableModel):
     def __init__(self, data, headers, predictions=None):
@@ -262,34 +280,24 @@ class ModelTrainer:
     def load_data(self):
         print(f"Loading data from: {self.file_path}")
 
+        # Load the data using pyarrow
         table = pa_csv.read_csv(self.file_path)
         self.data = table.to_pandas()
 
         print(f"Initial data shape: {self.data.shape}")
         print("Columns:", self.data.columns.tolist())
 
-        # Store original column order
+        # Store original column order before OHE is applied
         self.original_columns = self.data.columns.tolist()
 
-        # # One-hot encode non-numeric columns
-        # categorical_columns = self.data.select_dtypes(
-        #     include=["object", "category"]
-        # ).columns
-        # if len(categorical_columns) > 0:
-        #     ohe = OneHotEncoder(sparse_output=False, drop="first")
-        #     ohe_df = pd.DataFrame(
-        #         ohe.fit_transform(self.data[categorical_columns]),
-        #         columns=ohe.get_feature_names_out(categorical_columns),
-        #     )
-        #     self.data = pd.concat(
-        #         [self.data.drop(categorical_columns, axis=1), ohe_df], axis=1
-        #     )
+        # Apply auto-one hot encoding to transform all categorical columns
+        self.data = auto_one_hot_encode(self.data)
 
-        # Make copy to avoid modifying original
+        # Make a copy to avoid modifying the original data after OHE
         self.data_cleaned = self.data.copy()
 
-        # Print column info
-        print("\nColumn types:")
+        # Print column info after OHE
+        print("\nColumn types after one-hot encoding:")
         print(self.data.dtypes)
         print("\nMissing values per column:")
         print(self.data.isnull().sum())
@@ -305,14 +313,14 @@ class ModelTrainer:
 
         print(f"\nData shape after numeric conversion: {self.data_cleaned.shape}")
 
-        # Check if treatment variable exists
+        # Check if treatment variable exists (if one is specified)
         if self.treatment_var is not None:
             if self.treatment_var not in self.data_cleaned.columns:
                 raise ValueError(
                     f"Treatment variable '{self.treatment_var}' not found in the data."
                 )
 
-        # Drop any completely missing columns
+        # Drop any columns that are completely missing
         empty_cols = [
             col
             for col in self.data_cleaned.columns
@@ -1396,25 +1404,20 @@ class Arborist(QMainWindow):
             model.set_highlighted_column(selected_var)
 
     def open_in_analytics_view(self):
-        """Open the dataset in the analytics view (Train tab)."""
+        """Open the dataset in the analytics view (Train tab) with auto-one hot encoding."""
         if hasattr(self, "current_file_path"):
             try:
                 # Load entire CSV with pyarrow
                 df = pa_csv.read_csv(self.current_file_path).to_pandas()
+                # Apply auto-one hot encoding to the dataset
+                df = auto_one_hot_encode(df)
+
                 headers = df.columns.tolist()
                 model = PandasTableModel(df, headers)
                 self.analytics_viewer.setModel(model)
                 self.analytics_viewer.resizeColumnsToContents()
 
-                # Enable sorting
-                self.analytics_viewer.setSortingEnabled(False)
-                # Clear any sort indicator so that the original order is preserved
-                self.analytics_viewer.horizontalHeader().setSortIndicator(
-                    -1, Qt.AscendingOrder
-                )
-                self.analytics_viewer.horizontalHeader().setSortIndicatorShown(False)
-
-                # Update outcome and treatment variable dropdowns
+                # Update outcome and treatment variable dropdowns with new headers
                 self.outcome_combo.clear()
                 self.outcome_combo.addItems(headers)
                 self.treatment_combo.clear()
@@ -1435,10 +1438,6 @@ class Arborist(QMainWindow):
                 self.analytics_viewer.setModel(None)
                 self.no_dataset_label.setVisible(True)
                 self.analytics_viewer.setVisible(False)
-        else:
-            # Show the "No dataset" message if no dataset is loaded
-            self.no_dataset_label.setVisible(True)
-            self.analytics_viewer.setVisible(False)
 
     def train_model(self):
         """Train the model using threading and progress tracking."""
