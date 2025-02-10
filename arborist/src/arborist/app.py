@@ -10,16 +10,11 @@ from sklearn.preprocessing import OneHotEncoder
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
-    QTreeView,
-    QTableView,
     QFileSystemModel,
     QLabel,
-    QPushButton,
     QTabWidget,
     QWidget,
-    QSplitter,
     QHeaderView,
-    QComboBox,
     QProgressDialog,
     QMessageBox,
     QFileDialog,
@@ -42,7 +37,6 @@ import time
 import requests
 import webbrowser
 import pyarrow.csv as pa_csv
-import pyarrow.compute as pc
 
 # Current version and repo details
 CURRENT_VERSION = "v0.0.1"
