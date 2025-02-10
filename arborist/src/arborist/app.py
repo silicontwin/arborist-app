@@ -54,8 +54,6 @@ class PandasTableModel(QAbstractTableModel):
     def __init__(self, data, headers, predictions=None):
         super().__init__()
         self.headers = headers
-        self._sort_order = Qt.AscendingOrder
-        self._sort_column = None
         self.selected_column_name = None
         self.predictions = predictions
 
@@ -110,12 +108,14 @@ class PandasTableModel(QAbstractTableModel):
                 prediction_df = pd.DataFrame(prediction_data)
                 self._data = pd.concat([prediction_df, self._data], axis=1)
 
+        # Ensure the index is a simple range index matching the file order
+        if not self._data.index.equals(pd.RangeIndex(len(self._data))):
+            self._data.reset_index(drop=True, inplace=True)
+
     def rowCount(self, parent=QModelIndex()):
-        # Return the number of rows in the current data
         return len(self._data)
 
     def columnCount(self, parent=QModelIndex()):
-        # Return the number of columns in the dataset
         return len(self.headers)
 
     def data(self, index, role=Qt.DisplayRole):
@@ -123,14 +123,13 @@ class PandasTableModel(QAbstractTableModel):
             return None
 
         if role == Qt.DisplayRole:
-            # Return data from the loaded dataset
             value = self._data.iloc[index.row(), index.column()]
             if pd.isnull(value):
                 return ""
             return str(value)
 
         elif role == Qt.BackgroundRole:
-            # Apply zebra striping
+            # Apply zebra striping based on the actual row number
             base_color = (
                 self.alternate_row_color if index.row() % 2 else self.base_row_color
             )
@@ -158,22 +157,11 @@ class PandasTableModel(QAbstractTableModel):
     def headerData(self, section, orientation, role=Qt.DisplayRole):
         if role == Qt.DisplayRole:
             if orientation == Qt.Horizontal:
-                # Return the column header
                 return self.headers[section]
             else:
-                # Return the row number
+                # Return row numbers starting from 1
                 return str(section + 1)
         return None
-
-    def sort(self, column, order):
-        """Sort the data by the given column index and order."""
-        self.layoutAboutToBeChanged.emit()
-        self._data = self._data.sort_values(
-            by=self._data.columns[column], ascending=(order == Qt.AscendingOrder)
-        )
-        self._sort_order = order
-        self._sort_column = column
-        self.layoutChanged.emit()
 
     def set_highlighted_column(self, column_name):
         """Set the column to highlight in yellow."""
@@ -785,7 +773,7 @@ class Arborist(QMainWindow):
 
         # Set up the file viewer
         self.file_viewer = self.browse_ui.file_viewer
-        self.file_viewer.setSortingEnabled(True)
+        self.file_viewer.setSortingEnabled(False)
         # Clear any sort indicator so the original order is preserved
         self.file_viewer.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.file_viewer.horizontalHeader().setSortIndicatorShown(False)
@@ -1230,7 +1218,7 @@ class Arborist(QMainWindow):
             self.predict_ui.tableView.verticalHeader().setVisible(True)
 
             # Enable sorting
-            self.predict_ui.tableView.setSortingEnabled(True)
+            self.predict_ui.tableView.setSortingEnabled(False)
             # Clear any sort indicator so that the original order is preserved
             self.predict_ui.tableView.horizontalHeader().setSortIndicator(
                 -1, Qt.AscendingOrder
@@ -1375,16 +1363,17 @@ class Arborist(QMainWindow):
         """Load the selected CSV file and display its contents."""
         try:
             self.current_file_path = file_path  # Store the current file path
+
             # Load entire CSV with pyarrow
             df = pa_csv.read_csv(file_path).to_pandas()
+
+            # Ensure index matches the file order
+            df.index = range(len(df))
+
             headers = df.columns.tolist()
             model = PandasTableModel(df, headers, predictions=None)
             table_view.setModel(model)
-
-            # Enable sorting
-            table_view.setSortingEnabled(True)
-            # Clear any sort indicator so that the original order is preserved
-            table_view.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
+            table_view.setSortingEnabled(False)
             table_view.horizontalHeader().setSortIndicatorShown(False)
 
             # Automatically adjust the column width to fit the content and header
@@ -1426,7 +1415,7 @@ class Arborist(QMainWindow):
                 self.analytics_viewer.resizeColumnsToContents()
 
                 # Enable sorting
-                self.analytics_viewer.setSortingEnabled(True)
+                self.analytics_viewer.setSortingEnabled(False)
                 # Clear any sort indicator so that the original order is preserved
                 self.analytics_viewer.horizontalHeader().setSortIndicator(
                     -1, Qt.AscendingOrder
