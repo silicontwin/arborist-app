@@ -41,6 +41,8 @@ from stochtree import BCFModel, BARTModel
 import time
 import requests
 import webbrowser
+import pyarrow.csv as pa_csv
+import pyarrow.compute as pc
 
 CHUNK_SIZE = 1000  # Number of rows to load per chunk
 
@@ -54,39 +56,72 @@ class PandasTableModel(QAbstractTableModel):
     def __init__(self, data, headers, predictions=None):
         super().__init__()
         self.headers = headers
-        self._sort_order = Qt.AscendingOrder  # Default sort order
-        self._sort_column = None  # No sort initially
-        self.selected_column_name = None  # Outcome variable column to highlight
+        self._sort_order = Qt.AscendingOrder
+        self._sort_column = None
+        self.selected_column_name = None
         self.predictions = predictions
 
         # Zebra stripe colors
-        self.alternate_row_color = QColor("#F5F5F5")  # Light gray for alternate rows
-        self.base_row_color = QColor("#FFFFFF")  # White for base rows
-
-        # For lazy loading, if data is not a DataFrame, we expect an iterator
-        # Initialize an offset to preserve the global row order
-        self.current_offset = 0
+        self.alternate_row_color = QColor("#F5F5F5")
+        self.base_row_color = QColor("#FFFFFF")
 
         print("Initializing PandasTableModel with data type:", type(data))
         print("Headers:", headers)
         print("Predictions provided:", predictions is not None)
 
-        print("Initializing PandasTableModel with data type:", type(data))
-
         if isinstance(data, pd.DataFrame):
             self._data = data
-            self.has_more_chunks = False
             print("DataFrame loaded directly with shape:", self._data.shape)
         else:
-            if isinstance(data, (list, tuple)):
-                self.chunk_iter = iter(data)
+            if isinstance(data, str):
+                # Add index column before reading to preserve order
+                read_options = pa_csv.ReadOptions(use_threads=True)
+                convert_options = pa_csv.ConvertOptions(include_columns=None)
+                parse_options = pa_csv.ParseOptions(ignore_empty_lines=True)
+
+                table = pa_csv.read_csv(
+                    data,
+                    read_options=read_options,
+                    convert_options=convert_options,
+                    parse_options=parse_options,
+                )
+                self._data = table.to_pandas()
+                self._data["_original_index"] = range(len(self._data))
             else:
-                self.chunk_iter = data
-            self._data = pd.DataFrame()  # Store all loaded data
-            self.has_more_chunks = True
-            self.chunks_loaded = 0  # Track number of chunks loaded
-            self.load_next_chunk()  # Load the first chunk
-            print("Loaded first chunk, current data shape:", self._data.shape)
+                self._data = pd.DataFrame(data)
+                self._data["_original_index"] = range(len(self._data))
+
+            print("Data loaded with shape:", self._data.shape)
+
+            if self.predictions is not None:
+                # Create prediction DataFrame
+                prediction_data = {}
+
+                # Check if we have CATE predictions (BCF model)
+                if "Posterior Mean CATE" in self.predictions:
+                    prediction_data.update(
+                        {
+                            "CATE": self.predictions["Posterior Mean CATE"],
+                            "2.5th percentile CATE": self.predictions[
+                                "2.5th Percentile CATE"
+                            ],
+                            "97.5th percentile CATE": self.predictions[
+                                "97.5th Percentile CATE"
+                            ],
+                        }
+                    )
+
+                # Add outcome predictions (both BART and BCF)
+                prediction_data.update(
+                    {
+                        "Posterior Average ŷ": self.predictions["Posterior Mean"],
+                        "2.5th percentile ŷ": self.predictions["2.5th Percentile"],
+                        "97.5th percentile ŷ": self.predictions["97.5th Percentile"],
+                    }
+                )
+
+                prediction_df = pd.DataFrame(prediction_data)
+                self._data = pd.concat([prediction_df, self._data], axis=1)
 
     def rowCount(self, parent=QModelIndex()):
         # Return the number of rows in the current data
@@ -113,7 +148,6 @@ class PandasTableModel(QAbstractTableModel):
                 self.alternate_row_color if index.row() % 2 else self.base_row_color
             )
 
-            # Check for special column highlighting
             column_name = self.headers[index.column()]
             if self.selected_column_name == column_name:
                 return QColor("#FFFFCB")  # Light yellow for selected column
@@ -144,124 +178,14 @@ class PandasTableModel(QAbstractTableModel):
                 return str(section + 1)
         return None
 
-    def load_next_chunk(self):
-        """Load the next chunk of data with proper prediction handling for both BART and BCF."""
-        if not self.has_more_chunks:
-            return
-        try:
-            chunk = next(self.chunk_iter)
-            chunk = chunk.copy()
-            # Assign a global order if not already present
-            if "orig_order" not in chunk.columns:
-                chunk["orig_order"] = range(
-                    self.current_offset, self.current_offset + len(chunk)
-                )
-            self.current_offset += len(chunk)
-
-            print(f"Loading chunk {self.chunks_loaded + 1} with shape:", chunk.shape)
-
-            old_row_count = self.rowCount()
-            self.beginInsertRows(
-                QModelIndex(), old_row_count, old_row_count + len(chunk) - 1
-            )
-
-            if self.predictions is not None:
-                start_idx = self.chunks_loaded * CHUNK_SIZE
-                end_idx = start_idx + len(chunk)
-                print(f"Processing predictions for indices {start_idx} to {end_idx}")
-
-                # Create prediction DataFrame based on available predictions
-                prediction_data = {}
-
-                # Check if we have CATE predictions (BCF model)
-                if "Posterior Mean CATE" in self.predictions:
-                    prediction_data.update(
-                        {
-                            "CATE": self.predictions["Posterior Mean CATE"][
-                                start_idx:end_idx
-                            ],
-                            "2.5th percentile CATE": self.predictions[
-                                "2.5th Percentile CATE"
-                            ][start_idx:end_idx],
-                            "97.5th percentile CATE": self.predictions[
-                                "97.5th Percentile CATE"
-                            ][start_idx:end_idx],
-                        }
-                    )
-
-                # Add outcome predictions (both BART and BCF)
-                prediction_data.update(
-                    {
-                        "Posterior Average ŷ": self.predictions["Posterior Mean"][
-                            start_idx:end_idx
-                        ],
-                        "2.5th percentile ŷ": self.predictions["2.5th Percentile"][
-                            start_idx:end_idx
-                        ],
-                        "97.5th percentile ŷ": self.predictions["97.5th Percentile"][
-                            start_idx:end_idx
-                        ],
-                    }
-                )
-
-                print("Created prediction data with keys:", prediction_data.keys())
-
-                # Combine predictions with chunk data
-                prediction_df = pd.DataFrame(prediction_data, index=chunk.index)
-                # Do not reset the index so that the original order is preserved
-                self._data = pd.concat(
-                    [self._data, pd.concat([prediction_df, chunk], axis=1)],
-                    ignore_index=False,
-                )
-            else:
-                # Use ignore_index=False to preserve the chunk indices
-                self._data = pd.concat([self._data, chunk], ignore_index=False)
-
-            self.chunks_loaded += 1
-            print(
-                f"After loading chunk {self.chunks_loaded}, total data shape:",
-                self._data.shape,
-            )
-
-            self.endInsertRows()
-
-            # Apply sorting to new chunk if already sorted
-            if self._sort_column is not None:
-                self.sort(self._sort_column, self._sort_order)
-
-        except StopIteration:
-            print("No more chunks available")
-            self.has_more_chunks = False  # No more chunks to load
-        except Exception as e:
-            import traceback
-
-            print("Error loading chunk:", str(e))
-            print("Traceback:", traceback.format_exc())
-            self.has_more_chunks = False
-
-    def can_fetch_more(self):
-        """Check if there are more chunks to fetch."""
-        return self.has_more_chunks
-
-    def fetchMore(self, parent=QModelIndex()):
-        """Fetch the next chunk of data."""
-        if self.has_more_chunks:
-            self.load_next_chunk()
-
     def sort(self, column, order):
         """Sort the data by the given column index and order."""
         self.layoutAboutToBeChanged.emit()
-
-        # Sort loaded data
-        self._data.sort_values(
-            by=self._data.columns[column],
-            ascending=(order == Qt.AscendingOrder),
-            inplace=True,
+        self._data = self._data.sort_values(
+            by=self._data.columns[column], ascending=(order == Qt.AscendingOrder)
         )
-        # self._data.reset_index(drop=True, inplace=True)
         self._sort_order = order
         self._sort_column = column
-
         self.layoutChanged.emit()
 
     def set_highlighted_column(self, column_name):
@@ -349,8 +273,6 @@ class ModelTrainingWorker(QThread):
 
 # Shared class for model training and preprocessing
 class ModelTrainer:
-    """ModelTrainer class with error handling and progress tracking."""
-
     def __init__(self, file_path: str, outcome_var: str, treatment_var: str = None):
         self.file_path = file_path
         self.outcome_var = outcome_var
@@ -363,36 +285,19 @@ class ModelTrainer:
         self.model = None
 
     def load_data(self):
-        """Load the dataset and preprocess categorical variables."""
-        # # Check file size before loading
-        # file_size = os.path.getsize(self.file_path) / (1024 * 1024)
-        # if file_size > 1000:
-        #     warning = QMessageBox()
-        #     warning.setIcon(QMessageBox.Warning)
-        #     warning.setText(f"Large file detected ({file_size:.1f} MB)")
-        #     warning.setInformativeText("This may consume significant memory. Continue?")
-        #     warning.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
-        #     if warning.exec() == QMessageBox.No:
-        #         raise Exception("Operation cancelled by user")
-
         print(f"Loading data from: {self.file_path}")
 
-        # Load the dataset in chunks to handle large files
-        chunks = []
-        global_order = 0  # Use a global order counter
-        for chunk in pd.read_csv(self.file_path, chunksize=CHUNK_SIZE):
-            chunk = chunk.copy()
-            # Add a new column 'orig_order' to record the original row order
-            chunk["orig_order"] = range(global_order, global_order + len(chunk))
-            global_order += len(chunk)
-            chunks.append(chunk)
-        self.data = pd.concat(chunks, ignore_index=True)
+        # Use pyarrow to efficiently read the CSV
+        import pyarrow.csv as pa_csv
+
+        table = pa_csv.read_csv(self.file_path)
+        self.data = table.to_pandas()
+
         print(f"Initial data shape: {self.data.shape}")
         print("Columns:", self.data.columns.tolist())
 
-        # Store original column order and row count
+        # Store original column order
         self.original_columns = self.data.columns.tolist()
-        original_row_count = len(self.data)
 
         # # One-hot encode non-numeric columns
         # categorical_columns = self.data.select_dtypes(
