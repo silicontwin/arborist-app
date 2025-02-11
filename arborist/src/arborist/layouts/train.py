@@ -148,36 +148,6 @@ class Ui_TrainTab(object):
 
         self.horizontalLayout_3.addWidget(self.trainButton)
 
-        self.frame_7 = QFrame(self.frame_3)
-        self.frame_7.setObjectName(u"frame_7")
-        sizePolicy.setHeightForWidth(self.frame_7.sizePolicy().hasHeightForWidth())
-        self.frame_7.setSizePolicy(sizePolicy)
-        self.frame_7.setFrameShape(QFrame.Shape.NoFrame)
-        self.frame_7.setFrameShadow(QFrame.Shadow.Raised)
-        self.horizontalLayout_8 = QHBoxLayout(self.frame_7)
-        self.horizontalLayout_8.setSpacing(10)
-        self.horizontalLayout_8.setObjectName(u"horizontalLayout_8")
-        self.horizontalLayout_8.setContentsMargins(5, 5, 5, 5)
-        self.trainingTimeLabel = QLabel(self.frame_7)
-        self.trainingTimeLabel.setObjectName(u"trainingTimeLabel")
-        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Preferred)
-        sizePolicy1.setHorizontalStretch(0)
-        sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.trainingTimeLabel.sizePolicy().hasHeightForWidth())
-        self.trainingTimeLabel.setSizePolicy(sizePolicy1)
-
-        self.horizontalLayout_8.addWidget(self.trainingTimeLabel)
-
-        self.trainingTimeValue = QLabel(self.frame_7)
-        self.trainingTimeValue.setObjectName(u"trainingTimeValue")
-        sizePolicy1.setHeightForWidth(self.trainingTimeValue.sizePolicy().hasHeightForWidth())
-        self.trainingTimeValue.setSizePolicy(sizePolicy1)
-
-        self.horizontalLayout_8.addWidget(self.trainingTimeValue)
-
-
-        self.horizontalLayout_3.addWidget(self.frame_7)
-
 
         self.horizontalLayout.addWidget(self.frame_3)
 
@@ -461,8 +431,6 @@ class Ui_TrainTab(object):
         self.label.setText(QCoreApplication.translate("TrainTab", u"Outcome Variable (y):", None))
         self.treatmentLabel.setText(QCoreApplication.translate("TrainTab", u"Treatment Variable (Z):", None))
         self.trainButton.setText(QCoreApplication.translate("TrainTab", u"Train Model", None))
-        self.trainingTimeLabel.setText(QCoreApplication.translate("TrainTab", u"Training time:", None))
-        self.trainingTimeValue.setText(QCoreApplication.translate("TrainTab", u"0 seconds", None))
         self.codeGenPushButton.setText(QCoreApplication.translate("TrainTab", u"Code Gen", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Parameters", None))
         self.trainResetButton.setText(QCoreApplication.translate("TrainTab", u"Reset", None))
