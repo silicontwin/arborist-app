@@ -1487,7 +1487,6 @@ class Arborist(QMainWindow):
             f"Model training finished in {elapsed_time:.2f} seconds. Data cleaning: removed {self.trainer.observations_removed} rows; cleaned data: {self.trainer.cleaned_row_count} rows out of {self.trainer.original_row_count}."
         )
         self.trained_model = model
-        self.train_ui.trainingTimeValue.setText(f"{training_time:.2f} seconds")
         self.update_tab_states()
         try:
             df = self.trainer.data_cleaned
