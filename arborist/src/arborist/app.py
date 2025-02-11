@@ -166,6 +166,9 @@ class PandasTableModel(QAbstractTableModel):
             value = self._data.iloc[index.row(), index.column()]
             if pd.isnull(value):
                 return ""
+            # # Format numeric values
+            # if isinstance(value, (float, np.float64)):
+            #     return f"{value:.4f}"
             return str(value)
         elif role == Qt.BackgroundRole:
             # Apply zebra striping.
@@ -173,20 +176,21 @@ class PandasTableModel(QAbstractTableModel):
                 self.alternate_row_color if index.row() % 2 else self.base_row_color
             )
             column_name = self.headers[index.column()]
+
+            # Highlight logic
             if self.selected_column_name == column_name:
-                return QColor("#FFFFCB")  # Light yellow highlight for selected column.
-            elif column_name in [
-                "Posterior Average ŷ",
-                "2.5th percentile ŷ",
-                "97.5th percentile ŷ",
-            ]:
-                return QColor("#CCCCFF")  # Light blue for outcome predictions.
-            elif column_name in [
-                "CATE",
-                "2.5th percentile CATE",
-                "97.5th percentile CATE",
-            ]:
-                return QColor("#FFE5CC")  # Light orange for CATE predictions.
+                return QColor("#FFFFCB")  # Light yellow for selected
+            elif "Variance" in column_name:
+                if "Mean" in column_name:
+                    return QColor("#E6E6FF")  # Light blue for variance mean
+                else:
+                    return QColor(
+                        "#F0F0FF"
+                    )  # Slightly lighter blue for variance intervals
+            elif "CATE" in column_name:
+                return QColor("#FFE5CC")  # Light orange for CATE
+            elif any(term in column_name for term in ["Mean", "Percentile"]):
+                return QColor("#E6FFE6")  # Light green for predictions
             else:
                 return base_color
 
