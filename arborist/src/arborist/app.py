@@ -822,6 +822,11 @@ class Arborist(QMainWindow):
             self.browse_ui.rememberDirCheckBox.setChecked(True)
         else:
             self.browse_ui.rememberDirCheckBox.setChecked(False)
+        # Update the status bar with the current directory when the app loads.
+        self.update_directory_status()
+
+    def update_directory_status(self) -> None:
+        self.statusBar.showMessage(f"Current directory: {self.current_directory}")
 
     def load_train_tab_ui(self) -> None:
         """
@@ -881,6 +886,9 @@ class Arborist(QMainWindow):
         source_index = self.file_model.index(initial_dir)
         self.current_root_index = self.proxy_model.mapFromSource(source_index)
         self.tree.setRootIndex(self.current_root_index)
+        # Update the current directory and status bar
+        self.current_directory = initial_dir
+        self.update_directory_status()
 
         # Reset the Train tab UI:
         self.analytics_viewer.setModel(None)
@@ -1278,6 +1286,8 @@ class Arborist(QMainWindow):
         self.open_button.setVisible(False)
         # Update the stored last directory if the checkbox is checked.
         self.update_last_directory()
+        # Update the status bar to show the current directory.
+        self.update_directory_status()
 
     def navigate_back(self) -> None:
         """
@@ -1294,6 +1304,7 @@ class Arborist(QMainWindow):
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
             self.update_last_directory()
+            self.update_directory_status()
 
     def navigate_forward(self) -> None:
         """
@@ -1310,6 +1321,7 @@ class Arborist(QMainWindow):
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
             self.update_last_directory()
+            self.update_directory_status()
 
     def navigate_up(self) -> None:
         """
