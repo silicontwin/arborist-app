@@ -28,6 +28,7 @@ from PySide6.QtCore import (
     QThread,
     Signal,
     Slot,
+    QSettings,
 )
 from PySide6.QtGui import QColor, QAction
 from arborist.layouts.browse import Ui_BrowseTab
@@ -745,9 +746,15 @@ class Arborist(QMainWindow):
         self.browse_tab = QWidget()
         self.browse_ui = Ui_BrowseTab()
         self.browse_ui.setupUi(self.browse_tab)
+
+        settings = QSettings("UT Austin", "Arborist")
+        default_dir = settings.value(
+            "browse/lastDirectory", os.path.join(os.path.expanduser("~"), "Desktop")
+        )
+        self.current_directory = default_dir
+
         self.file_model = QFileSystemModel()
-        desktop_path = os.path.join(os.path.expanduser("~"), "Desktop")
-        self.file_model.setRootPath(desktop_path)
+        self.file_model.setRootPath(default_dir)
         dataset_extensions = {".csv", ".sav", ".dta"}
         self.proxy_model = DatasetFileFilterProxyModel(dataset_extensions)
         self.proxy_model.setSourceModel(self.file_model)
@@ -760,8 +767,7 @@ class Arborist(QMainWindow):
         self.tree.setModel(self.proxy_model)
         # Disable the view’s own sorting to avoid reordering while items are added.
         self.tree.setSortingEnabled(False)
-        self.current_directory = desktop_path  # Store current directory path.
-        source_index = self.file_model.index(desktop_path)
+        source_index = self.file_model.index(default_dir)
         self.current_root_index = self.proxy_model.mapFromSource(source_index)
         self.tree.setRootIndex(self.current_root_index)
         self.tree.header().setSectionResizeMode(QHeaderView.ResizeToContents)
@@ -812,6 +818,11 @@ class Arborist(QMainWindow):
         self.back_button.setEnabled(False)
         self.forward_button.setEnabled(False)
 
+        if settings.value("browse/rememberDir", "true") == "true":
+            self.browse_ui.rememberDirCheckBox.setChecked(True)
+        else:
+            self.browse_ui.rememberDirCheckBox.setChecked(False)
+
     def load_train_tab_ui(self) -> None:
         """
         Load and set up the Train tab UI for dataset analysis and model training.
@@ -855,8 +866,14 @@ class Arborist(QMainWindow):
         # Clear the file viewer
         self.file_viewer.setModel(None)
         self.no_dataset_message.show()
-        # Reset navigation history to the initial directory (Desktop)
-        initial_dir = os.path.join(os.path.expanduser("~"), "Desktop")
+        # Reset navigation history to the saved directory (if remember is checked), else to Desktop.
+        settings = QSettings("UT Austin", "Arborist")
+        if settings.value("browse/rememberDir", "false") == "true":
+            initial_dir = settings.value(
+                "browse/lastDirectory", os.path.join(os.path.expanduser("~"), "Desktop")
+            )
+        else:
+            initial_dir = os.path.join(os.path.expanduser("~"), "Desktop")
         self.history = [initial_dir]
         self.history_index = 0
         self.back_button.setEnabled(False)
@@ -1259,6 +1276,8 @@ class Arborist(QMainWindow):
         self.file_viewer.setModel(None)
         self.no_dataset_message.show()
         self.open_button.setVisible(False)
+        # Update the stored last directory if the checkbox is checked.
+        self.update_last_directory()
 
     def navigate_back(self) -> None:
         """
@@ -1274,6 +1293,7 @@ class Arborist(QMainWindow):
             self.current_root_index = proxy_index
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
+            self.update_last_directory()
 
     def navigate_forward(self) -> None:
         """
@@ -1289,6 +1309,7 @@ class Arborist(QMainWindow):
             self.current_root_index = proxy_index
             self.back_button.setEnabled(self.history_index > 0)
             self.forward_button.setEnabled(self.history_index < len(self.history) - 1)
+            self.update_last_directory()
 
     def navigate_up(self) -> None:
         """
@@ -1627,6 +1648,19 @@ class Arborist(QMainWindow):
             self.statusBar.showMessage(f"Selected prediction file: {file_path}")
         else:
             self.statusBar.showMessage("No file selected for prediction.")
+
+    def update_last_directory(self) -> None:
+        """
+        If the "Remember current directory" checkbox is checked,
+        store the current directory in QSettings.
+        """
+        if self.browse_ui.rememberDirCheckBox.isChecked():
+            settings = QSettings("UT Austin", "Arborist")
+            settings.setValue("browse/lastDirectory", self.current_directory)
+            settings.setValue("browse/rememberDir", "true")
+        else:
+            settings = QSettings("UT Austin", "Arborist")
+            settings.setValue("browse/rememberDir", "false")
 
 
 def main() -> None:
