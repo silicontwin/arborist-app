@@ -596,8 +596,7 @@ class ModelTrainer:
             return predictions
         except Exception as e:
             print(f"\nError in predict_outcome: {str(e)}")
-            print("Traceback:")
-            print(traceback.format_exc())
+            print("Traceback:", traceback.format_exc())
             raise RuntimeError(f"Error during prediction: {str(e)}")
 
 
@@ -872,18 +871,18 @@ class Arborist(QMainWindow):
         self.treatment_combo.clear()
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
-        self.train_ui.trainingTimeValue.setText("0 seconds")
         # Re-enable the train button so the user can run another analysis
         self.train_button.setEnabled(True)
 
         # Reset the Predict tab UI:
         self.predict_ui.tableView.setModel(None)
 
-        # Switch back to the Browse tab
+        # Switch back to the Browse tab and disable Train and Predict tabs
         self.tabs.setCurrentIndex(0)
         self.statusBar.showMessage(
             "Application reset. Please select a dataset from the Browse tab."
         )
+        self.update_tab_states()
 
     def generate_code(self) -> str:
         """
@@ -1088,6 +1087,7 @@ class Arborist(QMainWindow):
             "Predict tab reset. Please select a new file from the Browse tab."
         )
         self.tabs.setCurrentIndex(0)
+        self.update_tab_states()
 
     def run_prediction(self) -> None:
         """
