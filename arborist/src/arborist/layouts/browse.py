@@ -15,9 +15,10 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QFont, QFontDatabase, QGradient, QIcon,
     QImage, QKeySequence, QLinearGradient, QPainter,
     QPalette, QPixmap, QRadialGradient, QTransform)
-from PySide6.QtWidgets import (QApplication, QFrame, QHBoxLayout, QHeaderView,
-    QPushButton, QSizePolicy, QSpacerItem, QSplitter,
-    QTableView, QTreeView, QVBoxLayout, QWidget)
+from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QHBoxLayout,
+    QHeaderView, QPushButton, QSizePolicy, QSpacerItem,
+    QSplitter, QTableView, QTreeView, QVBoxLayout,
+    QWidget)
 
 class Ui_BrowseTab(object):
     def setupUi(self, BrowseTab):
@@ -99,6 +100,12 @@ class Ui_BrowseTab(object):
 
         self.horizontalLayout.addWidget(self.navigationFrame)
 
+        self.rememberDirCheckBox = QCheckBox(self.bottomMenu)
+        self.rememberDirCheckBox.setObjectName(u"rememberDirCheckBox")
+        self.rememberDirCheckBox.setChecked(True)
+
+        self.horizontalLayout.addWidget(self.rememberDirCheckBox)
+
         self.horizontalSpacer = QSpacerItem(0, 0, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
 
         self.horizontalLayout.addItem(self.horizontalSpacer)
@@ -125,6 +132,7 @@ class Ui_BrowseTab(object):
         self.back_button.setText(QCoreApplication.translate("BrowseTab", u"Back", None))
         self.up_button.setText(QCoreApplication.translate("BrowseTab", u"Up", None))
         self.forward_button.setText(QCoreApplication.translate("BrowseTab", u"Forward", None))
+        self.rememberDirCheckBox.setText(QCoreApplication.translate("BrowseTab", u"Remember current directory", None))
         self.openDatasetButton.setText(QCoreApplication.translate("BrowseTab", u"Open Dataset", None))
         pass
     # retranslateUi

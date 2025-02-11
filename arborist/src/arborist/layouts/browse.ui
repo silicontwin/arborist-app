@@ -182,6 +182,16 @@
        </widget>
       </item>
       <item>
+      <widget class="QCheckBox" name="rememberDirCheckBox">
+        <property name="text">
+          <string>Remember current directory</string>
+        </property>
+        <property name="checked">
+          <bool>true</bool>
+        </property>
+      </widget>
+      </item>
+      <item>
        <spacer name="horizontalSpacer">
         <property name="orientation">
          <enum>Qt::Orientation::Horizontal</enum>
