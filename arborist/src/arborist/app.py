@@ -1442,6 +1442,15 @@ class Arborist(QMainWindow):
                 self.statusBar.showMessage("Outcome variable not selected.")
                 return
 
+            # Setup progress dialog with dynamic time display
+            self.progress_dialog = QProgressDialog(
+                "Initializing training...", "Cancel", 0, 100, self
+            )
+            self.progress_dialog.setWindowModality(Qt.WindowModal)
+            self.progress_dialog.canceled.connect(self.cancel_training)
+            self.progress_dialog.setValue(0)
+
+            # Create training parameters
             model_name = self.train_ui.modelComboBox.currentText()
             num_trees = self.train_ui.treesSpinBox.value()
             burn_in = self.train_ui.burnInSpinBox.value()
@@ -1475,13 +1484,6 @@ class Arborist(QMainWindow):
             self.training_worker.error.connect(self.handle_training_error)
             self.training_worker.start()
 
-            self.progress_dialog = QProgressDialog(
-                "Training model...", "Cancel", 0, 100, self
-            )
-            self.progress_dialog.setWindowModality(Qt.WindowModal)
-            self.progress_dialog.canceled.connect(self.cancel_training)
-            self.progress_dialog.setValue(0)
-
         except Exception as e:
             self.statusBar.showMessage(f"Error initializing training: {str(e)}")
             self.train_button.setEnabled(True)
@@ -1489,14 +1491,16 @@ class Arborist(QMainWindow):
                 self.training_timer.stop()
 
     def update_training_time(self) -> None:
-        """Update the status bar with the current training time."""
+        """
+        Update both the status bar and progress dialog with current training time.
+        """
         if hasattr(self, "training_start_time"):
             elapsed_time = time.time() - self.training_start_time
             current_progress = (
                 self.progress_dialog.value() if hasattr(self, "progress_dialog") else 0
             )
 
-            # Update status message based on current progress
+            # Determine the current stage based on progress
             status_prefix = (
                 "Loading data..."
                 if current_progress <= 10
@@ -1515,9 +1519,12 @@ class Arborist(QMainWindow):
                 )
             )
 
-            self.statusBar.showMessage(
-                f"{status_prefix} (Elapsed: {elapsed_time:.2f} seconds)"
-            )
+            # Update both status bar and progress dialog
+            status_text = f"{status_prefix} (Elapsed: {elapsed_time:.2f} seconds)"
+            self.statusBar.showMessage(status_text)
+
+            if hasattr(self, "progress_dialog") and self.progress_dialog:
+                self.progress_dialog.setLabelText(status_text)
 
     @Slot(int)
     def update_progress(self, value: int) -> None:
@@ -1526,29 +1533,8 @@ class Arborist(QMainWindow):
 
         :param value: The current progress percentage.
         """
-        if self.progress_dialog:
+        if hasattr(self, "progress_dialog") and self.progress_dialog:
             self.progress_dialog.setValue(value)
-        elapsed_time = time.time() - self.start_time
-        if value == 10:
-            self.statusBar.showMessage(
-                f"Loading data... (Elapsed: {elapsed_time:.2f} seconds)"
-            )
-        elif value == 30:
-            self.statusBar.showMessage(
-                f"Preparing features... (Elapsed: {elapsed_time:.2f} seconds)"
-            )
-        elif value == 40:
-            self.statusBar.showMessage(
-                f"Training model... (Elapsed: {elapsed_time:.2f} seconds)"
-            )
-        elif value == 80:
-            self.statusBar.showMessage(
-                f"Generating predictions... (Elapsed: {elapsed_time:.2f} seconds)"
-            )
-        elif value == 100:
-            self.statusBar.showMessage(
-                f"Training complete in {elapsed_time:.2f} seconds."
-            )
 
     @Slot(dict, object)
     def handle_training_finished(self, predictions: dict, model: object) -> None:
@@ -1558,13 +1544,18 @@ class Arborist(QMainWindow):
         This method updates the status bar with cleaning statistics, stores the trained model,
         and displays predictions in the analytics viewer.
         """
+        # Stop the timer
         if hasattr(self, "training_timer"):
             self.training_timer.stop()
 
-        if self.progress_dialog:
+        # Close the progress dialog
+        if hasattr(self, "progress_dialog") and self.progress_dialog:
             self.progress_dialog.close()
 
+        # Calculate total training time
         total_time = time.time() - self.training_start_time
+
+        # Update status with final message
         self.statusBar.showMessage(
             f"Model training finished in {total_time:.2f} seconds. "
             f"Data cleaning: removed {self.trainer.observations_removed} rows; "
@@ -1575,6 +1566,7 @@ class Arborist(QMainWindow):
         self.update_tab_states()
 
         try:
+            # Update the display with predictions
             df = self.trainer.data_cleaned
             headers = df.columns.tolist()
 
@@ -1681,6 +1673,9 @@ class Arborist(QMainWindow):
 
         if hasattr(self, "training_timer"):
             self.training_timer.stop()
+
+        if hasattr(self, "progress_dialog"):
+            self.progress_dialog.close()
 
         self.train_button.setEnabled(True)
         self.statusBar.showMessage("Training cancelled")
