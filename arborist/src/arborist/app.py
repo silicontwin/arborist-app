@@ -29,6 +29,7 @@ from PySide6.QtCore import (
     Signal,
     Slot,
     QSettings,
+    QTimer,
 )
 from PySide6.QtGui import QColor, QAction
 from arborist.layouts.browse import Ui_BrowseTab
@@ -252,7 +253,7 @@ class ModelTrainingWorker(QThread):
     """
 
     progress = Signal(int)
-    finished = Signal(dict, float, object)
+    finished = Signal(dict, object)
     error = Signal(str)
 
     def __init__(self, trainer, model_params):
@@ -270,7 +271,6 @@ class ModelTrainingWorker(QThread):
     def run(self):
         """Run the training process in a separate thread with cancellation checks."""
         try:
-            start_time = time.time()
             self.progress.emit(10)
             print("Loading data...")
             self.trainer.load_data()
@@ -300,8 +300,7 @@ class ModelTrainingWorker(QThread):
                 return
 
             self.progress.emit(100)
-            training_time = time.time() - start_time
-            self.finished.emit(predictions, training_time, self.trainer.model)
+            self.finished.emit(predictions, self.trainer.model)
         except Exception as e:
             self.error.emit(str(e))
 
@@ -1424,15 +1423,25 @@ class Arborist(QMainWindow):
         """
         self.train_button.setEnabled(False)
         self.statusBar.showMessage("Initializing training...")
+
         try:
-            self.start_time = time.time()
+            # Start tracking time in the UI layer
+            self.training_start_time = time.time()
+
+            # Create a QTimer to update the elapsed time display
+            self.training_timer = QTimer()
+            self.training_timer.timeout.connect(self.update_training_time)
+            self.training_timer.start(1000)  # Update every second
+
             if not hasattr(self, "current_file_path"):
                 self.statusBar.showMessage("No dataset selected.")
                 return
+
             outcome_var = self.train_ui.outcomeComboBox.currentText()
             if not outcome_var:
                 self.statusBar.showMessage("Outcome variable not selected.")
                 return
+
             model_name = self.train_ui.modelComboBox.currentText()
             num_trees = self.train_ui.treesSpinBox.value()
             burn_in = self.train_ui.burnInSpinBox.value()
@@ -1443,11 +1452,13 @@ class Arborist(QMainWindow):
                 if self.train_ui.treatmentFrame.isVisible()
                 else None
             )
+
             self.trainer = ModelTrainer(
                 file_path=self.current_file_path,
                 outcome_var=outcome_var,
                 treatment_var=treatment_var,
             )
+
             model_params = {
                 "model_name": model_name,
                 "num_trees": num_trees,
@@ -1455,6 +1466,7 @@ class Arborist(QMainWindow):
                 "num_draws": num_draws,
                 "thinning": thinning,
             }
+
             self.training_worker = ModelTrainingWorker(
                 trainer=self.trainer, model_params=model_params
             )
@@ -1462,15 +1474,50 @@ class Arborist(QMainWindow):
             self.training_worker.finished.connect(self.handle_training_finished)
             self.training_worker.error.connect(self.handle_training_error)
             self.training_worker.start()
+
             self.progress_dialog = QProgressDialog(
                 "Training model...", "Cancel", 0, 100, self
             )
             self.progress_dialog.setWindowModality(Qt.WindowModal)
             self.progress_dialog.canceled.connect(self.cancel_training)
             self.progress_dialog.setValue(0)
+
         except Exception as e:
             self.statusBar.showMessage(f"Error initializing training: {str(e)}")
             self.train_button.setEnabled(True)
+            if hasattr(self, "training_timer"):
+                self.training_timer.stop()
+
+    def update_training_time(self) -> None:
+        """Update the status bar with the current training time."""
+        if hasattr(self, "training_start_time"):
+            elapsed_time = time.time() - self.training_start_time
+            current_progress = (
+                self.progress_dialog.value() if hasattr(self, "progress_dialog") else 0
+            )
+
+            # Update status message based on current progress
+            status_prefix = (
+                "Loading data..."
+                if current_progress <= 10
+                else (
+                    "Preparing features..."
+                    if current_progress <= 30
+                    else (
+                        "Training model..."
+                        if current_progress <= 40
+                        else (
+                            "Generating predictions..."
+                            if current_progress <= 80
+                            else "Finishing up..."
+                        )
+                    )
+                )
+            )
+
+            self.statusBar.showMessage(
+                f"{status_prefix} (Elapsed: {elapsed_time:.2f} seconds)"
+            )
 
     @Slot(int)
     def update_progress(self, value: int) -> None:
@@ -1503,27 +1550,34 @@ class Arborist(QMainWindow):
                 f"Training complete in {elapsed_time:.2f} seconds."
             )
 
-    @Slot(dict, float, object)
-    def handle_training_finished(
-        self, predictions: dict, training_time: float, model: object
-    ) -> None:
+    @Slot(dict, object)
+    def handle_training_finished(self, predictions: dict, model: object) -> None:
         """
         Handle completion of the training process.
 
         This method updates the status bar with cleaning statistics, stores the trained model,
         and displays predictions in the analytics viewer.
         """
+        if hasattr(self, "training_timer"):
+            self.training_timer.stop()
+
         if self.progress_dialog:
             self.progress_dialog.close()
-        elapsed_time = time.time() - self.start_time
+
+        total_time = time.time() - self.training_start_time
         self.statusBar.showMessage(
-            f"Model training finished in {elapsed_time:.2f} seconds. Data cleaning: removed {self.trainer.observations_removed} rows; cleaned data: {self.trainer.cleaned_row_count} rows out of {self.trainer.original_row_count}."
+            f"Model training finished in {total_time:.2f} seconds. "
+            f"Data cleaning: removed {self.trainer.observations_removed} rows; "
+            f"cleaned data: {self.trainer.cleaned_row_count} rows out of {self.trainer.original_row_count}."
         )
+
         self.trained_model = model
         self.update_tab_states()
+
         try:
             df = self.trainer.data_cleaned
             headers = df.columns.tolist()
+
             if isinstance(model, BCFModel):
                 pred_headers = [
                     "Posterior Mean CATE",
@@ -1624,6 +1678,12 @@ class Arborist(QMainWindow):
             self.training_worker.stop()
             self.training_worker.wait()
             self.training_worker = None
+
+        if hasattr(self, "training_timer"):
+            self.training_timer.stop()
+
+        self.train_button.setEnabled(True)
+        self.statusBar.showMessage("Training cancelled")
 
     def closeEvent(self, event) -> None:
         """
