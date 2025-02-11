@@ -1333,9 +1333,13 @@ class Arborist(QMainWindow):
     def update_tab_states(self) -> None:
         """
         Update the enabled/disabled state of the Train and Predict tabs.
+        The Train tab should only be enabled after explicitly opening a dataset
+        via the Open Dataset button, while the Predict tab requires a trained model.
         """
-        train_tab_enabled = hasattr(self, "dataset_opened") and self.dataset_opened
-        self.tabs.setTabEnabled(1, train_tab_enabled)
+        # Train tab enabled only after using "Open Dataset" button
+        self.tabs.setTabEnabled(1, self.dataset_opened)
+
+        # Predict tab enabled only after successful model training
         predict_tab_enabled = self.trained_model is not None
         self.tabs.setTabEnabled(2, predict_tab_enabled)
 
@@ -1349,6 +1353,7 @@ class Arborist(QMainWindow):
                 self.trainer = ModelTrainer(file_path, outcome_var="")
             else:
                 self.trainer.file_path = file_path
+
             self.trainer.load_data()
             df = self.trainer.data_cleaned
             headers = df.columns.tolist()
@@ -1357,16 +1362,22 @@ class Arborist(QMainWindow):
             table_view.setSortingEnabled(False)
             table_view.horizontalHeader().setSortIndicatorShown(False)
             table_view.resizeColumnsToContents()
+
             self.outcome_combo.clear()
             self.outcome_combo.addItems(headers)
             self.treatment_combo.clear()
             self.treatment_combo.addItems(headers)
+
             self.no_dataset_message.hide()
             self.open_button.setVisible(True)
-            self.dataset_opened = True
+
+            # Don't set dataset_opened here - requires Open Dataset button
             self.update_tab_states()
+
             self.statusBar.showMessage(
-                f"Loaded dataset: original rows {self.trainer.original_row_count}, cleaned rows {self.trainer.cleaned_row_count} (removed {self.trainer.observations_removed} rows)"
+                f"Loaded dataset: original rows {self.trainer.original_row_count}, "
+                f"cleaned rows {self.trainer.cleaned_row_count} "
+                f"(removed {self.trainer.observations_removed} rows)"
             )
         except Exception as e:
             print(f"Error loading file: {e}")
@@ -1386,6 +1397,7 @@ class Arborist(QMainWindow):
     def open_in_analytics_view(self) -> None:
         """
         Open the dataset in the analytics view (Train tab) using auto-one hot encoding.
+        This is triggered by the Open Dataset button and enables the Train tab.
         """
         if hasattr(self, "current_file_path"):
             try:
@@ -1393,29 +1405,41 @@ class Arborist(QMainWindow):
                     self.trainer = ModelTrainer(self.current_file_path, outcome_var="")
                 else:
                     self.trainer.file_path = self.current_file_path
+
                 self.trainer.load_data()
                 df = self.trainer.data_cleaned
                 headers = df.columns.tolist()
                 model = PandasTableModel(df, headers)
                 self.analytics_viewer.setModel(model)
                 self.analytics_viewer.resizeColumnsToContents()
+
                 self.outcome_combo.clear()
                 self.outcome_combo.addItems(headers)
                 self.treatment_combo.clear()
                 self.treatment_combo.addItems(headers)
+
                 self.no_dataset_label.setVisible(False)
                 self.analytics_viewer.setVisible(True)
+
+                # Set dataset_opened to True only when explicitly opened via this method
                 self.dataset_opened = True
                 self.update_tab_states()
+
+                # Switch to Train tab
                 self.tabs.setCurrentIndex(1)
+
                 self.statusBar.showMessage(
-                    f"Opened dataset: original rows {self.trainer.original_row_count}, cleaned rows {self.trainer.cleaned_row_count} (removed {self.trainer.observations_removed} rows)"
+                    f"Opened dataset: original rows {self.trainer.original_row_count}, "
+                    f"cleaned rows {self.trainer.cleaned_row_count} "
+                    f"(removed {self.trainer.observations_removed} rows)"
                 )
             except Exception as e:
                 print(f"Error loading file in analytics view: {e}")
                 self.analytics_viewer.setModel(None)
                 self.no_dataset_label.setVisible(True)
                 self.analytics_viewer.setVisible(False)
+                self.dataset_opened = False
+                self.update_tab_states()
 
     def train_model(self) -> None:
         """
