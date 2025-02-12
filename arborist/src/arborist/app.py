@@ -125,6 +125,9 @@ class PandasTableModel(QAbstractTableModel):
                             "97.5th Percentile CATE": self.predictions[
                                 "97.5th Percentile CATE"
                             ],
+                            "Credible Interval Width CATE": self.predictions[
+                                "Credible Interval Width CATE"
+                            ],
                         }
                     )
 
@@ -134,6 +137,9 @@ class PandasTableModel(QAbstractTableModel):
                         "Posterior Mean": self.predictions["Posterior Mean"],
                         "2.5th Percentile": self.predictions["2.5th Percentile"],
                         "97.5th Percentile": self.predictions["97.5th Percentile"],
+                        "Credible Interval Width": self.predictions[
+                            "Credible Interval Width"
+                        ],
                     }
                 )
 
@@ -507,14 +513,15 @@ class ModelTrainer:
             if isinstance(self.model, BARTModel):
                 self.y_pred_samples = self.model.predict(covariates=self.X)
                 y_pred_samples_original = self.y_pred_samples * self.y_std + self.y_mean
+                posterior_mean = np.mean(y_pred_samples_original, axis=1)
+                perc_2_5 = np.percentile(y_pred_samples_original, 2.5, axis=1)
+                perc_97_5 = np.percentile(y_pred_samples_original, 97.5, axis=1)
+                ci_width = perc_97_5 - perc_2_5
                 return {
-                    "Posterior Mean": np.mean(y_pred_samples_original, axis=1),
-                    "2.5th Percentile": np.percentile(
-                        y_pred_samples_original, 2.5, axis=1
-                    ),
-                    "97.5th Percentile": np.percentile(
-                        y_pred_samples_original, 97.5, axis=1
-                    ),
+                    "Posterior Mean": posterior_mean,
+                    "2.5th Percentile": perc_2_5,
+                    "97.5th Percentile": perc_97_5,
+                    "Credible Interval Width": ci_width,
                 }
             elif isinstance(self.model, BCFModel):
                 if not hasattr(self.model, "y_hat_test"):
@@ -534,13 +541,23 @@ class ModelTrainer:
                 print(f"yhat_samples shape: {yhat_samples.shape}")
                 print(f"tau_samples shape: {tau_samples.shape}")
                 yhat_samples = yhat_samples * self.y_std + self.y_mean
+                posterior_mean = np.mean(yhat_samples, axis=1)
+                perc_2_5 = np.percentile(yhat_samples, 2.5, axis=1)
+                perc_97_5 = np.percentile(yhat_samples, 97.5, axis=1)
+                ci_width = perc_97_5 - perc_2_5
+                posterior_mean_cate = np.mean(tau_samples, axis=1)
+                cate_perc_2_5 = np.percentile(tau_samples, 2.5, axis=1)
+                cate_perc_97_5 = np.percentile(tau_samples, 97.5, axis=1)
+                ci_width_cate = cate_perc_97_5 - cate_perc_2_5
                 return {
-                    "Posterior Mean": np.mean(yhat_samples, axis=1),
-                    "2.5th Percentile": np.percentile(yhat_samples, 2.5, axis=1),
-                    "97.5th Percentile": np.percentile(yhat_samples, 97.5, axis=1),
-                    "Posterior Mean CATE": np.mean(tau_samples, axis=1),
-                    "2.5th Percentile CATE": np.percentile(tau_samples, 2.5, axis=1),
-                    "97.5th Percentile CATE": np.percentile(tau_samples, 97.5, axis=1),
+                    "Posterior Mean": posterior_mean,
+                    "2.5th Percentile": perc_2_5,
+                    "97.5th Percentile": perc_97_5,
+                    "Credible Interval Width": ci_width,
+                    "Posterior Mean CATE": posterior_mean_cate,
+                    "2.5th Percentile CATE": cate_perc_2_5,
+                    "97.5th Percentile CATE": cate_perc_97_5,
+                    "Credible Interval Width CATE": ci_width_cate,
                 }
             else:
                 raise ValueError("No trained model available")
@@ -587,10 +604,15 @@ class ModelTrainer:
             print("\nGenerating predictions...")
             y_pred_samples = model.predict(covariates=X_new)
             print("Prediction samples shape:", y_pred_samples.shape)
+            posterior_mean = np.mean(y_pred_samples, axis=1)
+            perc_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
+            perc_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
+            ci_width = perc_97_5 - perc_2_5
             predictions = {
-                "Posterior Mean": np.mean(y_pred_samples, axis=1),
-                "2.5th Percentile": np.percentile(y_pred_samples, 2.5, axis=1),
-                "97.5th Percentile": np.percentile(y_pred_samples, 97.5, axis=1),
+                "Posterior Mean": posterior_mean,
+                "2.5th Percentile": perc_2_5,
+                "97.5th Percentile": perc_97_5,
+                "Credible Interval Width": ci_width,
             }
             print("\nPrediction summary:")
             for key, value in predictions.items():
@@ -991,12 +1013,14 @@ class Arborist(QMainWindow):
                 posterior_mean = np.mean(y_pred_samples, axis=1)
                 percentile_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
                 percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
+                credible_interval_width = percentile_97_5 - percentile_2_5
 
                 # Display results
                 results = pd.DataFrame({{
                     'Posterior Mean': posterior_mean,
                     '2.5th Percentile': percentile_2_5,
-                    '97.5th Percentile': percentile_97_5
+                    '97.5th Percentile': percentile_97_5,
+                    'Credible Interval Width': credible_interval_width
                 }})
                 print(results.head())
                 """
@@ -1054,23 +1078,28 @@ class Arborist(QMainWindow):
                 tau_samples, mu_samples, yhat_samples = model.predict(X=X, Z=Z, propensity=pi_test)
                 yhat_samples = yhat_samples * y_std + y_mean  # Convert back to original scale
 
-                # Compute posterior summaries
+                # Compute posterior summaries for outcome predictions
                 posterior_mean = np.mean(yhat_samples, axis=1)
                 percentile_2_5 = np.percentile(yhat_samples, 2.5, axis=1)
                 percentile_97_5 = np.percentile(yhat_samples, 97.5, axis=1)
+                credible_interval_width = percentile_97_5 - percentile_2_5
 
+                # Compute posterior summaries for CATE predictions
                 posterior_cate_mean = np.mean(tau_samples, axis=1)
                 cate_percentile_2_5 = np.percentile(tau_samples, 2.5, axis=1)
                 cate_percentile_97_5 = np.percentile(tau_samples, 97.5, axis=1)
+                credible_interval_width_cate = cate_percentile_97_5 - cate_percentile_2_5
 
                 # Display results
                 results = pd.DataFrame({{
                     'Posterior Mean': posterior_mean,
                     '2.5th Percentile': percentile_2_5,
                     '97.5th Percentile': percentile_97_5,
+                    'Credible Interval Width': credible_interval_width,
                     'Posterior Mean CATE': posterior_cate_mean,
                     '2.5th Percentile CATE': cate_percentile_2_5,
-                    '97.5th Percentile CATE': cate_percentile_97_5
+                    '97.5th Percentile CATE': cate_percentile_97_5,
+                    'Credible Interval Width CATE': credible_interval_width_cate
                 }})
                 print(results.head())
                 """
@@ -1180,18 +1209,21 @@ class Arborist(QMainWindow):
             is_bcf = "Posterior Mean CATE" in predictions
             if is_bcf:
                 prediction_headers = [
-                    "CATE",
-                    "2.5th percentile CATE",
-                    "97.5th percentile CATE",
+                    "Posterior Mean CATE",
+                    "2.5th Percentile CATE",
+                    "97.5th Percentile CATE",
+                    "Credible Interval Width CATE",
                     "Posterior Average ŷ",
                     "2.5th percentile ŷ",
                     "97.5th percentile ŷ",
+                    "Credible Interval Width ŷ",
                 ]
             else:
                 prediction_headers = [
                     "Posterior Average ŷ",
                     "2.5th percentile ŷ",
                     "97.5th percentile ŷ",
+                    "Credible Interval Width ŷ",
                 ]
             combined_headers = prediction_headers + headers
             print("Combined headers:", combined_headers)
@@ -1199,9 +1231,12 @@ class Arborist(QMainWindow):
             if is_bcf:
                 prediction_data.update(
                     {
-                        "CATE": predictions["Posterior Mean CATE"],
+                        "Posterior Mean CATE": predictions["Posterior Mean CATE"],
                         "2.5th percentile CATE": predictions["2.5th Percentile CATE"],
                         "97.5th percentile CATE": predictions["97.5th Percentile CATE"],
+                        "Credible Interval Width CATE": predictions[
+                            "Credible Interval Width CATE"
+                        ],
                     }
                 )
             prediction_data.update(
@@ -1209,6 +1244,7 @@ class Arborist(QMainWindow):
                     "Posterior Average ŷ": predictions["Posterior Mean"],
                     "2.5th percentile ŷ": predictions["2.5th Percentile"],
                     "97.5th percentile ŷ": predictions["97.5th Percentile"],
+                    "Credible Interval Width ŷ": predictions["Credible Interval Width"],
                 }
             )
             prediction_df = pd.DataFrame(prediction_data)
@@ -1603,24 +1639,30 @@ class Arborist(QMainWindow):
                     "Posterior Mean CATE",
                     "2.5th Percentile CATE",
                     "97.5th Percentile CATE",
+                    "Credible Interval Width CATE",
                     "Posterior Mean",
                     "2.5th Percentile",
                     "97.5th Percentile",
+                    "Credible Interval Width",
                 ]
             else:
                 pred_headers = [
                     "Posterior Mean",
                     "2.5th Percentile",
                     "97.5th Percentile",
+                    "Credible Interval Width",
                 ]
             full_headers = pred_headers + headers
             prediction_data = {}
             if isinstance(model, BCFModel):
                 prediction_data.update(
                     {
-                        "CATE": predictions["Posterior Mean CATE"],
-                        "2.5th percentile CATE": predictions["2.5th Percentile CATE"],
-                        "97.5th percentile CATE": predictions["97.5th Percentile CATE"],
+                        "Posterior Mean CATE": predictions["Posterior Mean CATE"],
+                        "2.5th Percentile CATE": predictions["2.5th Percentile CATE"],
+                        "97.5th Percentile CATE": predictions["97.5th Percentile CATE"],
+                        "Credible Interval Width CATE": predictions[
+                            "Credible Interval Width CATE"
+                        ],
                     }
                 )
             prediction_data.update(
@@ -1628,6 +1670,7 @@ class Arborist(QMainWindow):
                     "Posterior Average ŷ": predictions["Posterior Mean"],
                     "2.5th percentile ŷ": predictions["2.5th Percentile"],
                     "97.5th percentile ŷ": predictions["97.5th Percentile"],
+                    "Credible Interval Width ŷ": predictions["Credible Interval Width"],
                 }
             )
             prediction_df = pd.DataFrame(prediction_data)
