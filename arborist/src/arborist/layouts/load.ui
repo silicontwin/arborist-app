@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>BrowseTab</class>
- <widget class="QWidget" name="BrowseTab">
+ <class>LoadTab</class>
+ <widget class="QWidget" name="LoadTab">
   <property name="geometry">
    <rect>
     <x>0</x>

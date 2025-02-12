@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 
 ################################################################################
-## Form generated from reading UI file 'browse.ui'
+## Form generated from reading UI file 'load.ui'
 ##
 ## Created by: Qt User Interface Compiler version 6.8.0
 ##
@@ -20,17 +20,17 @@ from PySide6.QtWidgets import (QApplication, QCheckBox, QFrame, QHBoxLayout,
     QSplitter, QTableView, QTreeView, QVBoxLayout,
     QWidget)
 
-class Ui_BrowseTab(object):
-    def setupUi(self, BrowseTab):
-        if not BrowseTab.objectName():
-            BrowseTab.setObjectName(u"BrowseTab")
-        BrowseTab.resize(1600, 900)
-        BrowseTab.setBaseSize(QSize(1600, 900))
-        self.verticalLayout = QVBoxLayout(BrowseTab)
+class Ui_LoadTab(object):
+    def setupUi(self, LoadTab):
+        if not LoadTab.objectName():
+            LoadTab.setObjectName(u"LoadTab")
+        LoadTab.resize(1600, 900)
+        LoadTab.setBaseSize(QSize(1600, 900))
+        self.verticalLayout = QVBoxLayout(LoadTab)
         self.verticalLayout.setSpacing(10)
         self.verticalLayout.setObjectName(u"verticalLayout")
         self.verticalLayout.setContentsMargins(10, 10, 10, 10)
-        self.splitter = QSplitter(BrowseTab)
+        self.splitter = QSplitter(LoadTab)
         self.splitter.setObjectName(u"splitter")
         self.splitter.setOrientation(Qt.Orientation.Horizontal)
         self.treeView = QTreeView(self.splitter)
@@ -44,7 +44,7 @@ class Ui_BrowseTab(object):
 
         self.verticalLayout.addWidget(self.splitter)
 
-        self.bottomMenu = QFrame(BrowseTab)
+        self.bottomMenu = QFrame(LoadTab)
         self.bottomMenu.setObjectName(u"bottomMenu")
         sizePolicy = QSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Fixed)
         sizePolicy.setHorizontalStretch(0)
@@ -123,17 +123,17 @@ class Ui_BrowseTab(object):
         self.verticalLayout.addWidget(self.bottomMenu)
 
 
-        self.retranslateUi(BrowseTab)
+        self.retranslateUi(LoadTab)
 
-        QMetaObject.connectSlotsByName(BrowseTab)
+        QMetaObject.connectSlotsByName(LoadTab)
     # setupUi
 
-    def retranslateUi(self, BrowseTab):
-        self.back_button.setText(QCoreApplication.translate("BrowseTab", u"Back", None))
-        self.up_button.setText(QCoreApplication.translate("BrowseTab", u"Up", None))
-        self.forward_button.setText(QCoreApplication.translate("BrowseTab", u"Forward", None))
-        self.rememberDirCheckBox.setText(QCoreApplication.translate("BrowseTab", u"Remember current directory", None))
-        self.openDatasetButton.setText(QCoreApplication.translate("BrowseTab", u"Open Dataset", None))
+    def retranslateUi(self, LoadTab):
+        self.back_button.setText(QCoreApplication.translate("LoadTab", u"Back", None))
+        self.up_button.setText(QCoreApplication.translate("LoadTab", u"Up", None))
+        self.forward_button.setText(QCoreApplication.translate("LoadTab", u"Forward", None))
+        self.rememberDirCheckBox.setText(QCoreApplication.translate("LoadTab", u"Remember current directory", None))
+        self.openDatasetButton.setText(QCoreApplication.translate("LoadTab", u"Open Dataset", None))
         pass
     # retranslateUi
 
