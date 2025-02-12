@@ -94,8 +94,8 @@ class PandasTableModel(QAbstractTableModel):
         self.predictions = predictions
 
         # Define colors for zebra striping.
-        self.alternate_row_color = QColor("#F5F5F5")
-        self.base_row_color = QColor("#FFFFFF")
+        self.alternate_row_color = QColor("#2A2A3A")  # Darker stripe
+        self.base_row_color = QColor("#1E1E2F")  # Main dark background
 
         print("Initializing PandasTableModel with data type:", type(data))
         print("Headers:", headers)
@@ -135,7 +135,6 @@ class PandasTableModel(QAbstractTableModel):
                             ],
                         }
                     )
-
                 # Add outcome predictions (applicable to both BART and BCF).
                 prediction_data.update(
                     {
@@ -147,8 +146,8 @@ class PandasTableModel(QAbstractTableModel):
                         ],
                     }
                 )
-
                 prediction_df = pd.DataFrame(prediction_data)
+                # Prepend the prediction columns to the data.
                 self._data = pd.concat([prediction_df, self._data], axis=1)
 
         # Reset index to ensure it is a simple range index matching file order.
@@ -177,34 +176,30 @@ class PandasTableModel(QAbstractTableModel):
             value = self._data.iloc[index.row(), index.column()]
             if pd.isnull(value):
                 return ""
-            # # Format numeric values
-            # if isinstance(value, (float, np.float64)):
-            #     return f"{value:.4f}"
             return str(value)
         elif role == Qt.BackgroundRole:
-            # Apply zebra striping.
+            column_name = self.headers[index.column()]
+            lower = column_name.lower()
+            # For prepended prediction columns, check if the header indicates predictions.
+            if self.predictions is not None and (
+                lower.startswith("posterior")
+                or "percentile" in lower
+                or "credible" in lower
+            ):
+                if "cate" in lower:
+                    # For CATE predictions, use a warm highlight.
+                    return QColor("#8A6A59")
+                else:
+                    # For other prediction columns, use a dark blue-gray accent.
+                    return QColor("#3B4C5D")
+            # Otherwise, apply zebra striping.
             base_color = (
                 self.alternate_row_color if index.row() % 2 else self.base_row_color
             )
-            column_name = self.headers[index.column()]
-
-            # Highlight logic
+            # If a column is selected, override with an accent color.
             if self.selected_column_name == column_name:
-                return QColor("#FFFFCB")  # Light yellow for selected
-            elif "Variance" in column_name:
-                if "Mean" in column_name:
-                    return QColor("#E6E6FF")  # Light blue for variance mean
-                else:
-                    return QColor(
-                        "#F0F0FF"
-                    )  # Slightly lighter blue for variance intervals
-            elif "CATE" in column_name:
-                return QColor("#FFE5CC")  # Light orange for CATE
-            elif any(term in column_name for term in ["Mean", "Percentile"]):
-                return QColor("#E6FFE6")  # Light green for predictions
-            else:
-                return base_color
-
+                return QColor("#3A84DF")
+            return base_color
         return None
 
     def headerData(
@@ -212,7 +207,6 @@ class PandasTableModel(QAbstractTableModel):
     ):
         """
         Return header data for the given section and orientation.
-
         For horizontal headers, returns the column name; for vertical headers, returns row numbers.
         """
         if role == Qt.DisplayRole:
