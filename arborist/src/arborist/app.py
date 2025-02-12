@@ -638,14 +638,20 @@ class TitleBar(QWidget):
         self.parent = parent
         self._mousePos = None
         self._windowPos = None
-        self.setFixedHeight(30)
+        self.setFixedHeight(50)
         self.initUI()
 
     def initUI(self) -> None:
         layout = QHBoxLayout(self)
         layout.setContentsMargins(5, 0, 5, 0)
         # Title label displays the window title and current version.
-        self.titleLabel = QLabel("Arborist | " + CURRENT_VERSION, self)
+        self.titleLabel = QLabel(
+            "Arborist <span style='font-size:14px; color:#999999;'>"
+            + CURRENT_VERSION
+            + " alpha"
+            + "</span>",
+            self,
+        )
         layout.addWidget(self.titleLabel)
         layout.addStretch()
 
