@@ -10,27 +10,37 @@ QMainWindow, QWidget {
     border: none;
 }
 
+/* Main container override */
+#mainContainer {
+    background-color: #FFFFFF;
+}
+
 /* TitleBar styling */
 #TitleBar {
-    background-color: #161625;
-    color: #E0E0E0;
+    background-color: #FFFFFF; 
+    color: #000000; 
 }
 
 #TitleBar QLabel {
-    font: bold 12px;
+    background-color: #FFFFFF; 
+    color: #1E1E2F;
+    font-size: 20px;
+    font-weight: 600;
+    padding: 5px 0 0 2px;
 }
 
 #TitleBar QToolButton {
     background: transparent;
     border: none;
-    color: #E0E0E0;
+    color: #000000;
     font: bold 12px;
     padding: 5px;
 }
 
 #TitleBar QToolButton:hover {
-    background-color: #2A2A3A;
+    background-color: #F0F0F0;
 }
+
 
 /* QPushButton styling */
 QPushButton {
