@@ -32,7 +32,7 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtGui import QColor, QAction
-from arborist.layouts.browse import Ui_BrowseTab
+from arborist.layouts.load import Ui_LoadTab
 from arborist.layouts.train import Ui_TrainTab
 from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
@@ -728,10 +728,10 @@ class Arborist(QMainWindow):
         self.setMinimumSize(800, 600)
         self.center_window()
         self.tabs = QTabWidget()
-        self.load_browse_tab_ui()
+        self.load_load_tab_ui()
         self.load_train_tab_ui()
         self.load_predict_tab_ui()
-        self.tabs.addTab(self.browse_tab, "Browse")
+        self.tabs.addTab(self.load_tab, "Load")
         self.tabs.addTab(self.train_tab, "Train")
         self.tabs.addTab(self.predict_tab, "Predict")
         self.tabs.setTabEnabled(1, False)  # Disable Train tab initially.
@@ -764,17 +764,17 @@ class Arborist(QMainWindow):
         is_bcf_xbcf_model = selected_model in ["BCF", "XBCF"]
         self.train_ui.treatmentFrame.setVisible(is_train_tab and is_bcf_xbcf_model)
 
-    def load_browse_tab_ui(self) -> None:
+    def load_load_tab_ui(self) -> None:
         """
-        Load and set up the Browse tab UI for file navigation and dataset selection.
+        Set up the Load tab UI for file navigation and dataset selection.
         """
-        self.browse_tab = QWidget()
-        self.browse_ui = Ui_BrowseTab()
-        self.browse_ui.setupUi(self.browse_tab)
+        self.load_tab = QWidget()
+        self.load_ui = Ui_LoadTab()
+        self.load_ui.setupUi(self.load_tab)
 
         settings = QSettings("UT Austin", "Arborist")
         default_dir = settings.value(
-            "browse/lastDirectory", os.path.join(os.path.expanduser("~"), "Desktop")
+            "load/lastDirectory", os.path.join(os.path.expanduser("~"), "Desktop")
         )
         self.current_directory = default_dir
 
@@ -785,7 +785,7 @@ class Arborist(QMainWindow):
         self.proxy_model.setSourceModel(self.file_model)
         # Disable dynamic sorting so that the proxy does not keep reordering
         self.proxy_model.setDynamicSortFilter(False)
-        self.tree = self.browse_ui.treeView
+        self.tree = self.load_ui.treeView
         # Freeze updates to prevent visual jumps during the initial load.
         self.tree.setUpdatesEnabled(False)
         # Set the model on the tree view.
@@ -801,7 +801,7 @@ class Arborist(QMainWindow):
         # Re-enable updates once the model is fully set.
         self.tree.setUpdatesEnabled(True)
 
-        self.file_viewer = self.browse_ui.file_viewer
+        self.file_viewer = self.load_ui.file_viewer
         self.file_viewer.setSortingEnabled(False)
         self.file_viewer.horizontalHeader().setSortIndicator(-1, Qt.AscendingOrder)
         self.file_viewer.horizontalHeader().setSortIndicatorShown(False)
@@ -826,15 +826,15 @@ class Arborist(QMainWindow):
                 original_resize_event(event)
 
         self.file_viewer.resizeEvent = resize_event_override
-        self.browse_ui.splitter.setSizes([600, 1000])
-        self.open_button = self.browse_ui.openDatasetButton
+        self.load_ui.splitter.setSizes([600, 1000])
+        self.open_button = self.load_ui.openDatasetButton
         self.open_button.setVisible(
             False
         )  # Initially hidden until a dataset is selected.
         self.open_button.clicked.connect(self.open_in_analytics_view)
-        self.back_button = self.browse_ui.back_button
-        self.forward_button = self.browse_ui.forward_button
-        self.up_button = self.browse_ui.up_button
+        self.back_button = self.load_ui.back_button
+        self.forward_button = self.load_ui.forward_button
+        self.up_button = self.load_ui.up_button
         self.back_button.clicked.connect(self.navigate_back)
         self.forward_button.clicked.connect(self.navigate_forward)
         self.up_button.clicked.connect(self.navigate_up)
@@ -843,10 +843,10 @@ class Arborist(QMainWindow):
         self.back_button.setEnabled(False)
         self.forward_button.setEnabled(False)
 
-        if settings.value("browse/rememberDir", "true") == "true":
-            self.browse_ui.rememberDirCheckBox.setChecked(True)
+        if settings.value("load/rememberDir", "true") == "true":
+            self.load_ui.rememberDirCheckBox.setChecked(True)
         else:
-            self.browse_ui.rememberDirCheckBox.setChecked(False)
+            self.load_ui.rememberDirCheckBox.setChecked(False)
         # Update the status bar with the current directory when the app loads.
         self.update_directory_status()
 
@@ -879,7 +879,7 @@ class Arborist(QMainWindow):
     def reset_train_tab(self) -> None:
         """
         Reset the application to its initial state, allowing the user to start over.
-        This resets the Train tab, Browse tab, and Predict tab.
+        This resets the Train tab, Load tab, and Predict tab.
         """
         # Cancel any ongoing training
         if self.training_worker:
@@ -892,15 +892,15 @@ class Arborist(QMainWindow):
         self.dataset_opened = False
         self.predict_file_path = None
 
-        # Reset the Browse tab:
+        # Reset the Load tab:
         # Clear the file viewer
         self.file_viewer.setModel(None)
         self.no_dataset_message.show()
         # Reset navigation history to the saved directory (if remember is checked), else to Desktop.
         settings = QSettings("UT Austin", "Arborist")
-        if settings.value("browse/rememberDir", "false") == "true":
+        if settings.value("load/rememberDir", "false") == "true":
             initial_dir = settings.value(
-                "browse/lastDirectory", os.path.join(os.path.expanduser("~"), "Desktop")
+                "load/lastDirectory", os.path.join(os.path.expanduser("~"), "Desktop")
             )
         else:
             initial_dir = os.path.join(os.path.expanduser("~"), "Desktop")
@@ -927,10 +927,10 @@ class Arborist(QMainWindow):
         # Reset the Predict tab UI:
         self.predict_ui.tableView.setModel(None)
 
-        # Switch back to the Browse tab and disable Train and Predict tabs
+        # Switch back to the Load tab and disable Train and Predict tabs
         self.tabs.setCurrentIndex(0)
         self.statusBar.showMessage(
-            "Application reset. Please select a dataset from the Browse tab."
+            "Application reset. Please select a dataset from the Load tab."
         )
         self.update_tab_states()
 
@@ -1136,12 +1136,12 @@ class Arborist(QMainWindow):
 
     def reset_predict_tab(self) -> None:
         """
-        Reset the Predict tab by clearing any loaded prediction data and switching back to the Browse tab.
+        Reset the Predict tab by clearing any loaded prediction data and switching back to the Load tab.
         """
         self.predict_ui.tableView.setModel(None)
         self.predict_file_path = None
         self.statusBar.showMessage(
-            "Predict tab reset. Please select a new file from the Browse tab."
+            "Predict tab reset. Please select a new file from the Load tab."
         )
         self.tabs.setCurrentIndex(0)
         self.update_tab_states()
@@ -1792,13 +1792,13 @@ class Arborist(QMainWindow):
         If the "Remember current directory" checkbox is checked,
         store the current directory in QSettings.
         """
-        if self.browse_ui.rememberDirCheckBox.isChecked():
+        if self.load_ui.rememberDirCheckBox.isChecked():
             settings = QSettings("UT Austin", "Arborist")
-            settings.setValue("browse/lastDirectory", self.current_directory)
-            settings.setValue("browse/rememberDir", "true")
+            settings.setValue("load/lastDirectory", self.current_directory)
+            settings.setValue("load/rememberDir", "true")
         else:
             settings = QSettings("UT Austin", "Arborist")
-            settings.setValue("browse/rememberDir", "false")
+            settings.setValue("load/rememberDir", "false")
 
 
 def main() -> None:
