@@ -1333,8 +1333,8 @@ class Arborist(QMainWindow):
                 }
             )
             prediction_df = pd.DataFrame(prediction_data)
-            final_df = pd.concat([prediction_df, df], axis=1)
-            model = PandasTableModel(final_df, combined_headers, predictions)
+            combined_df = pd.concat([prediction_df, df], axis=1)
+            model = PandasTableModel(combined_df, combined_headers, predictions)
             self.predict_ui.tableView.setModel(model)
             self.predict_ui.tableView.horizontalHeader().setSectionResizeMode(
                 QHeaderView.ResizeToContents
