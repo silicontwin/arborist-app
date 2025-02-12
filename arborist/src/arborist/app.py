@@ -1307,8 +1307,8 @@ class Arborist(QMainWindow):
                 prediction_data.update(
                     {
                         "Posterior Mean CATE": predictions["Posterior Mean CATE"],
-                        "2.5th percentile CATE": predictions["2.5th Percentile CATE"],
-                        "97.5th percentile CATE": predictions["97.5th Percentile CATE"],
+                        "2.5th Percentile CATE": predictions["2.5th Percentile CATE"],
+                        "97.5th Percentile CATE": predictions["97.5th Percentile CATE"],
                         "Credible Interval Width CATE": predictions[
                             "Credible Interval Width CATE"
                         ],
