@@ -5,10 +5,27 @@
     color: #000000;
 }
 
-/* Main Window and basic widgets */
-QMainWindow, QWidget {
-    background-color: #FAFBFF;
+
+/* TitleBar styling */
+#TitleBar {
+    background-color: #333;
+    color: white;
+}
+
+#TitleBar QLabel {
+    font: bold 12px;
+}
+
+#TitleBar QToolButton {
+    background: transparent;
     border: none;
+    color: white;
+    font: bold 12px;
+    padding: 5px;
+}
+
+#TitleBar QToolButton:hover {
+    background-color: #666;
 }
 
 /* QPushButton styling */
@@ -43,11 +60,13 @@ QPushButton:disabled {
     border-radius: 4px;
     padding: 4px 10px;
 }
+
 #back_button:enabled, #forward_button:enabled {
     background-color: #4A90E2;
     color: white;
     border: none;
 }
+
 #back_button:disabled, #forward_button:disabled {
     background-color: #E0E0E0;
     color: #999;
@@ -84,6 +103,7 @@ QComboBox {
     padding: 4px;
     border-radius: 4px;
 }
+
 QComboBox:hover {
     border: none;
 }
@@ -95,6 +115,7 @@ QSpinBox, QDoubleSpinBox {
     padding: 4px;
     border-radius: 4px;
 }
+
 QSpinBox:focus, QDoubleSpinBox:focus {
     border: none;
 }
@@ -131,7 +152,7 @@ QTabBar::tab {
     text-transform: uppercase;
     font-size: 15px;
     min-width: 100px;
-    font-weight:bold;
+    font-weight: bold;
 }
 
 QTabBar::tab:selected,
@@ -140,11 +161,11 @@ QTabBar::tab:hover {
     color: #FFFFFF;
 }
 
-
 /* QSplitter and its handle */
 QSplitter {
     border: none;
 }
+
 QSplitter::handle {
     background-color: #CCC;
     border: none;
@@ -158,18 +179,22 @@ QScrollBar:vertical, QScrollBar:horizontal {
     height: 12px;
     border-radius: 6px;
 }
+
 QScrollBar::handle:vertical, QScrollBar::handle:horizontal {
     background: #C5CCD6;
     min-width: 20px;
     min-height: 20px;
     border-radius: 6px;
 }
+
 QScrollBar::handle:vertical:hover, QScrollBar::handle:horizontal:hover {
     background: #AAB3BE;
 }
+
 QScrollBar::handle:vertical:pressed, QScrollBar::handle:horizontal:pressed {
     background: #8F97A1;
 }
+
 QScrollBar::add-line, QScrollBar::sub-line {
     background: none;
     width: 0px;
@@ -181,6 +206,7 @@ QMessageBox {
     background-color: white;
     padding: 15px;
 }
+
 QMessageBox QLabel {
     color: #333;
     font-size: 15px;
