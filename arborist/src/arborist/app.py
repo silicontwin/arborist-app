@@ -634,6 +634,7 @@ class TitleBar(QWidget):
     def __init__(self, parent: QMainWindow = None) -> None:
         super().__init__(parent)
         self.setObjectName("TitleBar")
+        self.setAttribute(Qt.WA_StyledBackground, True)
         self.parent = parent
         self._mousePos = None
         self._windowPos = None
@@ -821,6 +822,7 @@ class Arborist(QMainWindow):
 
         # Container widget to hold our custom title bar and the tabs.
         container = QWidget()
+        container.setObjectName("mainContainer")
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
         self.titleBar = TitleBar(self)
