@@ -434,7 +434,7 @@ class Ui_TrainTab(object):
         self.codeGenPushButton.setText(QCoreApplication.translate("TrainTab", u"Code Gen", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Parameters", None))
         self.trainResetButton.setText(QCoreApplication.translate("TrainTab", u"Reset", None))
-        self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Browse\" tab", None))
+        self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Load\" tab", None))
         self.parametersTitleLabel.setText(QCoreApplication.translate("TrainTab", u"Model Parameters", None))
         self.treesLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Trees (M)", None))
         self.burnInLabel.setText(QCoreApplication.translate("TrainTab", u"Burn-in Iterations", None))

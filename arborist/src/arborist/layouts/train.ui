@@ -411,7 +411,7 @@
    <item>
     <widget class="QLabel" name="no_dataset_label">
      <property name="text">
-      <string>Please select a dataset from the &quot;Browse&quot; tab</string>
+      <string>Please select a dataset from the &quot;Load&quot; tab</string>
      </property>
      <property name="alignment">
       <set>Qt::AlignmentFlag::AlignCenter</set>
