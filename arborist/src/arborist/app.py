@@ -5,9 +5,16 @@ using tree-based models, including BCF, BART, and XBART.
 
 import sys
 import os
+import time
+import traceback
+import textwrap
+import webbrowser
+import requests
 import pandas as pd
 import numpy as np
 from sklearn.preprocessing import OneHotEncoder
+import pyarrow.csv as pa_csv
+
 from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
@@ -19,6 +26,9 @@ from PySide6.QtWidgets import (
     QProgressDialog,
     QMessageBox,
     QFileDialog,
+    QToolButton,
+    QHBoxLayout,
+    QVBoxLayout,
 )
 from PySide6.QtCore import (
     Qt,
@@ -32,16 +42,11 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtGui import QColor, QAction
+
 from arborist.layouts.load import Ui_LoadTab
 from arborist.layouts.train import Ui_TrainTab
 from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
-import time
-import requests
-import webbrowser
-import pyarrow.csv as pa_csv
-import traceback
-import textwrap
 
 # Current version and repository details
 CURRENT_VERSION = "v0.0.1"
@@ -626,6 +631,67 @@ class ModelTrainer:
             raise RuntimeError(f"Error during prediction: {str(e)}")
 
 
+class TitleBar(QWidget):
+    """
+    A custom title bar widget with a title label and control buttons for minimize,
+    maximize/restore, and close. It also supports window dragging.
+    """
+
+    def __init__(self, parent: QMainWindow = None) -> None:
+        super().__init__(parent)
+        self.setObjectName("TitleBar")
+        self.parent = parent
+        self._mousePos = None
+        self._windowPos = None
+        self.setFixedHeight(30)
+        self.initUI()
+
+    def initUI(self) -> None:
+        layout = QHBoxLayout(self)
+        layout.setContentsMargins(5, 0, 5, 0)
+        # Title label displays the window title and current version.
+        self.titleLabel = QLabel("Arborist | " + CURRENT_VERSION, self)
+        layout.addWidget(self.titleLabel)
+        layout.addStretch()
+
+        # Minimize button.
+        self.minimizeButton = QToolButton(self)
+        self.minimizeButton.setText("–")
+        layout.addWidget(self.minimizeButton)
+        # Maximize/Restore button.
+        self.maximizeButton = QToolButton(self)
+        self.maximizeButton.setText("□")
+        layout.addWidget(self.maximizeButton)
+        # Close button.
+        self.closeButton = QToolButton(self)
+        self.closeButton.setText("✕")
+        layout.addWidget(self.closeButton)
+
+        # Connect signals to their slots.
+        self.minimizeButton.clicked.connect(self.parent.showMinimized)
+        self.maximizeButton.clicked.connect(self.toggle_max_restore)
+        self.closeButton.clicked.connect(self.parent.close)
+
+    def toggle_max_restore(self) -> None:
+        if self.parent.isMaximized():
+            self.parent.showNormal()
+        else:
+            self.parent.showMaximized()
+
+    def mousePressEvent(self, event) -> None:
+        if event.button() == Qt.LeftButton:
+            self._mousePos = event.globalPosition().toPoint()
+            self._windowPos = self.parent.pos()
+            event.accept()
+
+    def mouseMoveEvent(self, event) -> None:
+        if event.buttons() == Qt.LeftButton and self._mousePos is not None:
+            diff = event.globalPosition().toPoint() - self._mousePos
+            newPos = self._windowPos + diff
+            self.parent.move(newPos)
+            event.accept()
+
+
 class Arborist(QMainWindow):
     """
     The main application window for Arborist.
@@ -644,6 +710,9 @@ class Arborist(QMainWindow):
         self.current_prediction_idx = 0
         self.dataset_opened = False
         self.trainer = None
+
+        # Remove the native window frame.
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Window)
 
         # Load the stylesheet.
         try:
@@ -727,6 +796,8 @@ class Arborist(QMainWindow):
         self.resize(1600, 900)
         self.setMinimumSize(800, 600)
         self.center_window()
+
+        # Create the tabs widget.
         self.tabs = QTabWidget()
         self.load_load_tab_ui()
         self.load_train_tab_ui()
@@ -736,7 +807,6 @@ class Arborist(QMainWindow):
         self.tabs.addTab(self.predict_tab, "Predict")
         self.tabs.setTabEnabled(1, False)  # Disable Train tab initially.
         self.tabs.setTabEnabled(2, False)  # Disable Predict tab initially.
-        self.setCentralWidget(self.tabs)
         self.tabs.currentChanged.connect(self.check_model_frame_visibility)
         self.train_ui.modelComboBox.currentIndexChanged.connect(
             self.check_model_frame_visibility
@@ -754,6 +824,15 @@ class Arborist(QMainWindow):
         self.train_ui.treatmentComboBox.currentIndexChanged.connect(
             self.update_code_gen_text
         )
+
+        # Container widget to hold our custom title bar and the tabs.
+        container = QWidget()
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.titleBar = TitleBar(self)
+        layout.addWidget(self.titleBar)
+        layout.addWidget(self.tabs)
+        self.setCentralWidget(container)
 
     def check_model_frame_visibility(self) -> None:
         """
