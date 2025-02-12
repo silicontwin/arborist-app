@@ -792,7 +792,7 @@ class Arborist(QMainWindow):
         self.setMinimumSize(800, 600)
         self.center_window()
 
-        # Create the tabs widget.
+        # Create the tabs widget and add content pages.
         self.tabs = QTabWidget()
         self.load_load_tab_ui()
         self.load_train_tab_ui()
@@ -800,6 +800,9 @@ class Arborist(QMainWindow):
         self.tabs.addTab(self.load_tab, "Load")
         self.tabs.addTab(self.train_tab, "Train")
         self.tabs.addTab(self.predict_tab, "Predict")
+        # Hide the actual tab bar to remove the visible tabs.
+        self.tabs.tabBar().hide()
+
         self.tabs.setTabEnabled(1, False)  # Disable Train tab initially.
         self.tabs.setTabEnabled(2, False)  # Disable Predict tab initially.
         self.tabs.currentChanged.connect(self.check_model_frame_visibility)
@@ -825,6 +828,7 @@ class Arborist(QMainWindow):
         container.setObjectName("mainContainer")
         layout = QVBoxLayout(container)
         layout.setContentsMargins(0, 0, 0, 0)
+        layout.setSpacing(0)
         self.titleBar = TitleBar(self)
         layout.addWidget(self.titleBar)
         layout.addWidget(self.tabs)
