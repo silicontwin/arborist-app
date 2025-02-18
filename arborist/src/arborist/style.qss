@@ -35,7 +35,6 @@ QMainWindow, QWidget {
     border: none;
     color: #000000;
     font: bold 20px;
-    padding: 5px 0;
 }
 
 #TitleBar QToolButton:hover {
@@ -49,7 +48,7 @@ QPushButton {
     color: white;
     border: none;
     border-radius: 4px;
-    padding: 8px 14px;
+    padding: 2px 4px;
     font-weight: bold;
 }
 
@@ -65,25 +64,6 @@ QPushButton:disabled {
     background-color: #555;
     color: #888;
     border: none;
-}
-
-/* Back and Forward buttons */
-#back_button, #forward_button {
-    background-color: #555;
-    border: none;
-    color: #E0E0E0;
-    border-radius: 4px;
-    padding: 4px 10px;
-}
-
-#back_button:enabled, #forward_button:enabled {
-    background-color: #3A84DF;
-    color: white;
-}
-
-#back_button:disabled, #forward_button:disabled {
-    background-color: #555;
-    color: #888;
 }
 
 /* Data Views: QTableView, QTreeView, and general item views */
