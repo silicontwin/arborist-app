@@ -1632,7 +1632,6 @@ class Arborist(QMainWindow):
     def handle_training_finished(self, predictions: dict, model: object) -> None:
         """
         Handle completion of the training process.
-
         This method updates the status bar with cleaning statistics, stores the trained model,
         and displays predictions in the analytics viewer.
         """
@@ -1660,10 +1659,14 @@ class Arborist(QMainWindow):
         try:
             # Update the display with predictions
             df = self.trainer.data_cleaned
-            headers = df.columns.tolist()
+            outcome_var = self.train_ui.outcomeComboBox.currentText()
 
+            # Create a copy of the dataframe without the outcome variable
+            df_without_outcome = df.drop(columns=[outcome_var])
+
+            # Create prediction DataFrames with explicit column ordering
             if isinstance(model, BCFModel):
-                pred_headers = [
+                bcf_column_order = [
                     "Posterior Mean CATE",
                     "2.5th Percentile CATE",
                     "97.5th Percentile CATE",
@@ -1671,42 +1674,60 @@ class Arborist(QMainWindow):
                     "Posterior Mean",
                     "2.5th Percentile",
                     "97.5th Percentile",
+                    outcome_var,
                     "Credible Interval Width",
                 ]
+
+                # Create a single dictionary with all predictions
+                predictions_dict = {
+                    "Posterior Mean CATE": predictions["Posterior Mean CATE"],
+                    "2.5th Percentile CATE": predictions["2.5th Percentile CATE"],
+                    "97.5th Percentile CATE": predictions["97.5th Percentile CATE"],
+                    "Credible Interval Width CATE": predictions[
+                        "Credible Interval Width CATE"
+                    ],
+                    "Posterior Mean": predictions["Posterior Mean"],
+                    "2.5th Percentile": predictions["2.5th Percentile"],
+                    "97.5th Percentile": predictions["97.5th Percentile"],
+                    outcome_var: df[outcome_var],
+                    "Credible Interval Width": predictions["Credible Interval Width"],
+                }
+
+                # Create DataFrame with explicit column order
+                ordered_pred_df = pd.DataFrame(predictions_dict)[bcf_column_order]
+
+                # Combine with remaining columns
+                combined_df = pd.concat([ordered_pred_df, df_without_outcome], axis=1)
+
             else:
-                pred_headers = [
+                bart_column_order = [
                     "Posterior Mean",
                     "2.5th Percentile",
                     "97.5th Percentile",
+                    outcome_var,
                     "Credible Interval Width",
                 ]
-            full_headers = pred_headers + headers
-            prediction_data = {}
-            if isinstance(model, BCFModel):
-                prediction_data.update(
-                    {
-                        "Posterior Mean CATE": predictions["Posterior Mean CATE"],
-                        "2.5th Percentile CATE": predictions["2.5th Percentile CATE"],
-                        "97.5th Percentile CATE": predictions["97.5th Percentile CATE"],
-                        "Credible Interval Width CATE": predictions[
-                            "Credible Interval Width CATE"
-                        ],
-                    }
-                )
-            prediction_data.update(
-                {
-                    "Posterior Average ŷ": predictions["Posterior Mean"],
-                    "2.5th percentile ŷ": predictions["2.5th Percentile"],
-                    "97.5th percentile ŷ": predictions["97.5th Percentile"],
-                    "Credible Interval Width ŷ": predictions["Credible Interval Width"],
+
+                predictions_dict = {
+                    "Posterior Mean": predictions["Posterior Mean"],
+                    "2.5th Percentile": predictions["2.5th Percentile"],
+                    "97.5th Percentile": predictions["97.5th Percentile"],
+                    outcome_var: df[outcome_var],
+                    "Credible Interval Width": predictions["Credible Interval Width"],
                 }
-            )
-            prediction_df = pd.DataFrame(prediction_data)
-            combined_df = pd.concat([prediction_df, df], axis=1)
+
+                ordered_pred_df = pd.DataFrame(predictions_dict)[bart_column_order]
+                combined_df = pd.concat([ordered_pred_df, df_without_outcome], axis=1)
+
+            # Update headers to match the new column order
+            full_headers = list(combined_df.columns)
+
+            # Create and set the table model
             model_table = PandasTableModel(combined_df, full_headers, predictions)
             self.analytics_viewer.setModel(model_table)
             self.analytics_viewer.resizeColumnsToContents()
             self.highlight_selected_column()
+
         except Exception as e:
             print(f"Error updating predictions: {e}")
             print("Traceback:", traceback.format_exc())
