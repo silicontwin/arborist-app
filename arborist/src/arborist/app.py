@@ -901,6 +901,8 @@ class Arborist(QMainWindow):
         self.train_ui.parametersPushButton.clicked.connect(self.toggle_parameters_menu)
         self.train_ui.codeGenPushButton.clicked.connect(self.toggle_code_gen_text)
         self.train_ui.trainResetButton.clicked.connect(self.reset_train_tab)
+        self.train_ui.exportButton.setVisible(False)
+        self.train_ui.exportButton.clicked.connect(self.export_data)
         self.no_dataset_label = self.train_ui.no_dataset_label
         self.analytics_viewer = self.train_ui.analytics_viewer
         self.outcome_combo = self.train_ui.outcomeComboBox
@@ -956,7 +958,7 @@ class Arborist(QMainWindow):
         self.treatment_combo.clear()
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
-        # Re-enable the train button so the user can run another analysis
+        self.train_ui.exportButton.setVisible(False)
         self.train_button.setEnabled(True)
 
         # Reset the Predict tab UI:
@@ -968,6 +970,41 @@ class Arborist(QMainWindow):
             "Application reset. Please select a dataset from the Load tab."
         )
         self.update_tab_states()
+
+    def export_data(self) -> None:
+        """
+        Export the current data with predictions to a CSV file.
+        """
+        try:
+            file_path, _ = QFileDialog.getSaveFileName(
+                self,
+                "Export Data",
+                "",
+                "CSV Files (*.csv);;All Files (*)",
+            )
+
+            if file_path:
+                # Get the current model's data
+                model = self.analytics_viewer.model()
+                if model and hasattr(model, "_data"):
+                    # Export to CSV
+                    model._data.to_csv(file_path, index=False)
+                    self.statusBar.showMessage(
+                        f"Data exported successfully to {file_path}"
+                    )
+                else:
+                    QMessageBox.warning(
+                        self,
+                        "Export Error",
+                        "No data available to export.",
+                    )
+        except Exception as e:
+            QMessageBox.critical(
+                self,
+                "Export Error",
+                f"An error occurred while exporting the data:\n{str(e)}",
+            )
+            self.statusBar.showMessage("Error exporting data")
 
     def generate_code(self) -> str:
         """
@@ -1727,6 +1764,7 @@ class Arborist(QMainWindow):
             self.analytics_viewer.setModel(model_table)
             self.analytics_viewer.resizeColumnsToContents()
             self.highlight_selected_column()
+            self.train_ui.exportButton.setVisible(True)
 
         except Exception as e:
             print(f"Error updating predictions: {e}")
