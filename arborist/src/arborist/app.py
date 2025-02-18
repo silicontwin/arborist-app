@@ -974,12 +974,25 @@ class Arborist(QMainWindow):
     def export_data(self) -> None:
         """
         Export the current data with predictions to a CSV file.
+        Uses original filename with -results-MODELNAME suffix and last browsed directory.
         """
         try:
+            # Get original filename without extension and current model name
+            original_filename = os.path.splitext(
+                os.path.basename(self.current_file_path)
+            )[0]
+            model_name = self.train_ui.modelComboBox.currentText()
+
+            # Construct default save filename with model-specific suffix
+            default_filename = f"{original_filename}-results-{model_name}.csv"
+
+            # Use the last browsed directory
+            default_save_path = os.path.join(self.current_directory, default_filename)
+
             file_path, _ = QFileDialog.getSaveFileName(
                 self,
                 "Export Data",
-                "",
+                default_save_path,
                 "CSV Files (*.csv);;All Files (*)",
             )
 
