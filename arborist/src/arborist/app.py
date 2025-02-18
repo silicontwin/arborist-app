@@ -1260,8 +1260,18 @@ class Arborist(QMainWindow):
 
     def update_code_gen_text(self, highlight_fields: list[str] | None = None) -> None:
         """Update the code generation text box whenever a UI element changes."""
+        # Save current scroll positions
+        v_scrollbar = self.train_ui.codeGenTextEdit.verticalScrollBar()
+        h_scrollbar = self.train_ui.codeGenTextEdit.horizontalScrollBar()
+        current_v_value = v_scrollbar.value()
+        current_h_value = h_scrollbar.value()
+
         code = self.generate_code(highlight_fields=highlight_fields)
         self.train_ui.codeGenTextEdit.setHtml(code)
+
+        # Restore scroll positions after update
+        v_scrollbar.setValue(current_v_value)
+        h_scrollbar.setValue(current_h_value)
 
     def load_predict_tab_ui(self) -> None:
         """Load and set up the Predict tab UI for running predictions."""
