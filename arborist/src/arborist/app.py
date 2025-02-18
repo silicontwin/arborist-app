@@ -587,7 +587,7 @@ class TitleBar(QWidget):
         self.parent = parent
         self._mousePos = None
         self._windowPos = None
-        self.setFixedHeight(50)
+        self.setFixedHeight(42)
         self.initUI()
 
     def initUI(self) -> None:
@@ -595,7 +595,7 @@ class TitleBar(QWidget):
         layout.setContentsMargins(5, 0, 5, 0)
         # Title label displays the window title and current version.
         self.titleLabel = QLabel(
-            "Arborist <span style='font-size:14px; color:#999999;'>"
+            "Arborist <span style='font-size:14px; color:#B9B9B9;'>"
             + CURRENT_VERSION
             + " alpha"
             + "</span>",
@@ -873,7 +873,7 @@ class Arborist(QMainWindow):
                 original_resize_event(event)
 
         self.file_viewer.resizeEvent = resize_event_override
-        self.load_ui.splitter.setSizes([600, 1000])
+        self.load_ui.splitter.setSizes([800, 800])
         self.open_button = self.load_ui.openDatasetButton
         self.open_button.setVisible(
             False
