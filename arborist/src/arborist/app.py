@@ -467,8 +467,7 @@ class ModelTrainer:
                 raise ValueError("No trained model available")
         except Exception as e:
             print(f"\nError in predict method: {str(e)}")
-            print("Traceback:")
-            print(traceback.format_exc())
+            print("Traceback:", traceback.format_exc())
             print("\nModel attributes:")
             print(f"Has y_hat_test: {'y_hat_test' in dir(self.model)}")
             print(f"Has tau_hat_test: {'tau_hat_test' in dir(self.model)}")
@@ -763,20 +762,25 @@ class Arborist(QMainWindow):
         self.tabs.setTabEnabled(2, False)  # Disable Predict tab initially.
         self.tabs.currentChanged.connect(self.check_model_frame_visibility)
         self.train_ui.modelComboBox.currentIndexChanged.connect(
-            self.check_model_frame_visibility
+            lambda _: self.trigger_code_highlight("model")
         )
-        self.train_ui.modelComboBox.currentIndexChanged.connect(
-            self.update_code_gen_text
+        self.train_ui.treesSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("trees")
         )
-        self.train_ui.treesSpinBox.valueChanged.connect(self.update_code_gen_text)
-        self.train_ui.burnInSpinBox.valueChanged.connect(self.update_code_gen_text)
-        self.train_ui.drawsSpinBox.valueChanged.connect(self.update_code_gen_text)
-        self.train_ui.thinningSpinBox.valueChanged.connect(self.update_code_gen_text)
+        self.train_ui.burnInSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("burn_in")
+        )
+        self.train_ui.drawsSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("draws")
+        )
+        self.train_ui.thinningSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("thinning")
+        )
         self.train_ui.outcomeComboBox.currentIndexChanged.connect(
-            self.update_code_gen_text
+            lambda _: self.trigger_code_highlight("outcome")
         )
         self.train_ui.treatmentComboBox.currentIndexChanged.connect(
-            self.update_code_gen_text
+            lambda _: self.trigger_code_highlight("treatment")
         )
 
         # Container widget to hold our custom title bar and the tabs.
@@ -789,6 +793,14 @@ class Arborist(QMainWindow):
         layout.addWidget(self.titleBar)
         layout.addWidget(self.tabs)
         self.setCentralWidget(container)
+
+    def trigger_code_highlight(self, field: str) -> None:
+        """
+        Update the code generation text with a temporary yellow highlight on the given field.
+        The highlight lasts for 5 seconds.
+        """
+        self.update_code_gen_text(highlight_fields=[field])
+        QTimer.singleShot(5000, lambda: self.update_code_gen_text())
 
     def check_model_frame_visibility(self) -> None:
         """
@@ -1019,24 +1031,38 @@ class Arborist(QMainWindow):
             )
             self.statusBar.showMessage("Error exporting data")
 
-    def generate_code(self) -> str:
+    def generate_code(self, highlight_fields: list[str] | None = None) -> str:
         """
         Generate a Python script that reproduces the analysis based on the current UI settings.
         The generated code is wrapped in <pre> tags for HTML formatting.
-        Any user-specified parameters are highlighted in yellow .
+        Any user-specified parameters are highlighted in yellow if included in highlight_fields.
         """
         if not hasattr(self, "current_file_path"):
             return "<pre>No dataset loaded.</pre>"
         outcome_var = self.train_ui.outcomeComboBox.currentText()
+        # For treatment, if the treatmentFrame is visible, try to get the current text.
         treatment_var = (
             self.train_ui.treatmentComboBox.currentText()
             if self.train_ui.treatmentFrame.isVisible()
             else None
         )
+        # If using the BCF model and no treatment variable is selected,
+        # then use the first available item (if any) as the default.
         model_name = self.train_ui.modelComboBox.currentText()
+        if model_name == "BCF" and (not treatment_var or treatment_var.strip() == ""):
+            if self.train_ui.treatmentComboBox.count() > 0:
+                treatment_var = self.train_ui.treatmentComboBox.itemText(0)
+            else:
+                return "<pre>Treatment variable not selected.</pre>"
         num_trees = self.train_ui.treesSpinBox.value()
         burn_in = self.train_ui.burnInSpinBox.value()
         num_draws = self.train_ui.drawsSpinBox.value()
+
+        # Helper to optionally wrap a value in a span that makes the text yellow
+        def maybe_highlight(field: str, value: str) -> str:
+            if highlight_fields and field in highlight_fields:
+                return f"<span style='color: yellow;'>{value}</span>"
+            return value
 
         # Format the current time in a human-readable style
         current_time = pd.Timestamp.now().strftime("%b. %d, %Y at %-I:%M%p")
@@ -1050,7 +1076,7 @@ class Arborist(QMainWindow):
                 import pandas as pd
                 import numpy as np
                 from sklearn.preprocessing import OneHotEncoder
-                from stochtree import {model_name}Model
+                from stochtree import {maybe_highlight("model", model_name)}Model
 
                 # Load the dataset
                 data = pd.read_csv(r'{self.current_file_path}')
@@ -1072,8 +1098,8 @@ class Arborist(QMainWindow):
                 data_cleaned = data.dropna()
 
                 # Feature variables (all except outcome variable)
-                X = data_cleaned.drop(columns=['{outcome_var}']).to_numpy()
-                y = data_cleaned['{outcome_var}'].to_numpy()
+                X = data_cleaned.drop(columns=[{maybe_highlight("outcome", repr(outcome_var))}]).to_numpy()
+                y = data_cleaned[{maybe_highlight("outcome", repr(outcome_var))}].to_numpy()
 
                 # Standardize the outcome variable
                 y_mean = np.mean(y)
@@ -1081,14 +1107,14 @@ class Arborist(QMainWindow):
                 y_standardized = (y - y_mean) / y_std
 
                 # Model training
-                model = {model_name}Model()
+                model = {maybe_highlight("model", model_name)}Model()
                 model.sample(
                     X_train=X,
                     y_train=y_standardized,
                     X_test=X,
-                    num_trees={num_trees},
-                    num_burnin={burn_in},
-                    num_mcmc={num_draws}
+                    num_trees={maybe_highlight("trees", str(num_trees))},
+                    num_burnin={maybe_highlight("burn_in", str(burn_in))},
+                    num_mcmc={maybe_highlight("draws", str(num_draws))}
                 )
 
                 # Generate predictions
@@ -1106,20 +1132,18 @@ class Arborist(QMainWindow):
                     'Posterior Mean': posterior_mean,
                     '2.5th Percentile': percentile_2_5,
                     '97.5th Percentile': percentile_97_5,
-                    '{outcome_var}': data_cleaned['{outcome_var}'],
+                    {maybe_highlight("outcome", repr(outcome_var))}: data_cleaned[{maybe_highlight("outcome", repr(outcome_var))}],
                     'Credible Interval Width': credible_interval_width
                 }})
 
                 # Combine with remaining features
-                remaining_features = data_cleaned.drop(columns=['{outcome_var}'])
+                remaining_features = data_cleaned.drop(columns=[{maybe_highlight("outcome", repr(outcome_var))}])
                 results = pd.concat([results_df, remaining_features], axis=1)
                 results.to_csv(f'{{output_filename}}-results-BART.csv', index=False)
                 print(results.head())
                 """
             )
         elif model_name == "BCF":
-            if not treatment_var:
-                return "<pre>Treatment variable not selected.</pre>"
             code = textwrap.dedent(
                 f"""
                 # Generated by Arborist {CURRENT_VERSION} (https://arborist.app) on {current_time}
@@ -1128,7 +1152,7 @@ class Arborist(QMainWindow):
                 import pandas as pd
                 import numpy as np
                 from sklearn.preprocessing import OneHotEncoder
-                from stochtree import {model_name}Model
+                from stochtree import {maybe_highlight("model", model_name)}Model
                 from sklearn.linear_model import LogisticRegression
 
                 # Load the dataset
@@ -1151,9 +1175,9 @@ class Arborist(QMainWindow):
                 data_cleaned = data.dropna()
 
                 # Extract variables
-                y = data_cleaned['{outcome_var}'].values
-                Z = data_cleaned['{treatment_var}'].values
-                X = data_cleaned.drop(columns=['{outcome_var}', '{treatment_var}']).values
+                y = data_cleaned[{maybe_highlight("outcome", repr(outcome_var))}].values
+                Z = data_cleaned[{maybe_highlight("treatment", repr(treatment_var))}].values
+                X = data_cleaned.drop(columns=[{maybe_highlight("outcome", repr(outcome_var))}, {maybe_highlight("treatment", repr(treatment_var))}]).values
 
                 # Standardize the outcome variable
                 y_mean = np.mean(y)
@@ -1167,7 +1191,7 @@ class Arborist(QMainWindow):
                 pi_test = pi_train  # Using the same data for testing
 
                 # Model training
-                model = {model_name}Model()
+                model = {maybe_highlight("model", model_name)}Model()
                 model.sample(
                     X_train=X,
                     Z_train=Z,
@@ -1176,10 +1200,10 @@ class Arborist(QMainWindow):
                     X_test=X,
                     Z_test=Z,
                     pi_test=pi_test,
-                    num_burnin={burn_in},
-                    num_mcmc={num_draws},
-                    num_trees_mu={num_trees},
-                    num_trees_tau={int(self.train_ui.treesSpinBox.value() / 4)},
+                    num_burnin={maybe_highlight("burn_in", str(burn_in))},
+                    num_mcmc={maybe_highlight("draws", str(num_draws))},
+                    num_trees_mu={maybe_highlight("trees", str(num_trees))},
+                    num_trees_tau={str(int(self.train_ui.treesSpinBox.value() / 4))},
                 )
 
                 # Generate predictions
@@ -1207,12 +1231,12 @@ class Arborist(QMainWindow):
                     'Posterior Mean': posterior_mean,
                     '2.5th Percentile': percentile_2_5,
                     '97.5th Percentile': percentile_97_5,
-                    '{outcome_var}': data_cleaned['{outcome_var}'],
+                    {maybe_highlight("outcome", repr(outcome_var))}: data_cleaned[{maybe_highlight("outcome", repr(outcome_var))}],
                     'Credible Interval Width': credible_interval_width
                 }})
 
                 # Combine with remaining features
-                remaining_features = data_cleaned.drop(columns=['{outcome_var}', '{treatment_var}'])
+                remaining_features = data_cleaned.drop(columns=[{maybe_highlight("outcome", repr(outcome_var))}, {maybe_highlight("treatment", repr(treatment_var))}])
                 results = pd.concat([bcf_results_df, remaining_features], axis=1)
                 results.to_csv(f'{{output_filename}}-results-BCF.csv', index=False)
                 print(results.head())
@@ -1234,9 +1258,9 @@ class Arborist(QMainWindow):
         is_visible = self.train_ui.parametersMenu.isVisible()
         self.train_ui.parametersMenu.setVisible(not is_visible)
 
-    def update_code_gen_text(self) -> None:
+    def update_code_gen_text(self, highlight_fields: list[str] | None = None) -> None:
         """Update the code generation text box whenever a UI element changes."""
-        code = self.generate_code()
+        code = self.generate_code(highlight_fields=highlight_fields)
         self.train_ui.codeGenTextEdit.setHtml(code)
 
     def load_predict_tab_ui(self) -> None:
