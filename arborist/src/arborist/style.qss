@@ -27,7 +27,7 @@ QMainWindow, QWidget {
     color: #1E1E2F;
     font-size: 20px;
     font-weight: 600;
-    padding: 2px 0 0 5px;
+    padding: 2px 0 0 8px;
 }
 
 #TitleBar QToolButton {
@@ -81,8 +81,9 @@ QTableView, QTreeView, QAbstractItemView {
 QHeaderView::section {
     background-color: #2A2A3A !important;
     color: #FFFFFF !important;
-    padding: 8px;
-    border-bottom: 1px solid #333;
+    padding: 10px 0 0 0;
+    height: 26px;
+    border: none;
     font-weight: bold;
     font-size: 15px;
 }
