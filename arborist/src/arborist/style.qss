@@ -197,7 +197,7 @@ QSplitter {
 }
 
 QSplitter::handle {
-    background-color: #333;
+    background-color: #424251;
     border: none;
 }
 
