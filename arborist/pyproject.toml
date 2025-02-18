@@ -1,7 +1,7 @@
 [tool.briefcase]
 project_name = "Arborist"
 bundle = "app.arborist"
-version = "0.0.1"
+version = "0.1.0"
 url = "https://arborist.app"
 license.file = "LICENSE"
 author = "Nicholas Warren"

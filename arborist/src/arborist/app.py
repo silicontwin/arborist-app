@@ -49,7 +49,7 @@ from arborist.layouts.predict import Ui_PredictTab
 from stochtree import BCFModel, BARTModel
 
 # Current version and repository details
-CURRENT_VERSION = "v0.0.1"
+CURRENT_VERSION = "v0.1.0"
 GITHUB_REPO = "silicontwin/arborist-app"
 
 
