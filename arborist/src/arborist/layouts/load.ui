@@ -40,10 +40,25 @@
      <widget class="QTreeView" name="treeView">
       <property name="minimumSize">
        <size>
-        <width>200</width>
+        <width>0</width>
         <height>0</height>
        </size>
       </property>
+      <property name="frameShape">
+       <enum>QFrame::Shape::NoFrame</enum>
+      </property>
+      <property name="frameShadow">
+       <enum>QFrame::Shadow::Plain</enum>
+      </property>
+      <property name="indentation">
+       <number>20</number>
+      </property>
+      <attribute name="headerMinimumSectionSize">
+       <number>0</number>
+      </attribute>
+      <attribute name="headerDefaultSectionSize">
+       <number>0</number>
+      </attribute>
      </widget>
      <widget class="QTableView" name="file_viewer">
       <property name="sortingEnabled">
