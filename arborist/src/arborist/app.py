@@ -246,62 +246,6 @@ class DatasetFileFilterProxyModel(QSortFilterProxyModel):
         return ext.lower() in self.dataset_extensions
 
 
-class ModelTrainingWorker(QThread):
-    """
-    Worker thread for model training to prevent UI freezing.
-
-    It emits progress, finished, and error signals during the training process.
-    """
-
-    progress = Signal(int)
-    finished = Signal(dict, object)
-    error = Signal(str)
-
-    def __init__(self, trainer, model_params):
-        """
-        Initialize the worker thread.
-
-        :param trainer: An instance of ModelTrainer.
-        :param model_params: Dictionary of parameters for model training.
-        """
-        super().__init__()
-        self.trainer = trainer
-        self.model_params = model_params
-        self._is_running = True
-
-    def run(self):
-        """Run the training process in a separate thread with cancellation checks."""
-        try:
-            self.progress.emit(10)
-            self.trainer.load_data()
-            if not self._is_running:
-                return
-
-            self.progress.emit(30)
-            self.trainer.prepare_features()
-            if not self._is_running:
-                return
-
-            self.progress.emit(40)
-            self.trainer.train_model(**self.model_params)
-            if not self._is_running:
-                return
-
-            self.progress.emit(80)
-            predictions = self.trainer.predict()
-            if not self._is_running:
-                return
-
-            self.progress.emit(100)
-            self.finished.emit(predictions, self.trainer.model)
-        except Exception as e:
-            self.error.emit(str(e))
-
-    def stop(self):
-        """Stop the training process."""
-        self._is_running = False
-
-
 class ModelTrainer:
     """
     Shared class for model training and preprocessing.
@@ -552,7 +496,6 @@ class ModelTrainer:
             raise ValueError("No trained model provided.")
 
         try:
-
             feature_cols = self.data_cleaned.select_dtypes(
                 include=["int64", "float64"]
             ).columns
@@ -574,6 +517,62 @@ class ModelTrainer:
             print(f"\nError in predict_outcome: {str(e)}")
             print("Traceback:", traceback.format_exc())
             raise RuntimeError(f"Error during prediction: {str(e)}")
+
+
+class ModelTrainingWorker(QThread):
+    """
+    Worker thread for model training to prevent UI freezing.
+
+    It emits progress, finished, and error signals during the training process.
+    """
+
+    progress = Signal(int)
+    finished = Signal(dict, object)
+    error = Signal(str)
+
+    def __init__(self, trainer, model_params):
+        """
+        Initialize the worker thread.
+
+        :param trainer: An instance of ModelTrainer.
+        :param model_params: Dictionary of parameters for model training.
+        """
+        super().__init__()
+        self.trainer = trainer
+        self.model_params = model_params
+        self._is_running = True
+
+    def run(self):
+        """Run the training process in a separate thread with cancellation checks."""
+        try:
+            self.progress.emit(10)
+            self.trainer.load_data()
+            if not self._is_running:
+                return
+
+            self.progress.emit(30)
+            self.trainer.prepare_features()
+            if not self._is_running:
+                return
+
+            self.progress.emit(40)
+            self.trainer.train_model(**self.model_params)
+            if not self._is_running:
+                return
+
+            self.progress.emit(80)
+            predictions = self.trainer.predict()
+            if not self._is_running:
+                return
+
+            self.progress.emit(100)
+            self.finished.emit(predictions, self.trainer.model)
+        except Exception as e:
+            self.error.emit(str(e))
+
+    def stop(self):
+        """Stop the training process."""
+        self._is_running = False
 
 
 class TitleBar(QWidget):
@@ -1236,7 +1235,6 @@ class Arborist(QMainWindow):
         This method combines prediction summary columns with the cleaned data and configures the table view.
         """
         try:
-
             df = cleaned_data
             headers = df.columns.tolist()
             is_bcf = "Posterior Mean CATE" in predictions
