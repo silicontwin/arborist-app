@@ -858,7 +858,7 @@ class Arborist(QMainWindow):
         )
         self.no_dataset_message.setAlignment(Qt.AlignCenter)
         self.no_dataset_message.setWordWrap(True)
-        self.no_dataset_message.setStyleSheet("color: gray; font-size: 16px;")
+        self.no_dataset_message.setStyleSheet("color: white; font-size: 16px;")
         self.no_dataset_message.setGeometry(
             0, 0, self.file_viewer.width(), self.file_viewer.height()
         )
