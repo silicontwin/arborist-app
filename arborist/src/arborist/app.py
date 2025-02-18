@@ -67,7 +67,6 @@ def auto_one_hot_encode(df: pd.DataFrame) -> pd.DataFrame:
             index=df.index,
         )
         df = pd.concat([df.drop(categorical_columns, axis=1), ohe_df], axis=1)
-        print(f"Performed one-hot encoding on columns: {list(categorical_columns)}")
     return df
 
 
@@ -97,13 +96,8 @@ class PandasTableModel(QAbstractTableModel):
         self.alternate_row_color = QColor("#2A2A3A")  # Darker stripe
         self.base_row_color = QColor("#1E1E2F")  # Main dark background
 
-        print("Initializing PandasTableModel with data type:", type(data))
-        print("Headers:", headers)
-        print("Predictions provided:", predictions is not None)
-
         if isinstance(data, pd.DataFrame):
             self._data = data
-            print("DataFrame loaded directly with shape:", self._data.shape)
         else:
             if isinstance(data, str):
                 # Load the entire CSV via pyarrow.
@@ -111,8 +105,6 @@ class PandasTableModel(QAbstractTableModel):
                 self._data = table.to_pandas()
             else:
                 self._data = pd.DataFrame(data)
-
-            print("Data loaded with shape:", self._data.shape)
 
             if self.predictions is not None:
                 # Create a prediction DataFrame if predictions are provided.
@@ -281,31 +273,23 @@ class ModelTrainingWorker(QThread):
         """Run the training process in a separate thread with cancellation checks."""
         try:
             self.progress.emit(10)
-            print("Loading data...")
             self.trainer.load_data()
             if not self._is_running:
-                print("Training cancelled after loading data.")
                 return
 
             self.progress.emit(30)
-            print("Preparing features...")
             self.trainer.prepare_features()
             if not self._is_running:
-                print("Training cancelled after preparing features.")
                 return
 
             self.progress.emit(40)
-            print("Training model...")
             self.trainer.train_model(**self.model_params)
             if not self._is_running:
-                print("Training cancelled after training model.")
                 return
 
             self.progress.emit(80)
-            print("Generating predictions...")
             predictions = self.trainer.predict()
             if not self._is_running:
-                print("Training cancelled after generating predictions.")
                 return
 
             self.progress.emit(100)
@@ -354,19 +338,12 @@ class ModelTrainer:
         This includes converting columns to numeric when possible, dropping columns that are completely missing,
         and removing rows with any missing values. Original and cleaned row counts are stored.
         """
-        print(f"Loading data from: {self.file_path}")
         table = pa_csv.read_csv(self.file_path)
         self.data = table.to_pandas()
         self.original_row_count = len(self.data)
-        print(f"Initial data shape: {self.data.shape}")
-        print("Columns:", self.data.columns.tolist())
         self.original_columns = self.data.columns.tolist()
         self.data = auto_one_hot_encode(self.data)
         self.data_cleaned = self.data.copy()
-        print("\nColumn types after one-hot encoding:")
-        print(self.data.dtypes)
-        print("\nMissing values per column:")
-        print(self.data.isnull().sum())
         for col in self.data_cleaned.columns:
             try:
                 self.data_cleaned[col] = pd.to_numeric(
@@ -374,7 +351,6 @@ class ModelTrainer:
                 )
             except Exception as e:
                 print(f"Could not convert column {col} to numeric: {str(e)}")
-        print(f"\nData shape after numeric conversion: {self.data_cleaned.shape}")
         if self.treatment_var is not None:
             if self.treatment_var not in self.data_cleaned.columns:
                 raise ValueError(
@@ -386,15 +362,11 @@ class ModelTrainer:
             if self.data_cleaned[col].isnull().all()
         ]
         if empty_cols:
-            print(f"Dropping empty columns: {empty_cols}")
             self.data_cleaned = self.data_cleaned.drop(columns=empty_cols)
         rows_before = len(self.data_cleaned)
         self.data_cleaned = self.data_cleaned.dropna()
         self.observations_removed = rows_before - len(self.data_cleaned)
         self.cleaned_row_count = len(self.data_cleaned)
-        print(f"\nFinal cleaned data shape: {self.data_cleaned.shape}")
-        if self.observations_removed > 0:
-            print(f"Removed {self.observations_removed} rows with missing values")
 
     def prepare_features(self) -> None:
         """
@@ -480,9 +452,6 @@ class ModelTrainer:
                     "keep_gfr": False,
                     "random_seed": 42,
                 }
-                print("\nTraining BCF model with parameters:")
-                for key, value in params.items():
-                    print(f"{key}: {value}")
                 self.model.sample(
                     X_train=self.X,
                     Z_train=Z_train,
@@ -525,20 +494,12 @@ class ModelTrainer:
             elif isinstance(self.model, BCFModel):
                 if not hasattr(self.model, "y_hat_test"):
                     raise ValueError("No trained BCF model available")
-                print("\nAccessing stored predictions...")
-                print(f"Number of MCMC samples: {self.model.num_samples}")
                 yhat_samples = self.model.y_hat_test
                 tau_samples = self.model.tau_hat_test
-                print("\nPrediction shapes:")
-                print(f"yhat_samples shape: {yhat_samples.shape}")
-                print(f"tau_samples shape: {tau_samples.shape}")
                 if yhat_samples.ndim == 3:
                     yhat_samples = yhat_samples.squeeze(-1)
                 if tau_samples.ndim == 3:
                     tau_samples = tau_samples.squeeze(-1)
-                print("\nAfter squeezing:")
-                print(f"yhat_samples shape: {yhat_samples.shape}")
-                print(f"tau_samples shape: {tau_samples.shape}")
                 yhat_samples = yhat_samples * self.y_std + self.y_mean
                 posterior_mean = np.mean(yhat_samples, axis=1)
                 perc_2_5 = np.percentile(yhat_samples, 2.5, axis=1)
@@ -591,18 +552,12 @@ class ModelTrainer:
             raise ValueError("No trained model provided.")
 
         try:
-            print("\nPrediction data info:")
-            print("Data shape:", self.data_cleaned.shape)
-            print("Columns:", self.data_cleaned.columns.tolist())
+
             feature_cols = self.data_cleaned.select_dtypes(
                 include=["int64", "float64"]
             ).columns
-            print(f"\nUsing features: {feature_cols.tolist()}")
             X_new = self.data_cleaned[feature_cols].to_numpy()
-            print("Feature matrix shape:", X_new.shape)
-            print("\nGenerating predictions...")
             y_pred_samples = model.predict(covariates=X_new)
-            print("Prediction samples shape:", y_pred_samples.shape)
             posterior_mean = np.mean(y_pred_samples, axis=1)
             perc_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
             perc_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
@@ -613,11 +568,7 @@ class ModelTrainer:
                 "97.5th Percentile": perc_97_5,
                 "Credible Interval Width": ci_width,
             }
-            print("\nPrediction summary:")
-            for key, value in predictions.items():
-                print(
-                    f"{key} shape: {value.shape if hasattr(value, 'shape') else len(value)}"
-                )
+
             return predictions
         except Exception as e:
             print(f"\nError in predict_outcome: {str(e)}")
@@ -1285,12 +1236,9 @@ class Arborist(QMainWindow):
         This method combines prediction summary columns with the cleaned data and configures the table view.
         """
         try:
-            print("\nDisplaying predictions:")
-            print("Prediction keys:", predictions.keys())
-            print("Prediction lengths:", {k: len(v) for k, v in predictions.items()})
+
             df = cleaned_data
             headers = df.columns.tolist()
-            print("Cleaned dataset headers:", headers)
             is_bcf = "Posterior Mean CATE" in predictions
             if is_bcf:
                 prediction_headers = [
@@ -1311,7 +1259,6 @@ class Arborist(QMainWindow):
                     "Credible Interval Width ŷ",
                 ]
             combined_headers = prediction_headers + headers
-            print("Combined headers:", combined_headers)
             prediction_data = {}
             if is_bcf:
                 prediction_data.update(
@@ -1345,9 +1292,7 @@ class Arborist(QMainWindow):
                 -1, Qt.AscendingOrder
             )
             self.predict_ui.tableView.horizontalHeader().setSortIndicatorShown(False)
-            print(
-                f"TableView configured with {model.rowCount()} rows and {model.columnCount()} columns"
-            )
+
             self.statusBar.showMessage(
                 "Successfully displaying predictions with cleaned data"
             )
