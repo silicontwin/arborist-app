@@ -148,6 +148,15 @@ class Ui_TrainTab(object):
 
         self.horizontalLayout_3.addWidget(self.trainButton)
 
+        self.exportButton = QPushButton(self.frame_3)
+        self.exportButton.setObjectName(u"exportButton")
+        sizePolicy.setHeightForWidth(self.exportButton.sizePolicy().hasHeightForWidth())
+        self.exportButton.setSizePolicy(sizePolicy)
+        self.exportButton.setMinimumSize(QSize(100, 30))
+        self.exportButton.setVisible(False)
+
+        self.horizontalLayout_3.addWidget(self.exportButton)
+
 
         self.horizontalLayout.addWidget(self.frame_3)
 
@@ -431,6 +440,7 @@ class Ui_TrainTab(object):
         self.label.setText(QCoreApplication.translate("TrainTab", u"Outcome Variable (y):", None))
         self.treatmentLabel.setText(QCoreApplication.translate("TrainTab", u"Treatment Variable (Z):", None))
         self.trainButton.setText(QCoreApplication.translate("TrainTab", u"Train Model", None))
+        self.exportButton.setText(QCoreApplication.translate("TrainTab", u"Export Data", None))
         self.codeGenPushButton.setText(QCoreApplication.translate("TrainTab", u"Code Gen", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Parameters", None))
         self.trainResetButton.setText(QCoreApplication.translate("TrainTab", u"Reset", None))
