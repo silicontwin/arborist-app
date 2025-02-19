@@ -379,13 +379,17 @@ class ModelTrainer:
         try:
             if model_name == "BART":
                 self.model = BARTModel()
+                mean_forest_params = {
+                    "num_trees": num_trees,
+                }
+
                 self.model.sample(
                     X_train=self.X,
                     y_train=self.y_standardized,
                     X_test=self.X,
-                    num_trees=num_trees,
                     num_burnin=burn_in,
                     num_mcmc=num_draws,
+                    mean_forest_params=mean_forest_params,
                 )
             elif model_name == "BCF":
                 if self.treatment_var is None:
