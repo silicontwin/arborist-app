@@ -109,7 +109,7 @@ class PandasTableModel(QAbstractTableModel):
             if self.predictions is not None:
                 # Create a prediction DataFrame if predictions are provided.
                 prediction_data = {}
-                # Check for CATE predictions (used with the BCF model).
+                # Check for Treatment Effect predictions (used with the BCF model).
                 if "Posterior Mean (Treatment Effect)" in self.predictions:
                     prediction_data.update(
                         {
@@ -127,23 +127,30 @@ class PandasTableModel(QAbstractTableModel):
                             ],
                         }
                     )
-                # Add outcome predictions (applicable to both BART and BCF).
-                prediction_data.update(
-                    {
-                        "Posterior Mean (Outcome Effect)": self.predictions[
-                            "Posterior Mean (Outcome Effect)"
-                        ],
-                        "2.5th Percentile (Outcome Effect)": self.predictions[
-                            "2.5th Percentile (Outcome Effect)"
-                        ],
-                        "97.5th Percentile (Outcome Effect)": self.predictions[
-                            "97.5th Percentile (Outcome Effect)"
-                        ],
-                        "Credible Interval Width (Outcome Effect)": self.predictions[
-                            "Credible Interval Width (Outcome Effect)"
-                        ],
-                    }
-                )
+                # For Outcome predictions, try standard keys or include keys with "(Outcome Effect)"
+                try:
+                    outcome_lower = self.predictions[
+                        "2.5th Percentile (Outcome Effect)"
+                    ]
+                    outcome_upper = self.predictions[
+                        "97.5th Percentile (Outcome Effect)"
+                    ]
+                    outcome_mean = self.predictions["Posterior Mean (Outcome Effect)"]
+                    outcome_ci = self.predictions[
+                        "Credible Interval Width (Outcome Effect)"
+                    ]
+                    prediction_data.update(
+                        {
+                            "Posterior Mean (Outcome Effect)": outcome_mean,
+                            "2.5th Percentile (Outcome Effect)": outcome_lower,
+                            "97.5th Percentile (Outcome Effect)": outcome_upper,
+                            "Credible Interval Width (Outcome Effect)": outcome_ci,
+                        }
+                    )
+                except KeyError:
+                    for key in self.predictions:
+                        if "(Outcome Effect)" in key:
+                            prediction_data[key] = self.predictions[key]
                 prediction_df = pd.DataFrame(prediction_data)
                 # Prepend the prediction columns to the data.
                 self._data = pd.concat([prediction_df, self._data], axis=1)
@@ -178,7 +185,7 @@ class PandasTableModel(QAbstractTableModel):
         elif role == Qt.BackgroundRole:
             column_name = self.headers[index.column()]
             lower = column_name.lower()
-            # For prepended prediction columns, check if the header indicates predictions.
+            # For prediction columns, check if the header indicates predictions.
             if self.predictions is not None and (
                 lower.startswith("posterior")
                 or "percentile" in lower
@@ -187,9 +194,8 @@ class PandasTableModel(QAbstractTableModel):
                 if "treatment effect" in lower:
                     # For Treatment Effect predictions, use a warm highlight.
                     return QColor("#8A6A59")
-
                 else:
-                    # For other prediction columns, use a dark blue-gray accent.
+                    # For Outcome prediction columns, use a dark blue-gray accent.
                     return QColor("#3B4C5D")
             # Otherwise, apply zebra striping.
             base_color = (
@@ -281,6 +287,9 @@ class ModelTrainer:
         self.y: np.ndarray | None = None
         self.Z: np.ndarray | None = None
         self.model = None
+        self.credible_interval: float = (
+            95  # Selected credible interval (e.g., 95 or 99)
+        )
 
     def load_data(self) -> None:
         """
@@ -421,26 +430,33 @@ class ModelTrainer:
                 f"Error during model training: {str(e)}\n{traceback_str}"
             )
 
-    def predict(self) -> dict:
+    def predict(self, credible_interval: float = 95) -> dict:
         """
         Generate predictions using the trained model.
 
         For BART, predictions are generated using the predict method.
         For BCF, the stored predictions are accessed and processed.
+        The credible interval is determined by the provided credible_interval value.
         """
+        # Compute the lower and upper percentiles based on credible_interval
+        lower = (100 - credible_interval) / 2
+        upper = 100 - lower
+        lower_key = f"{lower:.1f}th Percentile (Outcome Effect)"
+        upper_key = f"{upper:.1f}th Percentile (Outcome Effect)"
+        ci_width_key = "Credible Interval Width (Outcome Effect)"
         try:
             if isinstance(self.model, BARTModel):
                 self.y_pred_samples = self.model.predict(covariates=self.X)
                 y_pred_samples_original = self.y_pred_samples * self.y_std + self.y_mean
                 posterior_mean = np.mean(y_pred_samples_original, axis=1)
-                perc_2_5 = np.percentile(y_pred_samples_original, 2.5, axis=1)
-                perc_97_5 = np.percentile(y_pred_samples_original, 97.5, axis=1)
-                ci_width = perc_97_5 - perc_2_5
+                perc_lower = np.percentile(y_pred_samples_original, lower, axis=1)
+                perc_upper = np.percentile(y_pred_samples_original, upper, axis=1)
+                ci_width = perc_upper - perc_lower
                 return {
                     "Posterior Mean (Outcome Effect)": posterior_mean,
-                    "2.5th Percentile (Outcome Effect)": perc_2_5,
-                    "97.5th Percentile (Outcome Effect)": perc_97_5,
-                    "Credible Interval Width (Outcome Effect)": ci_width,
+                    lower_key: perc_lower,
+                    upper_key: perc_upper,
+                    ci_width_key: ci_width,
                 }
             elif isinstance(self.model, BCFModel):
                 if not hasattr(self.model, "y_hat_test"):
@@ -453,22 +469,25 @@ class ModelTrainer:
                     tau_samples = tau_samples.squeeze(-1)
                 yhat_samples = yhat_samples * self.y_std + self.y_mean
                 posterior_mean = np.mean(yhat_samples, axis=1)
-                perc_2_5 = np.percentile(yhat_samples, 2.5, axis=1)
-                perc_97_5 = np.percentile(yhat_samples, 97.5, axis=1)
-                ci_width = perc_97_5 - perc_2_5
+                perc_lower = np.percentile(yhat_samples, lower, axis=1)
+                perc_upper = np.percentile(yhat_samples, upper, axis=1)
+                ci_width = perc_upper - perc_lower
                 posterior_mean_cate = np.mean(tau_samples, axis=1)
-                cate_perc_2_5 = np.percentile(tau_samples, 2.5, axis=1)
-                cate_perc_97_5 = np.percentile(tau_samples, 97.5, axis=1)
-                ci_width_cate = cate_perc_97_5 - cate_perc_2_5
+                lower_key_tr = f"{lower:.1f}th Percentile (Treatment Effect)"
+                upper_key_tr = f"{upper:.1f}th Percentile (Treatment Effect)"
+                ci_width_key_tr = "Credible Interval Width (Treatment Effect)"
+                cate_perc_lower = np.percentile(tau_samples, lower, axis=1)
+                cate_perc_upper = np.percentile(tau_samples, upper, axis=1)
+                ci_width_cate = cate_perc_upper - cate_perc_lower
                 return {
                     "Posterior Mean (Outcome Effect)": posterior_mean,
-                    "2.5th Percentile (Outcome Effect)": perc_2_5,
-                    "97.5th Percentile (Outcome Effect)": perc_97_5,
-                    "Credible Interval Width (Outcome Effect)": ci_width,
+                    lower_key: perc_lower,
+                    upper_key: perc_upper,
+                    ci_width_key: ci_width,
                     "Posterior Mean (Treatment Effect)": posterior_mean_cate,
-                    "2.5th Percentile (Treatment Effect)": cate_perc_2_5,
-                    "97.5th Percentile (Treatment Effect)": cate_perc_97_5,
-                    "Credible Interval Width (Treatment Effect)": ci_width_cate,
+                    lower_key_tr: cate_perc_lower,
+                    upper_key_tr: cate_perc_upper,
+                    ci_width_key_tr: ci_width_cate,
                 }
             else:
                 raise ValueError("No trained model available")
@@ -487,13 +506,18 @@ class ModelTrainer:
             print(f"Model type: {type(self.model)}")
             raise RuntimeError(f"Error during prediction: {str(e)}")
 
-    def predict_outcome(self, model) -> dict:
+    def predict_outcome(self, model, credible_interval: float = 95) -> dict:
         """
         Predict outcomes for new data using the provided model.
 
         This method loads the cleaned data, extracts numeric features, generates predictions,
-        and calculates summary statistics.
+        and calculates summary statistics for the desired credible interval.
         """
+        lower = (100 - credible_interval) / 2
+        upper = 100 - lower
+        lower_key = f"{lower:.1f}th Percentile (Outcome Effect)"
+        upper_key = f"{upper:.1f}th Percentile (Outcome Effect)"
+        ci_width_key = "Credible Interval Width (Outcome Effect)"
         if self.data_cleaned is None:
             raise ValueError("No data loaded for prediction.")
         if len(self.data_cleaned) == 0:
@@ -508,16 +532,15 @@ class ModelTrainer:
             X_new = self.data_cleaned[feature_cols].to_numpy()
             y_pred_samples = model.predict(covariates=X_new)
             posterior_mean = np.mean(y_pred_samples, axis=1)
-            perc_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
-            perc_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
-            ci_width = perc_97_5 - perc_2_5
+            perc_lower = np.percentile(y_pred_samples, lower, axis=1)
+            perc_upper = np.percentile(y_pred_samples, upper, axis=1)
+            ci_width = perc_upper - perc_lower
             predictions = {
                 "Posterior Mean (Outcome Effect)": posterior_mean,
-                "2.5th Percentile (Outcome Effect)": perc_2_5,
-                "97.5th Percentile (Outcome Effect)": perc_97_5,
-                "Credible Interval Width (Outcome Effect)": ci_width,
+                lower_key: perc_lower,
+                upper_key: perc_upper,
+                ci_width_key: ci_width,
             }
-
             return predictions
         except Exception as e:
             print(f"\nError in predict_outcome: {str(e)}")
@@ -567,7 +590,9 @@ class ModelTrainingWorker(QThread):
                 return
 
             self.progress.emit(80)
-            predictions = self.trainer.predict()
+            predictions = self.trainer.predict(
+                credible_interval=self.trainer.credible_interval
+            )
             if not self._is_running:
                 return
 
@@ -925,6 +950,7 @@ class Arborist(QMainWindow):
         self.train_ui.parametersMenu.setVisible(False)
         self.train_ui.codeGenTextEdit.setVisible(False)
         self.train_ui.parametersPushButton.clicked.connect(self.toggle_parameters_menu)
+        self.train_ui.codeGenTextEdit.setVisible(False)
         self.train_ui.codeGenPushButton.clicked.connect(self.toggle_code_gen_text)
         self.train_ui.trainResetButton.clicked.connect(self.reset_train_tab)
         self.train_ui.exportButton.setVisible(False)
@@ -1128,6 +1154,11 @@ class Arborist(QMainWindow):
                 y_std = np.std(y)
                 y_standardized = (y - y_mean) / y_std
 
+                # Define credible interval dynamically based on user input
+                credible_interval = {maybe_highlight("credible_interval", repr(self.train_ui.credibleIntervalComboBox.currentText()))}
+                lower = (100 - float(credible_interval.replace('%', '')))/2
+                upper = 100 - lower
+
                 # Model training
                 model = {maybe_highlight("model", model_name)}Model()
                 model.sample(
@@ -1143,17 +1174,17 @@ class Arborist(QMainWindow):
                 y_pred_samples = model.predict(covariates=X)
                 y_pred_samples = y_pred_samples * y_std + y_mean  # Convert back to original scale
 
-                # Compute posterior summaries
+                # Compute posterior summaries dynamically based on credible interval
                 posterior_mean = np.mean(y_pred_samples, axis=1)
-                percentile_2_5 = np.percentile(y_pred_samples, 2.5, axis=1)
-                percentile_97_5 = np.percentile(y_pred_samples, 97.5, axis=1)
-                credible_interval_width = percentile_97_5 - percentile_2_5
+                percentile_lower = np.percentile(y_pred_samples, lower, axis=1)
+                percentile_upper = np.percentile(y_pred_samples, upper, axis=1)
+                credible_interval_width = percentile_upper - percentile_lower
 
                 # Organize results with specific column order
                 results_df = pd.DataFrame({{
                     'Posterior Mean (Outcome Effect)': posterior_mean,
-                    '2.5th Percentile (Outcome Effect)': percentile_2_5,
-                    '97.5th Percentile (Outcome Effect)': percentile_97_5,
+                    f"{{lower:.1f}}th Percentile (Outcome Effect)": percentile_lower,
+                    f"{{upper:.1f}}th Percentile (Outcome Effect)": percentile_upper,
                     {maybe_highlight("outcome", repr(outcome_var))}: data_cleaned[{maybe_highlight("outcome", repr(outcome_var))}],
                     'Credible Interval Width (Outcome Effect)': credible_interval_width
                 }})
@@ -1212,6 +1243,11 @@ class Arborist(QMainWindow):
                 pi_train = propensity_model.predict_proba(X)[:, 1]
                 pi_test = pi_train  # Using the same data for testing
 
+                # Define credible interval dynamically based on user input
+                credible_interval = {maybe_highlight("credible_interval", repr(self.train_ui.credibleIntervalComboBox.currentText()))}
+                lower = (100 - float(credible_interval.replace('%', '')))/2
+                upper = 100 - lower
+
                 # Model training
                 model = {maybe_highlight("model", model_name)}Model()
                 model.sample(
@@ -1232,28 +1268,27 @@ class Arborist(QMainWindow):
                 tau_samples, mu_samples, yhat_samples = model.predict(X=X, Z=Z, propensity=pi_test)
                 yhat_samples = yhat_samples * y_std + y_mean  # Convert back to original scale
 
-                # Compute posterior summaries for outcome predictions
+                # Compute posterior summaries for outcome predictions dynamically
                 posterior_mean = np.mean(yhat_samples, axis=1)
-                percentile_2_5 = np.percentile(yhat_samples, 2.5, axis=1)
-                percentile_97_5 = np.percentile(yhat_samples, 97.5, axis=1)
-                credible_interval_width = percentile_97_5 - percentile_2_5
+                percentile_lower = np.percentile(yhat_samples, lower, axis=1)
+                percentile_upper = np.percentile(yhat_samples, upper, axis=1)
+                credible_interval_width = percentile_upper - percentile_lower
 
-                # Compute posterior summaries for CATE predictions
+                # Compute posterior summaries for Treatment Effect predictions dynamically
                 posterior_cate_mean = np.mean(tau_samples, axis=1)
-                cate_percentile_2_5 = np.percentile(tau_samples, 2.5, axis=1)
-                cate_percentile_97_5 = np.percentile(tau_samples, 97.5, axis=1)
-                credible_interval_width_cate = cate_percentile_97_5 - cate_percentile_2_5
+                cate_percentile_lower = np.percentile(tau_samples, lower, axis=1)
+                cate_percentile_upper = np.percentile(tau_samples, upper, axis=1)
+                credible_interval_width_cate = cate_percentile_upper - cate_percentile_lower
 
                 # For BCF models, organize results with specific column order
                 bcf_results_df = pd.DataFrame({{
                     'Posterior Mean (Treatment Effect)': posterior_cate_mean,
-                    '2.5th Percentile (Treatment Effect)': cate_percentile_2_5,
-                    '97.5th Percentile (Treatment Effect)': cate_percentile_97_5,
+                    f"{{lower:.1f}}th Percentile (Treatment Effect)": cate_percentile_lower,
+                    f"{{upper:.1f}}th Percentile (Treatment Effect)": cate_percentile_upper,
                     'Credible Interval Width (Treatment Effect)': credible_interval_width_cate,
                     'Posterior Mean (Outcome Effect)': posterior_mean,
-                    '2.5th Percentile (Outcome Effect)': percentile_2_5,
-                    '97.5th Percentile (Outcome Effect)': percentile_97_5,
-                    {maybe_highlight("outcome", repr(outcome_var))}: data_cleaned[{maybe_highlight("outcome", repr(outcome_var))}],
+                    f"{{lower:.1f}}th Percentile (Outcome Effect)": percentile_lower,
+                    f"{{upper:.1f}}th Percentile (Outcome Effect)": percentile_upper,
                     'Credible Interval Width (Outcome Effect)': credible_interval_width
                 }})
 
@@ -1347,7 +1382,15 @@ class Arborist(QMainWindow):
             progress.setValue(30)
             trainer.load_data()
             progress.setValue(60)
-            predictions = trainer.predict_outcome(self.trained_model)
+            # Pass the credible interval from the combo box (e.g., 95 or 99)
+            ci_str = self.train_ui.credibleIntervalComboBox.currentText().replace(
+                "%", ""
+            )
+            credible_interval = float(ci_str)
+            trainer.credible_interval = credible_interval
+            predictions = trainer.predict_outcome(
+                self.trained_model, credible_interval=credible_interval
+            )
             progress.setValue(90)
             self.display_predictions(predictions, trainer.data_cleaned)
             progress.setValue(100)
@@ -1367,71 +1410,103 @@ class Arborist(QMainWindow):
         self, predictions: dict, cleaned_data: pd.DataFrame
     ) -> None:
         """
-        Display the predictions alongside the cleaned dataset.
+        Display the predictions alongside the cleaned data.
 
         This method combines prediction summary columns with the cleaned data and configures the table view.
         """
         try:
             df = cleaned_data
             headers = df.columns.tolist()
+            # Determine if this is a BCF model (has treatment effect keys) or BART
             is_bcf = "Posterior Mean (Treatment Effect)" in predictions
+            # Recompute lower and upper based on the trainer's credible_interval
+            ci = (
+                self.trainer.credible_interval
+                if self.trainer and hasattr(self.trainer, "credible_interval")
+                else 95
+            )
+            lower = (100 - ci) / 2
+            upper = 100 - lower
+            lower_key_out = f"{lower:.1f}th Percentile (Outcome Effect)"
+            upper_key_out = f"{upper:.1f}th Percentile (Outcome Effect)"
             if is_bcf:
-                prediction_headers = [
+                lower_key_tr = f"{lower:.1f}th Percentile (Treatment Effect)"
+                upper_key_tr = f"{upper:.1f}th Percentile (Treatment Effect)"
+                bcf_column_order = [
                     "Posterior Mean (Treatment Effect)",
-                    "2.5th Percentile (Treatment Effect)",
-                    "97.5th Percentile (Treatment Effect)",
+                    lower_key_tr,
+                    upper_key_tr,
                     "Credible Interval Width (Treatment Effect)",
                     "Posterior Mean (Outcome Effect)",
-                    "2.5th Percentile (Outcome Effect)",
-                    "97.5th Percentile (Outcome Effect)",
+                    lower_key_out,
+                    upper_key_out,
                     "Credible Interval Width (Outcome Effect)",
                 ]
-            else:
-                prediction_headers = [
-                    "Posterior Mean (Outcome Effect)",
-                    "2.5th Percentile (Outcome Effect)",
-                    "97.5th Percentile (Outcome Effect)",
-                    "Credible Interval Width (Outcome Effect)",
-                ]
-            combined_headers = prediction_headers + headers
-            prediction_data = {}
-            if is_bcf:
-                prediction_data.update(
-                    {
-                        "Posterior Mean (Treatment Effect)": predictions[
-                            "Posterior Mean (Treatment Effect)"
-                        ],
-                        "2.5th Percentile (Treatment Effect)": predictions[
-                            "2.5th Percentile (Treatment Effect)"
-                        ],
-                        "97.5th Percentile (Treatment Effect)": predictions[
-                            "97.5th Percentile (Treatment Effect)"
-                        ],
-                        "Credible Interval Width (Treatment Effect)": predictions[
-                            "Credible Interval Width (Treatment Effect)"
-                        ],
-                    }
-                )
-            prediction_data.update(
-                {
+                predictions_dict = {
+                    "Posterior Mean (Treatment Effect)": predictions[
+                        "Posterior Mean (Treatment Effect)"
+                    ],
+                    lower_key_tr: predictions[lower_key_tr],
+                    upper_key_tr: predictions[upper_key_tr],
+                    "Credible Interval Width (Treatment Effect)": predictions[
+                        "Credible Interval Width (Treatment Effect)"
+                    ],
                     "Posterior Mean (Outcome Effect)": predictions[
                         "Posterior Mean (Outcome Effect)"
                     ],
-                    "2.5th Percentile (Outcome Effect)": predictions[
-                        "2.5th Percentile (Outcome Effect)"
-                    ],
-                    "97.5th Percentile (Outcome Effect)": predictions[
-                        "97.5th Percentile (Outcome Effect)"
-                    ],
+                    lower_key_out: predictions[lower_key_out],
+                    upper_key_out: predictions[upper_key_out],
                     "Credible Interval Width (Outcome Effect)": predictions[
                         "Credible Interval Width (Outcome Effect)"
                     ],
                 }
-            )
-            prediction_df = pd.DataFrame(prediction_data)
-            combined_df = pd.concat([prediction_df, df], axis=1)
-            model = PandasTableModel(combined_df, combined_headers, predictions)
-            self.predict_ui.tableView.setModel(model)
+                # For both models, we want to insert the outcome column in the 4th position.
+                # For BCF, drop the outcome column from the data first.
+                outcome_var = self.train_ui.outcomeComboBox.currentText()
+                df_without_outcome = df.drop(columns=[outcome_var])
+                # Create predictions DataFrame from predictions_dict based on the defined order.
+                ordered_pred_df = pd.DataFrame(predictions_dict)[bcf_column_order]
+                # Now, reinsert the outcome column from the original df at position 3.
+                outcome_series = df[outcome_var]
+                ordered_pred_df.insert(3, outcome_var, outcome_series)
+                combined_df = pd.concat([ordered_pred_df, df_without_outcome], axis=1)
+                combined_headers = (
+                    list(ordered_pred_df.columns) + df_without_outcome.columns.tolist()
+                )
+            else:
+                bart_column_order = [
+                    "Posterior Mean (Outcome Effect)",
+                    lower_key_out,
+                    upper_key_out,
+                    "Credible Interval Width (Outcome Effect)",
+                ]
+                predictions_dict = {
+                    "Posterior Mean (Outcome Effect)": predictions[
+                        "Posterior Mean (Outcome Effect)"
+                    ],
+                    lower_key_out: predictions[lower_key_out],
+                    upper_key_out: predictions[upper_key_out],
+                    "Credible Interval Width (Outcome Effect)": predictions[
+                        "Credible Interval Width (Outcome Effect)"
+                    ],
+                }
+                outcome_var = self.train_ui.outcomeComboBox.currentText()
+                df_without_outcome = df.drop(columns=[outcome_var])
+                ordered_pred_df = pd.DataFrame(predictions_dict)[bart_column_order]
+                # Reinsert the outcome column in the 4th position (index 3)
+                outcome_series = df[outcome_var]
+                ordered_pred_df.insert(3, outcome_var, outcome_series)
+                combined_df = pd.concat([ordered_pred_df, df_without_outcome], axis=1)
+                combined_headers = (
+                    list(ordered_pred_df.columns) + df_without_outcome.columns.tolist()
+                )
+
+            # Update headers to match the new column order
+            full_headers = list(combined_df.columns)
+
+            # Create and set the table model
+            model_table = PandasTableModel(combined_df, full_headers, predictions)
+            self.predict_ui.tableView.setModel(model_table)
             self.predict_ui.tableView.horizontalHeader().setSectionResizeMode(
                 QHeaderView.ResizeToContents
             )
@@ -1710,6 +1785,11 @@ class Arborist(QMainWindow):
                 outcome_var=outcome_var,
                 treatment_var=treatment_var,
             )
+            # Set the credible interval from the combo box (e.g., "95%" or "99%")
+            ci_str = self.train_ui.credibleIntervalComboBox.currentText().replace(
+                "%", ""
+            )
+            self.trainer.credible_interval = float(ci_str)
 
             model_params = {
                 "model_name": model_name,
@@ -1816,83 +1896,80 @@ class Arborist(QMainWindow):
 
             # Create a copy of the dataframe without the outcome variable
             df_without_outcome = df.drop(columns=[outcome_var])
-
-            # Create prediction DataFrames with explicit column ordering
+            # Recompute the lower and upper percentiles based on the trainer's credible_interval
+            ci = (
+                self.trainer.credible_interval
+                if self.trainer and hasattr(self.trainer, "credible_interval")
+                else 95
+            )
+            lower = (100 - ci) / 2
+            upper = 100 - lower
+            lower_key_out = f"{lower:.1f}th Percentile (Outcome Effect)"
+            upper_key_out = f"{upper:.1f}th Percentile (Outcome Effect)"
             if isinstance(model, BCFModel):
+                lower_key_tr = f"{lower:.1f}th Percentile (Treatment Effect)"
+                upper_key_tr = f"{upper:.1f}th Percentile (Treatment Effect)"
                 bcf_column_order = [
                     "Posterior Mean (Treatment Effect)",
-                    "2.5th Percentile (Treatment Effect)",
-                    "97.5th Percentile (Treatment Effect)",
+                    lower_key_tr,
+                    upper_key_tr,
                     "Credible Interval Width (Treatment Effect)",
                     "Posterior Mean (Outcome Effect)",
-                    "2.5th Percentile (Outcome Effect)",
-                    "97.5th Percentile (Outcome Effect)",
-                    outcome_var,
+                    lower_key_out,
+                    upper_key_out,
                     "Credible Interval Width (Outcome Effect)",
                 ]
-
-                # Create a single dictionary with all predictions
                 predictions_dict = {
                     "Posterior Mean (Treatment Effect)": predictions[
                         "Posterior Mean (Treatment Effect)"
                     ],
-                    "2.5th Percentile (Treatment Effect)": predictions[
-                        "2.5th Percentile (Treatment Effect)"
-                    ],
-                    "97.5th Percentile (Treatment Effect)": predictions[
-                        "97.5th Percentile (Treatment Effect)"
-                    ],
+                    lower_key_tr: predictions[lower_key_tr],
+                    upper_key_tr: predictions[upper_key_tr],
                     "Credible Interval Width (Treatment Effect)": predictions[
                         "Credible Interval Width (Treatment Effect)"
                     ],
                     "Posterior Mean (Outcome Effect)": predictions[
                         "Posterior Mean (Outcome Effect)"
                     ],
-                    "2.5th Percentile (Outcome Effect)": predictions[
-                        "2.5th Percentile (Outcome Effect)"
-                    ],
-                    "97.5th Percentile (Outcome Effect)": predictions[
-                        "97.5th Percentile (Outcome Effect)"
-                    ],
-                    outcome_var: df[outcome_var],
+                    lower_key_out: predictions[lower_key_out],
+                    upper_key_out: predictions[upper_key_out],
                     "Credible Interval Width (Outcome Effect)": predictions[
                         "Credible Interval Width (Outcome Effect)"
                     ],
                 }
-
-                # Create DataFrame with explicit column order
+                # Remove outcome_var from predictions since it is not in predictions_dict.
+                # Then reinsert it from the original dataframe.
                 ordered_pred_df = pd.DataFrame(predictions_dict)[bcf_column_order]
-
-                # Combine with remaining columns
+                outcome_series = df[outcome_var]
+                ordered_pred_df.insert(3, outcome_var, outcome_series)
                 combined_df = pd.concat([ordered_pred_df, df_without_outcome], axis=1)
-
+                combined_headers = (
+                    list(ordered_pred_df.columns) + df_without_outcome.columns.tolist()
+                )
             else:
                 bart_column_order = [
                     "Posterior Mean (Outcome Effect)",
-                    "2.5th Percentile (Outcome Effect)",
-                    "97.5th Percentile (Outcome Effect)",
-                    outcome_var,
+                    lower_key_out,
+                    upper_key_out,
                     "Credible Interval Width (Outcome Effect)",
                 ]
-
                 predictions_dict = {
                     "Posterior Mean (Outcome Effect)": predictions[
                         "Posterior Mean (Outcome Effect)"
                     ],
-                    "2.5th Percentile (Outcome Effect)": predictions[
-                        "2.5th Percentile (Outcome Effect)"
-                    ],
-                    "97.5th Percentile (Outcome Effect)": predictions[
-                        "97.5th Percentile (Outcome Effect)"
-                    ],
-                    outcome_var: df[outcome_var],
+                    lower_key_out: predictions[lower_key_out],
+                    upper_key_out: predictions[upper_key_out],
                     "Credible Interval Width (Outcome Effect)": predictions[
                         "Credible Interval Width (Outcome Effect)"
                     ],
                 }
-
                 ordered_pred_df = pd.DataFrame(predictions_dict)[bart_column_order]
+                outcome_series = df[outcome_var]
+                ordered_pred_df.insert(3, outcome_var, outcome_series)
                 combined_df = pd.concat([ordered_pred_df, df_without_outcome], axis=1)
+                combined_headers = (
+                    list(ordered_pred_df.columns) + df_without_outcome.columns.tolist()
+                )
 
             # Update headers to match the new column order
             full_headers = list(combined_df.columns)
