@@ -92,7 +92,6 @@ QHeaderView::section {
 QComboBox {
     background-color: #2A2A3A;
     border: 1px solid #333;
-    padding: 4px;
     border-radius: 4px;
     color: #E0E0E0;
 }
