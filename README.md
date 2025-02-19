@@ -12,8 +12,8 @@
 
 # Development
 - Activate venv: `source venv/bin/activate`
-- Change to the directory of the project: `arborist/src/arborist`
-- Build the layouts:
-  -  `pyside6-uic load.ui -o load.py`:
-  -  `pyside6-uic train.ui -o train.py`:
-  -  `pyside6-uic predict.ui -o predict.py`:
+- Change to the layouts directory: `cd arborist/src/arborist/layouts`
+- Building the layouts (run the following commands for the respective layouts):
+  -  `pyside6-uic load.ui -o load.py`
+  -  `pyside6-uic train.ui -o train.py`
+  -  `pyside6-uic predict.ui -o predict.py`
