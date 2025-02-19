@@ -202,17 +202,17 @@ class Ui_TrainTab(object):
 
         self.horizontalLayout_8.addWidget(self.pushButton)
 
-
-        self.horizontalLayout_3.addWidget(self.frame_7)
-
-        self.exportButton = QPushButton(self.frame_3)
+        self.exportButton = QPushButton(self.frame_7)
         self.exportButton.setObjectName(u"exportButton")
         sizePolicy2.setHeightForWidth(self.exportButton.sizePolicy().hasHeightForWidth())
         self.exportButton.setSizePolicy(sizePolicy2)
-        self.exportButton.setMinimumSize(QSize(30, 30))
-        self.exportButton.setVisible(False)
+        self.exportButton.setMinimumSize(QSize(0, 0))
+        self.exportButton.setVisible(True)
 
-        self.horizontalLayout_3.addWidget(self.exportButton)
+        self.horizontalLayout_8.addWidget(self.exportButton)
+
+
+        self.horizontalLayout_3.addWidget(self.frame_7)
 
 
         self.horizontalLayout.addWidget(self.frame_3)
@@ -508,7 +508,7 @@ class Ui_TrainTab(object):
 
         self.trainButton.setText(QCoreApplication.translate("TrainTab", u"Train", None))
         self.pushButton.setText(QCoreApplication.translate("TrainTab", u"Predict", None))
-        self.exportButton.setText(QCoreApplication.translate("TrainTab", u"Export Data", None))
+        self.exportButton.setText(QCoreApplication.translate("TrainTab", u"Export", None))
         self.codeGenPushButton.setText(QCoreApplication.translate("TrainTab", u"Code Gen", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Hyperparameters", None))
         self.trainResetButton.setText(QCoreApplication.translate("TrainTab", u"Reset", None))
