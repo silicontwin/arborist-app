@@ -922,6 +922,12 @@ class Arborist(QMainWindow):
         self.train_ui.trainResetButton.clicked.connect(self.reset_train_tab)
         self.train_ui.exportButton.setVisible(False)
         self.train_ui.exportButton.clicked.connect(self.export_data)
+        self.train_ui.pushButton.clicked.connect(
+            lambda: (
+                self.tabs.setCurrentIndex(2),
+                self.predict_ui.predictButton.setVisible(True),
+            )
+        )
         self.no_dataset_label = self.train_ui.no_dataset_label
         self.analytics_viewer = self.train_ui.analytics_viewer
         self.outcome_combo = self.train_ui.outcomeComboBox
