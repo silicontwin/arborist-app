@@ -931,6 +931,7 @@ class Arborist(QMainWindow):
         self.no_dataset_label.setVisible(True)
         self.analytics_viewer.setVisible(False)
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
+        self.train_ui.pushButton.setVisible(False)
 
     def reset_train_tab(self) -> None:
         """
@@ -979,6 +980,7 @@ class Arborist(QMainWindow):
         self.analytics_viewer.setVisible(False)
         self.train_ui.exportButton.setVisible(False)
         self.train_button.setEnabled(True)
+        self.train_ui.pushButton.setVisible(False)
 
         # Reset the Predict tab UI:
         self.predict_ui.tableView.setModel(None)
@@ -1288,6 +1290,7 @@ class Arborist(QMainWindow):
         self.predict_ui.selectFileButton.clicked.connect(self.select_predict_file)
         self.predict_ui.predictButton.clicked.connect(self.run_prediction)
         self.predict_ui.resetButton.clicked.connect(self.reset_predict_tab)
+        # self.predict_ui.predictButton.setVisible(False)
 
     def reset_predict_tab(self) -> None:
         """
@@ -1300,6 +1303,7 @@ class Arborist(QMainWindow):
         )
         self.tabs.setCurrentIndex(0)
         self.update_tab_states()
+        self.predict_ui.predictButton.setVisible(False)
 
     def run_prediction(self) -> None:
         """
@@ -1775,6 +1779,8 @@ class Arborist(QMainWindow):
 
         self.trained_model = model
         self.update_tab_states()
+        self.train_ui.pushButton.setVisible(True)
+        # self.predict_ui.predictButton.setVisible(True)
 
         try:
             # Update the display with predictions
