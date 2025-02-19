@@ -50,7 +50,7 @@ from stochtree import BCFModel, BARTModel
 
 # Current version and repository details
 CURRENT_VERSION = "v0.1.0"
-GITHUB_REPO = "silicontwin/arborist-app"
+GITHUB_REPO = "silicontwin/arborist"
 
 
 def auto_one_hot_encode(df: pd.DataFrame) -> pd.DataFrame:
