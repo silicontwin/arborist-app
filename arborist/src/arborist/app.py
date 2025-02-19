@@ -760,6 +760,13 @@ class Arborist(QMainWindow):
 
         self.tabs.setTabEnabled(1, False)  # Disable Train tab initially.
         self.tabs.setTabEnabled(2, False)  # Disable Predict tab initially.
+
+        # Connect both tab changes and model changes to visibility check
+        self.tabs.currentChanged.connect(self.check_model_frame_visibility)
+        self.train_ui.modelComboBox.currentTextChanged.connect(
+            self.check_model_frame_visibility
+        )
+
         self.tabs.currentChanged.connect(self.check_model_frame_visibility)
         self.train_ui.modelComboBox.currentIndexChanged.connect(
             lambda _: self.trigger_code_highlight("model")
