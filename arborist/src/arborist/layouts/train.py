@@ -289,19 +289,14 @@ class Ui_TrainTab(object):
 
         self.parametersMenu = QFrame(self.frame_6)
         self.parametersMenu.setObjectName(u"parametersMenu")
-        self.parametersMenu.setMinimumSize(QSize(300, 0))
-        self.parametersMenu.setVisible(False)
+        self.parametersMenu.setMinimumSize(QSize(0, 0))
+        self.parametersMenu.setVisible(True)
         self.verticalLayout_Parameters = QVBoxLayout(self.parametersMenu)
         self.verticalLayout_Parameters.setSpacing(10)
         self.verticalLayout_Parameters.setObjectName(u"verticalLayout_Parameters")
         self.verticalLayout_Parameters.setContentsMargins(10, 10, 10, 10)
-        self.parametersTitleLabel = QLabel(self.parametersMenu)
-        self.parametersTitleLabel.setObjectName(u"parametersTitleLabel")
-        self.parametersTitleLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        self.verticalLayout_Parameters.addWidget(self.parametersTitleLabel)
-
         self.horizontalLayout_Trees = QHBoxLayout()
+        self.horizontalLayout_Trees.setSpacing(10)
         self.horizontalLayout_Trees.setObjectName(u"horizontalLayout_Trees")
         self.treesLabel = QLabel(self.parametersMenu)
         self.treesLabel.setObjectName(u"treesLabel")
@@ -320,6 +315,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Trees)
 
         self.horizontalLayout_BurnIn = QHBoxLayout()
+        self.horizontalLayout_BurnIn.setSpacing(10)
         self.horizontalLayout_BurnIn.setObjectName(u"horizontalLayout_BurnIn")
         self.burnInLabel = QLabel(self.parametersMenu)
         self.burnInLabel.setObjectName(u"burnInLabel")
@@ -338,6 +334,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_BurnIn)
 
         self.horizontalLayout_Draws = QHBoxLayout()
+        self.horizontalLayout_Draws.setSpacing(10)
         self.horizontalLayout_Draws.setObjectName(u"horizontalLayout_Draws")
         self.drawsLabel = QLabel(self.parametersMenu)
         self.drawsLabel.setObjectName(u"drawsLabel")
@@ -356,6 +353,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Draws)
 
         self.horizontalLayout_Thinning = QHBoxLayout()
+        self.horizontalLayout_Thinning.setSpacing(10)
         self.horizontalLayout_Thinning.setObjectName(u"horizontalLayout_Thinning")
         self.thinningLabel = QLabel(self.parametersMenu)
         self.thinningLabel.setObjectName(u"thinningLabel")
@@ -374,6 +372,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Thinning)
 
         self.horizontalLayout_PriorMean = QHBoxLayout()
+        self.horizontalLayout_PriorMean.setSpacing(10)
         self.horizontalLayout_PriorMean.setObjectName(u"horizontalLayout_PriorMean")
         self.priorMeanLabel = QLabel(self.parametersMenu)
         self.priorMeanLabel.setObjectName(u"priorMeanLabel")
@@ -392,6 +391,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_PriorMean)
 
         self.horizontalLayout_PriorVariance = QHBoxLayout()
+        self.horizontalLayout_PriorVariance.setSpacing(10)
         self.horizontalLayout_PriorVariance.setObjectName(u"horizontalLayout_PriorVariance")
         self.priorVarianceLabel = QLabel(self.parametersMenu)
         self.priorVarianceLabel.setObjectName(u"priorVarianceLabel")
@@ -410,6 +410,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_PriorVariance)
 
         self.horizontalLayout_Alpha = QHBoxLayout()
+        self.horizontalLayout_Alpha.setSpacing(10)
         self.horizontalLayout_Alpha.setObjectName(u"horizontalLayout_Alpha")
         self.alphaLabel = QLabel(self.parametersMenu)
         self.alphaLabel.setObjectName(u"alphaLabel")
@@ -428,6 +429,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Alpha)
 
         self.horizontalLayout_Beta = QHBoxLayout()
+        self.horizontalLayout_Beta.setSpacing(10)
         self.horizontalLayout_Beta.setObjectName(u"horizontalLayout_Beta")
         self.betaLabel = QLabel(self.parametersMenu)
         self.betaLabel.setObjectName(u"betaLabel")
@@ -446,6 +448,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Beta)
 
         self.horizontalLayout_Depth = QHBoxLayout()
+        self.horizontalLayout_Depth.setSpacing(10)
         self.horizontalLayout_Depth.setObjectName(u"horizontalLayout_Depth")
         self.treeDepthLabel = QLabel(self.parametersMenu)
         self.treeDepthLabel.setObjectName(u"treeDepthLabel")
@@ -464,6 +467,7 @@ class Ui_TrainTab(object):
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_Depth)
 
         self.horizontalLayout_NodeSize = QHBoxLayout()
+        self.horizontalLayout_NodeSize.setSpacing(10)
         self.horizontalLayout_NodeSize.setObjectName(u"horizontalLayout_NodeSize")
         self.nodeSizeLabel = QLabel(self.parametersMenu)
         self.nodeSizeLabel.setObjectName(u"nodeSizeLabel")
@@ -480,6 +484,10 @@ class Ui_TrainTab(object):
 
 
         self.verticalLayout_Parameters.addLayout(self.horizontalLayout_NodeSize)
+
+        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
+
+        self.verticalLayout_Parameters.addItem(self.verticalSpacer)
 
 
         self.horizontalLayout_6.addWidget(self.parametersMenu)
@@ -513,7 +521,6 @@ class Ui_TrainTab(object):
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Hyperparameters", None))
         self.trainResetButton.setText(QCoreApplication.translate("TrainTab", u"Reset", None))
         self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Load\" tab", None))
-        self.parametersTitleLabel.setText(QCoreApplication.translate("TrainTab", u"Model Hyperparameters", None))
         self.treesLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Trees (M)", None))
         self.burnInLabel.setText(QCoreApplication.translate("TrainTab", u"Burn-in Iterations", None))
         self.drawsLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Draws", None))
