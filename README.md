@@ -1,7 +1,9 @@
 # Installation
 - Create venv: `python3 -m venv venv`
 - Activate venv: `source venv/bin/activate`
+- Select the correct Python intepreter (so that you install packages in the venv)
 - Install requirements: `pip install -r requirements.txt`
+- Check the installation: `pip list`
 
 # Usage
 - Activate venv: `source venv/bin/activate`
