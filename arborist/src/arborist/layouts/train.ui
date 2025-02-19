@@ -34,6 +34,12 @@
    </property>
    <item>
     <widget class="QFrame" name="frame">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="frameShape">
       <enum>QFrame::Shape::NoFrame</enum>
      </property>
@@ -145,7 +151,7 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>100</width>
+                <width>0</width>
                 <height>0</height>
                </size>
               </property>
@@ -222,7 +228,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>Outcome Variable (y):</string>
+               <string>Outcome (y):</string>
               </property>
              </widget>
             </item>
@@ -236,7 +242,7 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>200</width>
+                <width>0</width>
                 <height>0</height>
                </size>
               </property>
@@ -284,7 +290,7 @@
                </sizepolicy>
               </property>
               <property name="text">
-               <string>Treatment Variable (Z):</string>
+               <string>Treatment (Z):</string>
               </property>
              </widget>
             </item>
@@ -302,7 +308,73 @@
           </widget>
          </item>
          <item>
+          <widget class="QFrame" name="frame_8">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::Shape::NoFrame</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Shadow::Raised</enum>
+           </property>
+           <layout class="QHBoxLayout" name="horizontalLayout_7">
+            <property name="spacing">
+             <number>0</number>
+            </property>
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item>
+             <widget class="QLabel" name="label_2">
+              <property name="text">
+               <string>Credible Interval:</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QComboBox" name="credibleIntervalComboBox">
+              <item>
+               <property name="text">
+                <string>95%</string>
+               </property>
+              </item>
+              <item>
+               <property name="text">
+                <string>99%</string>
+               </property>
+              </item>
+             </widget>
+            </item>
+           </layout>
+          </widget>
+         </item>
+         <item>
           <widget class="QFrame" name="frame_7">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
            <property name="minimumSize">
             <size>
              <width>0</width>
@@ -346,7 +418,7 @@
                </size>
               </property>
               <property name="text">
-               <string>Train Model</string>
+               <string>Train</string>
               </property>
              </widget>
             </item>
@@ -468,7 +540,7 @@
             </size>
            </property>
            <property name="text">
-            <string>Parameters</string>
+            <string>Hyperparameters</string>
            </property>
           </widget>
          </item>
@@ -575,7 +647,7 @@
          <item>
           <widget class="QLabel" name="parametersTitleLabel">
            <property name="text">
-            <string>Model Parameters</string>
+            <string>Model Hyperparameters</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignCenter</set>
