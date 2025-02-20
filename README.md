@@ -16,4 +16,5 @@
 - Building the layouts (run the following commands for the respective layouts):
   -  `pyside6-uic load.ui -o load.py`
   -  `pyside6-uic train.ui -o train.py`
+  -  `pyside6-uic plot.ui -o plot.py`
   -  `pyside6-uic predict.ui -o predict.py`
