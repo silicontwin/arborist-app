@@ -242,7 +242,7 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>180</width>
+                <width>160</width>
                 <height>0</height>
                </size>
               </property>
@@ -304,7 +304,7 @@
               </property>
               <property name="minimumSize">
                <size>
-                <width>180</width>
+                <width>160</width>
                 <height>0</height>
                </size>
               </property>
@@ -435,25 +435,6 @@
              </widget>
             </item>
             <item>
-             <widget class="QPushButton" name="pushButton">
-              <property name="sizePolicy">
-               <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
-                <horstretch>0</horstretch>
-                <verstretch>0</verstretch>
-               </sizepolicy>
-              </property>
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>0</height>
-               </size>
-              </property>
-              <property name="text">
-               <string>Predict</string>
-              </property>
-             </widget>
-            </item>
-            <item>
              <widget class="QPushButton" name="exportButton">
               <property name="sizePolicy">
                <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
@@ -472,6 +453,32 @@
               </property>
               <property name="text">
                <string>Export</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="plotButton">
+              <property name="text">
+               <string>Plot</string>
+              </property>
+             </widget>
+            </item>
+            <item>
+             <widget class="QPushButton" name="pushButton">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>0</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="text">
+               <string>Predict</string>
               </property>
              </widget>
             </item>
@@ -670,12 +677,16 @@
            <item>
             <widget class="QLabel" name="treesLabel">
              <property name="text">
-              <string>Number of Trees (M)</string>
+              <string>Total Number of Trees</string>
              </property>
             </widget>
            </item>
            <item>
             <widget class="QSpinBox" name="treesSpinBox">
+             <property name="toolTip">
+              <string>For BART: Total number of trees in single forest
+            For BCF: Total trees split between prognostic forest (250 trees) and treatment effect forest (50 trees)</string>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
@@ -683,7 +694,7 @@
               <number>1000</number>
              </property>
              <property name="value">
-              <number>100</number>
+              <number>300</number>
              </property>
             </widget>
            </item>
@@ -703,6 +714,9 @@
            </item>
            <item>
             <widget class="QSpinBox" name="burnInSpinBox">
+             <property name="toolTip">
+              <string>Number of initial MCMC iterations to discard</string>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
@@ -730,6 +744,9 @@
            </item>
            <item>
             <widget class="QSpinBox" name="drawsSpinBox">
+             <property name="toolTip">
+              <string>Number of MCMC iterations to retain after burn-in</string>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
@@ -757,6 +774,9 @@
            </item>
            <item>
             <widget class="QSpinBox" name="thinningSpinBox">
+             <property name="toolTip">
+              <string>Keep every nth MCMC draw (reduces autocorrelation)</string>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
@@ -784,11 +804,14 @@
            </item>
            <item>
             <widget class="QDoubleSpinBox" name="priorMeanSpinBox">
+             <property name="toolTip">
+              <string>Prior mean of the leaf parameters (default: 0)</string>
+             </property>
              <property name="minimum">
-              <double>0.000000000000000</double>
+              <double>-10.000000000000000</double>
              </property>
              <property name="maximum">
-              <double>0.000000000000000</double>
+              <double>10.000000000000000</double>
              </property>
              <property name="value">
               <double>0.000000000000000</double>
@@ -811,14 +834,17 @@
            </item>
            <item>
             <widget class="QDoubleSpinBox" name="priorVarianceSpinBox">
+             <property name="toolTip">
+              <string>Prior variance of the leaf parameters</string>
+             </property>
              <property name="minimum">
               <double>0.000000000000000</double>
              </property>
              <property name="maximum">
-              <double>0.000000000000000</double>
+              <double>10.000000000000000</double>
              </property>
              <property name="value">
-              <double>0.000000000000000</double>
+              <double>1.000000000000000</double>
              </property>
             </widget>
            </item>
@@ -838,14 +864,22 @@
            </item>
            <item>
             <widget class="QDoubleSpinBox" name="alphaSpinBox">
+             <property name="toolTip">
+              <string>Prior probability of splitting at depth 0
+            For BART: Uses 0.95
+            For BCF: Uses 0.95 for prognostic forest, 0.25 for treatment forest</string>
+             </property>
              <property name="minimum">
               <double>0.000000000000000</double>
              </property>
              <property name="maximum">
-              <double>0.000000000000000</double>
+              <double>1.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
              </property>
              <property name="value">
-              <double>0.000000000000000</double>
+              <double>0.950000000000000</double>
              </property>
             </widget>
            </item>
@@ -865,6 +899,11 @@
            </item>
            <item>
             <widget class="QSpinBox" name="betaSpinBox">
+             <property name="toolTip">
+              <string>Penalizes tree depth
+            For BART: Uses 2
+            For BCF: Uses 2 for prognostic forest, 3 for treatment forest</string>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
@@ -892,14 +931,19 @@
            </item>
            <item>
             <widget class="QSpinBox" name="treeDepthSpinBox">
+             <property name="toolTip">
+              <string>Maximum depth of any tree in the forest(s)
+            For BART: Uses 10
+            For BCF: Uses 10 for prognostic forest, 5 for treatment forest</string>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>
              <property name="maximum">
-              <number>10</number>
+              <number>20</number>
              </property>
              <property name="value">
-              <number>3</number>
+              <number>10</number>
              </property>
             </widget>
            </item>
@@ -919,6 +963,9 @@
            </item>
            <item>
             <widget class="QSpinBox" name="nodeSizeSpinBox">
+             <property name="toolTip">
+              <string>Minimum number of observations required in each leaf node</string>
+             </property>
              <property name="minimum">
               <number>1</number>
              </property>

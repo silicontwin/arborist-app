@@ -3,7 +3,7 @@
 ################################################################################
 ## Form generated from reading UI file 'train.ui'
 ##
-## Created by: Qt User Interface Compiler version 6.8.0
+## Created by: Qt User Interface Compiler version 6.8.2
 ##
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
@@ -112,7 +112,7 @@ class Ui_TrainTab(object):
         self.outcomeComboBox.setObjectName(u"outcomeComboBox")
         sizePolicy1.setHeightForWidth(self.outcomeComboBox.sizePolicy().hasHeightForWidth())
         self.outcomeComboBox.setSizePolicy(sizePolicy1)
-        self.outcomeComboBox.setMinimumSize(QSize(180, 0))
+        self.outcomeComboBox.setMinimumSize(QSize(160, 0))
 
         self.horizontalLayout_2.addWidget(self.outcomeComboBox)
 
@@ -140,7 +140,7 @@ class Ui_TrainTab(object):
         self.treatmentComboBox.setObjectName(u"treatmentComboBox")
         sizePolicy1.setHeightForWidth(self.treatmentComboBox.sizePolicy().hasHeightForWidth())
         self.treatmentComboBox.setSizePolicy(sizePolicy1)
-        self.treatmentComboBox.setMinimumSize(QSize(180, 0))
+        self.treatmentComboBox.setMinimumSize(QSize(160, 0))
 
         self.horizontalLayout_9.addWidget(self.treatmentComboBox)
 
@@ -196,14 +196,6 @@ class Ui_TrainTab(object):
 
         self.horizontalLayout_8.addWidget(self.trainButton)
 
-        self.pushButton = QPushButton(self.frame_7)
-        self.pushButton.setObjectName(u"pushButton")
-        sizePolicy2.setHeightForWidth(self.pushButton.sizePolicy().hasHeightForWidth())
-        self.pushButton.setSizePolicy(sizePolicy2)
-        self.pushButton.setMinimumSize(QSize(0, 0))
-
-        self.horizontalLayout_8.addWidget(self.pushButton)
-
         self.exportButton = QPushButton(self.frame_7)
         self.exportButton.setObjectName(u"exportButton")
         sizePolicy2.setHeightForWidth(self.exportButton.sizePolicy().hasHeightForWidth())
@@ -212,6 +204,19 @@ class Ui_TrainTab(object):
         self.exportButton.setVisible(True)
 
         self.horizontalLayout_8.addWidget(self.exportButton)
+
+        self.plotButton = QPushButton(self.frame_7)
+        self.plotButton.setObjectName(u"plotButton")
+
+        self.horizontalLayout_8.addWidget(self.plotButton)
+
+        self.pushButton = QPushButton(self.frame_7)
+        self.pushButton.setObjectName(u"pushButton")
+        sizePolicy2.setHeightForWidth(self.pushButton.sizePolicy().hasHeightForWidth())
+        self.pushButton.setSizePolicy(sizePolicy2)
+        self.pushButton.setMinimumSize(QSize(0, 0))
+
+        self.horizontalLayout_8.addWidget(self.pushButton)
 
 
         self.horizontalLayout_3.addWidget(self.frame_7)
@@ -309,7 +314,7 @@ class Ui_TrainTab(object):
         self.treesSpinBox.setObjectName(u"treesSpinBox")
         self.treesSpinBox.setMinimum(1)
         self.treesSpinBox.setMaximum(1000)
-        self.treesSpinBox.setValue(100)
+        self.treesSpinBox.setValue(300)
 
         self.horizontalLayout_Trees.addWidget(self.treesSpinBox)
 
@@ -383,8 +388,8 @@ class Ui_TrainTab(object):
 
         self.priorMeanSpinBox = QDoubleSpinBox(self.parametersMenu)
         self.priorMeanSpinBox.setObjectName(u"priorMeanSpinBox")
-        self.priorMeanSpinBox.setMinimum(0.000000000000000)
-        self.priorMeanSpinBox.setMaximum(0.000000000000000)
+        self.priorMeanSpinBox.setMinimum(-10.000000000000000)
+        self.priorMeanSpinBox.setMaximum(10.000000000000000)
         self.priorMeanSpinBox.setValue(0.000000000000000)
 
         self.horizontalLayout_PriorMean.addWidget(self.priorMeanSpinBox)
@@ -403,8 +408,8 @@ class Ui_TrainTab(object):
         self.priorVarianceSpinBox = QDoubleSpinBox(self.parametersMenu)
         self.priorVarianceSpinBox.setObjectName(u"priorVarianceSpinBox")
         self.priorVarianceSpinBox.setMinimum(0.000000000000000)
-        self.priorVarianceSpinBox.setMaximum(0.000000000000000)
-        self.priorVarianceSpinBox.setValue(0.000000000000000)
+        self.priorVarianceSpinBox.setMaximum(10.000000000000000)
+        self.priorVarianceSpinBox.setValue(1.000000000000000)
 
         self.horizontalLayout_PriorVariance.addWidget(self.priorVarianceSpinBox)
 
@@ -422,8 +427,9 @@ class Ui_TrainTab(object):
         self.alphaSpinBox = QDoubleSpinBox(self.parametersMenu)
         self.alphaSpinBox.setObjectName(u"alphaSpinBox")
         self.alphaSpinBox.setMinimum(0.000000000000000)
-        self.alphaSpinBox.setMaximum(0.000000000000000)
-        self.alphaSpinBox.setValue(0.000000000000000)
+        self.alphaSpinBox.setMaximum(1.000000000000000)
+        self.alphaSpinBox.setSingleStep(0.050000000000000)
+        self.alphaSpinBox.setValue(0.950000000000000)
 
         self.horizontalLayout_Alpha.addWidget(self.alphaSpinBox)
 
@@ -460,8 +466,8 @@ class Ui_TrainTab(object):
         self.treeDepthSpinBox = QSpinBox(self.parametersMenu)
         self.treeDepthSpinBox.setObjectName(u"treeDepthSpinBox")
         self.treeDepthSpinBox.setMinimum(1)
-        self.treeDepthSpinBox.setMaximum(10)
-        self.treeDepthSpinBox.setValue(3)
+        self.treeDepthSpinBox.setMaximum(20)
+        self.treeDepthSpinBox.setValue(10)
 
         self.horizontalLayout_Depth.addWidget(self.treeDepthSpinBox)
 
@@ -517,22 +523,60 @@ class Ui_TrainTab(object):
         self.credibleIntervalComboBox.setItemText(1, QCoreApplication.translate("TrainTab", u"99%", None))
 
         self.trainButton.setText(QCoreApplication.translate("TrainTab", u"Train", None))
-        self.pushButton.setText(QCoreApplication.translate("TrainTab", u"Predict", None))
         self.exportButton.setText(QCoreApplication.translate("TrainTab", u"Export", None))
+        self.plotButton.setText(QCoreApplication.translate("TrainTab", u"Plot", None))
+        self.pushButton.setText(QCoreApplication.translate("TrainTab", u"Predict", None))
         self.codeGenPushButton.setText(QCoreApplication.translate("TrainTab", u"Code", None))
         self.parametersPushButton.setText(QCoreApplication.translate("TrainTab", u"Hyperparameters", None))
         self.trainResetButton.setText(QCoreApplication.translate("TrainTab", u"Reset", None))
         self.no_dataset_label.setText(QCoreApplication.translate("TrainTab", u"Please select a dataset from the \"Load\" tab", None))
-        self.treesLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Trees (M)", None))
+        self.treesLabel.setText(QCoreApplication.translate("TrainTab", u"Total Number of Trees", None))
+#if QT_CONFIG(tooltip)
+        self.treesSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"For BART: Total number of trees in single forest\n"
+"            For BCF: Total trees split between prognostic forest (250 trees) and treatment effect forest (50 trees)", None))
+#endif // QT_CONFIG(tooltip)
         self.burnInLabel.setText(QCoreApplication.translate("TrainTab", u"Burn-in Iterations", None))
+#if QT_CONFIG(tooltip)
+        self.burnInSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Number of initial MCMC iterations to discard", None))
+#endif // QT_CONFIG(tooltip)
         self.drawsLabel.setText(QCoreApplication.translate("TrainTab", u"Number of Draws", None))
+#if QT_CONFIG(tooltip)
+        self.drawsSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Number of MCMC iterations to retain after burn-in", None))
+#endif // QT_CONFIG(tooltip)
         self.thinningLabel.setText(QCoreApplication.translate("TrainTab", u"Thinning", None))
+#if QT_CONFIG(tooltip)
+        self.thinningSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Keep every nth MCMC draw (reduces autocorrelation)", None))
+#endif // QT_CONFIG(tooltip)
         self.priorMeanLabel.setText(QCoreApplication.translate("TrainTab", u"Prior Mean of Leaf Parameters", None))
+#if QT_CONFIG(tooltip)
+        self.priorMeanSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Prior mean of the leaf parameters (default: 0)", None))
+#endif // QT_CONFIG(tooltip)
         self.priorVarianceLabel.setText(QCoreApplication.translate("TrainTab", u"Prior Variance of Leaf Parameters", None))
+#if QT_CONFIG(tooltip)
+        self.priorVarianceSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Prior variance of the leaf parameters", None))
+#endif // QT_CONFIG(tooltip)
         self.alphaLabel.setText(QCoreApplication.translate("TrainTab", u"Alpha (\u03b1) for Tree Structure Prior", None))
+#if QT_CONFIG(tooltip)
+        self.alphaSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Prior probability of splitting at depth 0\n"
+"            For BART: Uses 0.95\n"
+"            For BCF: Uses 0.95 for prognostic forest, 0.25 for treatment forest", None))
+#endif // QT_CONFIG(tooltip)
         self.betaLabel.setText(QCoreApplication.translate("TrainTab", u"Beta (\u03b2) for Tree Structure Prior", None))
+#if QT_CONFIG(tooltip)
+        self.betaSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Penalizes tree depth\n"
+"            For BART: Uses 2\n"
+"            For BCF: Uses 2 for prognostic forest, 3 for treatment forest", None))
+#endif // QT_CONFIG(tooltip)
         self.treeDepthLabel.setText(QCoreApplication.translate("TrainTab", u"Tree Depth (D)", None))
+#if QT_CONFIG(tooltip)
+        self.treeDepthSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Maximum depth of any tree in the forest(s)\n"
+"            For BART: Uses 10\n"
+"            For BCF: Uses 10 for prognostic forest, 5 for treatment forest", None))
+#endif // QT_CONFIG(tooltip)
         self.nodeSizeLabel.setText(QCoreApplication.translate("TrainTab", u"Minimum Node Size", None))
+#if QT_CONFIG(tooltip)
+        self.nodeSizeSpinBox.setToolTip(QCoreApplication.translate("TrainTab", u"Minimum number of observations required in each leaf node", None))
+#endif // QT_CONFIG(tooltip)
         pass
     # retranslateUi
 
