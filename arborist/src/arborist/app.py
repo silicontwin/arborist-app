@@ -373,14 +373,14 @@ class ModelTrainer:
         """
         Train the model based on the selected type (BART or BCF) using the prepared features.
 
-        For BART, it calls sample with X and the standardized outcome.
-        For BCF, it additionally estimates propensity scores and requires a treatment variable.
+        For BCF, the total number of trees is split between prognostic (mu) and treatment effect (tau) forests
+        in a 5:1 ratio following the paper recommendations.
         """
         try:
             if model_name == "BART":
                 self.model = BARTModel()
                 mean_forest_params = {
-                    "num_trees": num_trees,
+                    "num_trees": num_trees,  # Use full number of trees for BART
                 }
 
                 self.model.sample(
@@ -396,26 +396,45 @@ class ModelTrainer:
                     raise ValueError(
                         "Treatment variable must be specified for BCF model."
                     )
+
                 Z_train = self.Z.astype(np.float64)
                 Z_test = Z_train
+
                 from sklearn.linear_model import LogisticRegression
 
                 propensity_model = LogisticRegression()
                 propensity_model.fit(self.X, Z_train)
                 pi_train = propensity_model.predict_proba(self.X)[:, 1]
                 pi_test = pi_train
-                self.pi_train = pi_train
-                self.pi_test = pi_test
+
                 self.model = BCFModel()
-                params = {
-                    "num_trees_mu": num_trees,
-                    "num_trees_tau": max(int(num_trees / 4), 10),
+
+                # Split total trees between prognostic and treatment forests
+                # Following 5:1 ratio from the BCF documentation
+                mu_trees = int(5 * num_trees / 6)  # 5/6 of trees for prognostic
+                tau_trees = num_trees - mu_trees  # 1/6 of trees for treatment
+
+                # Set up forest parameters for BCF
+                mu_forest_params = {
+                    "num_trees": mu_trees,  # Prognostic forest (larger)
+                    "alpha": 0.95,
+                    "beta": 2,
+                }
+
+                tau_forest_params = {
+                    "num_trees": tau_trees,  # Treatment forest (smaller)
+                    "alpha": 0.25,
+                    "beta": 3,
+                }
+
+                general_params = {
                     "num_burnin": burn_in,
                     "num_mcmc": num_draws,
                     "keep_burnin": False,
                     "keep_gfr": False,
                     "random_seed": 42,
                 }
+
                 self.model.sample(
                     X_train=self.X,
                     Z_train=Z_train,
@@ -424,7 +443,9 @@ class ModelTrainer:
                     X_test=self.X,
                     Z_test=Z_test,
                     pi_test=pi_test,
-                    **params,
+                    general_params=general_params,
+                    mu_forest_params=mu_forest_params,
+                    tau_forest_params=tau_forest_params,
                 )
             else:
                 raise ValueError(f"Unsupported model: {model_name}")
@@ -772,6 +793,107 @@ class Arborist(QMainWindow):
                 f"An error occurred while checking for updates:\n{str(e)}",
             )
 
+    def update_hyperparameters_for_model(self) -> None:
+        """
+        Update hyperparameter UI values and visibility based on selected model.
+        Also updates tooltips and shows/hides relevant UI elements.
+        """
+        model_name = self.train_ui.modelComboBox.currentText()
+
+        # Store current values before updating
+        current_trees = self.train_ui.treesSpinBox.value()
+        current_alpha = self.train_ui.alphaSpinBox.value()
+        current_beta = self.train_ui.betaSpinBox.value()
+        current_depth = self.train_ui.treeDepthSpinBox.value()
+
+        # Get references to widgets for visibility toggling
+        prior_mean_label = self.train_ui.priorMeanLabel
+        prior_mean_spin = self.train_ui.priorMeanSpinBox
+        prior_var_label = self.train_ui.priorVarianceLabel
+        prior_var_spin = self.train_ui.priorVarianceSpinBox
+        depth_label = self.train_ui.treeDepthLabel
+        depth_spin = self.train_ui.treeDepthSpinBox
+        node_label = self.train_ui.nodeSizeLabel
+        node_spin = self.train_ui.nodeSizeSpinBox
+
+        if model_name == "BART":
+            # Show/hide relevant UI elements
+            self.train_ui.treatmentFrame.setVisible(False)
+            prior_mean_label.setVisible(False)
+            prior_mean_spin.setVisible(False)
+            prior_var_label.setVisible(False)
+            prior_var_spin.setVisible(False)
+            depth_label.setVisible(False)
+            depth_spin.setVisible(False)
+            node_label.setVisible(True)
+            node_spin.setVisible(True)
+
+            # Set BART default values
+            self.train_ui.treesSpinBox.setValue(200)  # BART default
+            self.train_ui.alphaSpinBox.setValue(0.95)
+            self.train_ui.betaSpinBox.setValue(2)
+            self.train_ui.treeDepthSpinBox.setValue(10)
+            self.train_ui.nodeSizeSpinBox.setValue(5)
+
+            # Update tooltips for BART
+            self.train_ui.treesSpinBox.setToolTip("Total number of trees in the forest")
+            self.train_ui.alphaSpinBox.setToolTip(
+                "Prior probability of splitting at depth 0"
+            )
+            self.train_ui.betaSpinBox.setToolTip("Penalizes tree depth")
+            self.train_ui.nodeSizeSpinBox.setToolTip(
+                "Minimum number of observations required in each leaf node"
+            )
+
+        elif model_name == "BCF":
+            # Show/hide relevant UI elements
+            self.train_ui.treatmentFrame.setVisible(True)
+            prior_mean_label.setVisible(True)
+            prior_mean_spin.setVisible(True)
+            prior_var_label.setVisible(True)
+            prior_var_spin.setVisible(True)
+            depth_label.setVisible(True)
+            depth_spin.setVisible(True)
+            node_label.setVisible(True)
+            node_spin.setVisible(True)
+
+            # Set BCF default values
+            self.train_ui.treesSpinBox.setValue(300)  # BCF default (250 + 50)
+            self.train_ui.alphaSpinBox.setValue(0.95)  # For prognostic forest
+            self.train_ui.betaSpinBox.setValue(2)  # For prognostic forest
+            self.train_ui.treeDepthSpinBox.setValue(10)  # For prognostic forest
+            self.train_ui.nodeSizeSpinBox.setValue(5)
+
+            # Update tooltips for BCF
+            self.train_ui.treesSpinBox.setToolTip(
+                "Total trees split between prognostic forest (5/6) and treatment forest (1/6)"
+            )
+            self.train_ui.alphaSpinBox.setToolTip(
+                "Prior probability of splitting at depth 0\n"
+                "Uses 0.95 for prognostic forest, 0.25 for treatment forest"
+            )
+            self.train_ui.betaSpinBox.setToolTip(
+                "Penalizes tree depth\n"
+                "Uses 2 for prognostic forest, 3 for treatment forest"
+            )
+            self.train_ui.treeDepthSpinBox.setToolTip(
+                "Maximum depth of any tree in the forest(s)\n"
+                "Uses 10 for prognostic forest, 5 for treatment forest"
+            )
+            self.train_ui.nodeSizeSpinBox.setToolTip(
+                "Minimum number of observations required in each leaf node"
+            )
+
+        # If values actually changed, trigger code highlighting
+        if current_trees != self.train_ui.treesSpinBox.value():
+            self.trigger_code_highlight("trees")
+        if current_alpha != self.train_ui.alphaSpinBox.value():
+            self.trigger_code_highlight("alpha")
+        if current_beta != self.train_ui.betaSpinBox.value():
+            self.trigger_code_highlight("beta")
+        if current_depth != self.train_ui.treeDepthSpinBox.value():
+            self.trigger_code_highlight("depth")
+
     def init_ui(self) -> None:
         """
         Initialize the main user interface, including window settings and tab layouts.
@@ -791,40 +913,16 @@ class Arborist(QMainWindow):
         self.tabs.addTab(self.load_tab, "Load")
         self.tabs.addTab(self.train_tab, "Train")
         self.tabs.addTab(self.predict_tab, "Predict")
+
         # Hide the actual tab bar to remove the visible tabs.
         self.tabs.tabBar().hide()
 
-        self.tabs.setTabEnabled(1, False)  # Disable Train tab initially.
-        self.tabs.setTabEnabled(2, False)  # Disable Predict tab initially.
+        # Disable Train and Predict tabs initially
+        self.tabs.setTabEnabled(1, False)
+        self.tabs.setTabEnabled(2, False)
 
-        # Connect both tab changes and model changes to visibility check
-        self.tabs.currentChanged.connect(self.check_model_frame_visibility)
-        self.train_ui.modelComboBox.currentTextChanged.connect(
-            self.check_model_frame_visibility
-        )
-
-        self.tabs.currentChanged.connect(self.check_model_frame_visibility)
-        self.train_ui.modelComboBox.currentIndexChanged.connect(
-            lambda _: self.trigger_code_highlight("model")
-        )
-        self.train_ui.treesSpinBox.valueChanged.connect(
-            lambda _: self.trigger_code_highlight("trees")
-        )
-        self.train_ui.burnInSpinBox.valueChanged.connect(
-            lambda _: self.trigger_code_highlight("burn_in")
-        )
-        self.train_ui.drawsSpinBox.valueChanged.connect(
-            lambda _: self.trigger_code_highlight("draws")
-        )
-        self.train_ui.thinningSpinBox.valueChanged.connect(
-            lambda _: self.trigger_code_highlight("thinning")
-        )
-        self.train_ui.outcomeComboBox.currentIndexChanged.connect(
-            lambda _: self.trigger_code_highlight("outcome")
-        )
-        self.train_ui.treatmentComboBox.currentIndexChanged.connect(
-            lambda _: self.trigger_code_highlight("treatment")
-        )
+        # Connect all signal handlers
+        self.connect_ui_signals()
 
         # Container widget to hold our custom title bar and the tabs.
         container = QWidget()
@@ -836,6 +934,64 @@ class Arborist(QMainWindow):
         layout.addWidget(self.titleBar)
         layout.addWidget(self.tabs)
         self.setCentralWidget(container)
+
+    def connect_ui_signals(self) -> None:
+        """
+        Connect all UI signals to their handlers.
+        """
+        # Model selection and visibility
+        self.tabs.currentChanged.connect(self.check_model_frame_visibility)
+        self.train_ui.modelComboBox.currentTextChanged.connect(
+            self.check_model_frame_visibility
+        )
+        self.train_ui.modelComboBox.currentTextChanged.connect(
+            self.update_hyperparameters_for_model
+        )
+
+        # Code highlighting for model changes
+        self.train_ui.modelComboBox.currentIndexChanged.connect(
+            lambda _: self.trigger_code_highlight("model")
+        )
+
+        # Code highlighting for hyperparameter changes
+        self.train_ui.treesSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("trees")
+        )
+        self.train_ui.alphaSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("alpha")
+        )
+        self.train_ui.betaSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("beta")
+        )
+        self.train_ui.treeDepthSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("depth")
+        )
+        self.train_ui.burnInSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("burn_in")
+        )
+        self.train_ui.drawsSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("draws")
+        )
+        self.train_ui.thinningSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("thinning")
+        )
+        self.train_ui.priorMeanSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("prior_mean")
+        )
+        self.train_ui.priorVarianceSpinBox.valueChanged.connect(
+            lambda _: self.trigger_code_highlight("prior_variance")
+        )
+
+        # Variable selection highlighting
+        self.train_ui.outcomeComboBox.currentIndexChanged.connect(
+            lambda _: self.trigger_code_highlight("outcome")
+        )
+        self.train_ui.treatmentComboBox.currentIndexChanged.connect(
+            lambda _: self.trigger_code_highlight("treatment")
+        )
+
+        # Run initial hyperparameter update to set correct initial state
+        self.update_hyperparameters_for_model()
 
     def trigger_code_highlight(self, field: str) -> None:
         """
