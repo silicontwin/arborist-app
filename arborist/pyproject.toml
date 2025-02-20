@@ -21,6 +21,7 @@ test_sources = [
 
 requires = [
     # "PySide6-Addons~=6.7",
+    "matplotlib>=3.7",
     "numpy",
     "pandas",
     "pyarrow",

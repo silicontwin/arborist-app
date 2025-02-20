@@ -8,4 +8,5 @@ scikit-learn
 scipy
 requests
 urllib3<2.0
+matplotlib
 git+https://github.com/StochasticTree/stochtree.git@59d7786dce81bdffa0859789f04ebc6b04328371
