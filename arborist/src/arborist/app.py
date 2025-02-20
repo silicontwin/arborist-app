@@ -3,6 +3,9 @@ The cross-platform app for efficiently performing Bayesian causal inference and 
 using tree-based models, including BCF, BART, and XBART.
 """
 
+import matplotlib
+
+matplotlib.use("QtAgg")
 import sys
 import os
 import time
@@ -19,6 +22,7 @@ from PySide6.QtWidgets import (
     QApplication,
     QMainWindow,
     QFileSystemModel,
+    QFrame,
     QLabel,
     QTabWidget,
     QWidget,
@@ -29,6 +33,7 @@ from PySide6.QtWidgets import (
     QToolButton,
     QHBoxLayout,
     QVBoxLayout,
+    QPushButton,
 )
 from PySide6.QtCore import (
     Qt,
@@ -42,6 +47,9 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtGui import QColor, QAction
+
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
 
 from arborist.layouts.load import Ui_LoadTab
 from arborist.layouts.train import Ui_TrainTab
@@ -913,13 +921,16 @@ class Arborist(QMainWindow):
         self.tabs.addTab(self.load_tab, "Load")
         self.tabs.addTab(self.train_tab, "Train")
         self.tabs.addTab(self.predict_tab, "Predict")
+        self.load_plot_tab_ui()
+        self.tabs.addTab(self.plot_tab, "Plot")
 
         # Hide the actual tab bar to remove the visible tabs.
         self.tabs.tabBar().hide()
 
-        # Disable Train and Predict tabs initially
+        # Disable Train, Predict, and Plot tabs initially
         self.tabs.setTabEnabled(1, False)
         self.tabs.setTabEnabled(2, False)
+        self.tabs.setTabEnabled(3, False)
 
         # Connect all signal handlers
         self.connect_ui_signals()
@@ -1115,12 +1126,11 @@ class Arborist(QMainWindow):
         self.train_ui.trainResetButton.clicked.connect(self.reset_train_tab)
         self.train_ui.exportButton.setVisible(False)
         self.train_ui.exportButton.clicked.connect(self.export_data)
-        self.train_ui.pushButton.clicked.connect(
-            lambda: (
-                self.tabs.setCurrentIndex(2),
-                self.predict_ui.predictButton.setVisible(True),
-            )
-        )
+        self.train_ui.pushButton.setText("Predict")
+        self.train_ui.pushButton.clicked.connect(lambda: self.tabs.setCurrentIndex(2))
+        self.train_ui.plotButton.setText("Plot")
+        self.train_ui.plotButton.clicked.connect(lambda: self.tabs.setCurrentIndex(3))
+
         self.no_dataset_label = self.train_ui.no_dataset_label
         self.analytics_viewer = self.train_ui.analytics_viewer
         self.outcome_combo = self.train_ui.outcomeComboBox
@@ -1131,6 +1141,7 @@ class Arborist(QMainWindow):
         self.analytics_viewer.setVisible(False)
         self.outcome_combo.currentIndexChanged.connect(self.highlight_selected_column)
         self.train_ui.pushButton.setVisible(False)
+        self.train_ui.plotButton.setVisible(False)
 
     def reset_train_tab(self) -> None:
         """
@@ -1500,6 +1511,12 @@ class Arborist(QMainWindow):
         self.predict_ui.resetButton.clicked.connect(self.reset_predict_tab)
         # self.predict_ui.predictButton.setVisible(False)
 
+    def load_plot_tab_ui(self) -> None:
+        """
+        Load and set up the Plot tab UI using the custom PlotTab class.
+        """
+        self.plot_tab = PlotTab()
+
     def reset_predict_tab(self) -> None:
         """
         Reset the Predict tab by clearing any loaded prediction data and switching back to the Load tab.
@@ -1553,6 +1570,14 @@ class Arborist(QMainWindow):
             )
             progress.setValue(90)
             self.display_predictions(predictions, trainer.data_cleaned)
+            try:
+                outcome_var = self.train_ui.outcomeComboBox.currentText()
+                if hasattr(self, "plot_tab") and self.plot_tab is not None:
+                    self.plot_tab.update_plots(
+                        trainer.data_cleaned, predictions, outcome_var
+                    )
+            except Exception as e:
+                print("Error updating plots in prediction:", e)
             progress.setValue(100)
             self.statusBar.showMessage("Predictions generated successfully")
         except Exception as e:
@@ -1786,9 +1811,9 @@ class Arborist(QMainWindow):
 
     def update_tab_states(self) -> None:
         """
-        Update the enabled/disabled state of the Train and Predict tabs.
+        Update the enabled/disabled state of the Train, Predict, and Plot tabs.
         The Train tab should only be enabled after explicitly opening a dataset
-        via the Open Dataset button, while the Predict tab requires a trained model.
+        via the Open Dataset button, while the Predict and Plot tabs require a trained model.
         """
         # Train tab enabled only after using "Open Dataset" button
         self.tabs.setTabEnabled(1, self.dataset_opened)
@@ -1796,6 +1821,8 @@ class Arborist(QMainWindow):
         # Predict tab enabled only after successful model training
         predict_tab_enabled = self.trained_model is not None
         self.tabs.setTabEnabled(2, predict_tab_enabled)
+        # Plot tab enabled only after successful model training
+        self.tabs.setTabEnabled(3, predict_tab_enabled)
 
     def load_csv_file(self, file_path: str, table_view) -> None:
         """
@@ -2026,36 +2053,34 @@ class Arborist(QMainWindow):
         This method updates the status bar with cleaning statistics, stores the trained model,
         and displays predictions in the analytics viewer.
         """
-        # Stop the timer
-        if hasattr(self, "training_timer"):
-            self.training_timer.stop()
-
-        # Close the progress dialog
-        if hasattr(self, "progress_dialog") and self.progress_dialog:
-            self.progress_dialog.close()
-
-        # Calculate total training time
-        total_time = time.time() - self.training_start_time
-
-        # Update status with final message
-        self.statusBar.showMessage(
-            f"Model training finished in {total_time:.2f} seconds. "
-            f"Data cleaning: removed {self.trainer.observations_removed} rows; "
-            f"cleaned data: {self.trainer.cleaned_row_count} rows out of {self.trainer.original_row_count}."
-        )
-
-        self.trained_model = model
-        self.update_tab_states()
-        self.train_ui.pushButton.setVisible(True)
-        # self.predict_ui.predictButton.setVisible(True)
-
         try:
-            # Update the display with predictions
+            # Stop the timer and close progress dialog
+            if hasattr(self, "training_timer"):
+                self.training_timer.stop()
+            if hasattr(self, "progress_dialog") and self.progress_dialog:
+                self.progress_dialog.close()
+
+            # Calculate total training time and update status
+            total_time = time.time() - self.training_start_time
+            self.statusBar.showMessage(
+                f"Model training finished in {total_time:.2f} seconds. "
+                f"Data cleaning: removed {self.trainer.observations_removed} rows; "
+                f"cleaned data: {self.trainer.cleaned_row_count} rows out of {self.trainer.original_row_count}."
+            )
+
+            # Store the trained model and update UI state
+            self.trained_model = model
+            self.update_tab_states()
+            self.train_ui.pushButton.setVisible(True)
+            self.train_ui.plotButton.setVisible(True)
+
+            # Display predictions in analytics viewer
             df = self.trainer.data_cleaned
             outcome_var = self.train_ui.outcomeComboBox.currentText()
 
             # Create a copy of the dataframe without the outcome variable
             df_without_outcome = df.drop(columns=[outcome_var])
+
             # Recompute the lower and upper percentiles based on the trainer's credible_interval
             ci = (
                 self.trainer.credible_interval
@@ -2066,6 +2091,7 @@ class Arborist(QMainWindow):
             upper = 100 - lower
             lower_key_out = f"{lower:.1f}th Percentile (Outcome Effect)"
             upper_key_out = f"{upper:.1f}th Percentile (Outcome Effect)"
+
             if isinstance(model, BCFModel):
                 lower_key_tr = f"{lower:.1f}th Percentile (Treatment Effect)"
                 upper_key_tr = f"{upper:.1f}th Percentile (Treatment Effect)"
@@ -2141,9 +2167,24 @@ class Arborist(QMainWindow):
             self.highlight_selected_column()
             self.train_ui.exportButton.setVisible(True)
 
+            # Update the Plot tab with the predictions, but don't switch to it
+            try:
+                if hasattr(self, "plot_tab") and self.plot_tab is not None:
+                    self.plot_tab.update_plots(
+                        self.trainer.data_cleaned, predictions, outcome_var
+                    )
+            except Exception as e:
+                print(f"Error updating plots: {str(e)}")
+                print("Traceback:", traceback.format_exc())
+
         except Exception as e:
-            print(f"Error updating predictions: {e}")
+            print(f"Error in handle_training_finished: {str(e)}")
             print("Traceback:", traceback.format_exc())
+            self.statusBar.showMessage("Error updating display after training")
+
+        finally:
+            # Re-enable the train button regardless of outcome
+            self.train_button.setEnabled(True)
 
     @Slot(str)
     def handle_training_error(self, error_message: str) -> None:
@@ -2261,6 +2302,244 @@ class Arborist(QMainWindow):
         else:
             settings = QSettings("UT Austin", "Arborist")
             settings.setValue("load/rememberDir", "false")
+
+
+class PlotTab(QWidget):
+    def __init__(self, parent=None):
+        """
+        Initialize the PlotTab by creating the UI programmatically
+        """
+        super().__init__(parent)
+
+        self.canvas1 = None
+        self.canvas2 = None
+        self.canvas3 = None
+        self.fig1 = None
+        self.fig2 = None
+        self.fig3 = None
+
+        # Create main layout
+        main_layout = QVBoxLayout(self)
+        plot_layout = QHBoxLayout()
+
+        # Create the three plot columns
+        for i in range(3):
+            # Create vertical layout for each column
+            column_layout = QVBoxLayout()
+
+            # Create plot frame
+            plot_frame = QFrame()
+            plot_frame.setFrameShape(QFrame.Shape.Box)
+            plot_frame.setFrameShadow(QFrame.Shadow.Raised)
+            plot_frame.setMinimumSize(200, 200)
+            setattr(self, f"plotFrame{i+1}", plot_frame)
+
+            # Create copy button
+            copy_button = QPushButton("Copy Code")
+            setattr(self, f"copyCodeButton{i+1}", copy_button)
+
+            # Add widgets to column layout
+            column_layout.addWidget(plot_frame)
+            column_layout.addWidget(copy_button)
+
+            # Add column to plot layout
+            plot_layout.addLayout(column_layout)
+
+        # Add plot layout to main layout
+        main_layout.addLayout(plot_layout)
+
+        # Initialize matplotlib components
+        self.setup_matplotlib()
+
+        # Code strings for each plot
+        self.code_plot1 = ""
+        self.code_plot2 = ""
+        self.code_plot3 = ""
+
+        # Connect copy buttons to their handlers
+        self.copyCodeButton1.clicked.connect(lambda: self.copy_code(self.code_plot1))
+        self.copyCodeButton2.clicked.connect(lambda: self.copy_code(self.code_plot2))
+        self.copyCodeButton3.clicked.connect(lambda: self.copy_code(self.code_plot3))
+
+    def setup_matplotlib(self):
+        """Set up matplotlib figures and canvases"""
+        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+        from matplotlib.figure import Figure
+
+        self.fig1 = Figure(figsize=(4, 3))
+        self.canvas1 = FigureCanvas(self.fig1)
+        self.fig2 = Figure(figsize=(4, 3))
+        self.canvas2 = FigureCanvas(self.fig2)
+        self.fig3 = Figure(figsize=(4, 3))
+        self.canvas3 = FigureCanvas(self.fig3)
+
+        # Set up layouts in each plot frame and add the canvas
+        self._add_canvas_to_frame(self.plotFrame1, self.canvas1)
+        self._add_canvas_to_frame(self.plotFrame2, self.canvas2)
+        self._add_canvas_to_frame(self.plotFrame3, self.canvas3)
+
+    def _add_canvas_to_frame(self, frame, canvas):
+        """Helper method to add a matplotlib canvas to a QFrame"""
+        layout = QVBoxLayout(frame)
+        layout.setContentsMargins(0, 0, 0, 0)
+        layout.addWidget(canvas)
+        frame.setLayout(layout)
+
+    def copy_code(self, code):
+        """Copy the provided code string to the clipboard"""
+        clipboard = QApplication.clipboard()
+        clipboard.setText(code)
+        QMessageBox.information(
+            self, "Copy Code", "Plot generation code has been copied to the clipboard."
+        )
+
+    def update_plots(self, df, predictions, outcome_col):
+        """Update the three plots based on the predictions and actual outcome data"""
+        import numpy as np
+
+        # Plot 1: Predicted vs. Actual Outcomes
+        self.fig1.clf()
+        ax1 = self.fig1.add_subplot(111)
+        actual = df[outcome_col].to_numpy()
+        predicted = predictions.get("Posterior Mean (Outcome Effect)")
+        if predicted is None:
+            ax1.text(0.5, 0.5, "No Outcome Predictions", ha="center", va="center")
+        else:
+            ax1.scatter(actual, predicted, alpha=0.7, label="Data points")
+            min_val = min(np.min(actual), np.min(predicted))
+            max_val = max(np.max(actual), np.max(predicted))
+            ax1.plot([min_val, max_val], [min_val, max_val], "r--", label="Ideal fit")
+            ax1.set_xlabel("Actual Outcome")
+            ax1.set_ylabel("Predicted Outcome")
+            ax1.set_title("Predicted vs. Actual Outcomes")
+            ax1.legend()
+
+        self.canvas1.draw()
+
+        # Plot 2: Outcome Predictions with Credible Intervals
+        self.fig2.clf()
+        ax2 = self.fig2.add_subplot(111)
+        if predicted is None:
+            ax2.text(0.5, 0.5, "No Outcome Predictions", ha="center", va="center")
+        else:
+            lower = predictions.get("2.5th Percentile (Outcome Effect)")
+            upper = predictions.get("97.5th Percentile (Outcome Effect)")
+            if lower is None or upper is None:
+                ax2.text(
+                    0.5, 0.5, "No Credible Interval Data", ha="center", va="center"
+                )
+            else:
+                err_lower = predicted - lower
+                err_upper = upper - predicted
+                errors = [err_lower, err_upper]
+                x_values = np.arange(len(predicted))
+                ax2.errorbar(
+                    x_values, predicted, yerr=errors, fmt="o", ecolor="gray", capsize=3
+                )
+                ax2.set_xlabel("Observation Index")
+                ax2.set_ylabel("Predicted Outcome")
+                ax2.set_title("Outcome Predictions with Credible Intervals")
+
+        self.canvas2.draw()
+
+        # Plot 3: Distribution Histogram
+        self.fig3.clf()
+        ax3 = self.fig3.add_subplot(111)
+
+        if "Posterior Mean (Treatment Effect)" in predictions:
+            data_hist = predictions["Posterior Mean (Treatment Effect)"]
+            title = "Distribution of Treatment Effects"
+            xlabel = "Treatment Effect"
+        elif predicted is not None:
+            data_hist = predicted
+            title = "Distribution of Outcome Predictions"
+            xlabel = "Predicted Outcome"
+        else:
+            ax3.text(0.5, 0.5, "No Prediction Data", ha="center", va="center")
+            self.canvas3.draw()
+            data_hist = None
+
+        if data_hist is not None:
+            ax3.hist(data_hist, bins=30, alpha=0.7, color="skyblue", edgecolor="black")
+            ax3.set_xlabel(xlabel)
+            ax3.set_ylabel("Frequency")
+            ax3.set_title(title)
+
+        self.canvas3.draw()
+
+        # Save example code for each plot
+        if data_hist is not None:
+            self.code_plot1 = textwrap.dedent(
+                """
+                import matplotlib.pyplot as plt
+                import numpy as np
+                
+                # Create scatter plot
+                plt.figure(figsize=(8, 6))
+                plt.scatter(actual, predicted, alpha=0.7, label='Data points')
+                
+                # Add reference line
+                min_val = min(min(actual), min(predicted))
+                max_val = max(max(actual), max(predicted))
+                plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='Ideal fit')
+                
+                plt.xlabel('Actual Outcome')
+                plt.ylabel('Predicted Outcome')
+                plt.title('Predicted vs. Actual Outcomes')
+                plt.legend()
+                plt.show()
+            """
+            ).strip()
+
+            self.code_plot2 = textwrap.dedent(
+                """
+                import matplotlib.pyplot as plt
+                import numpy as np
+                
+                # Create error bar plot
+                plt.figure(figsize=(8, 6))
+                x = np.arange(len(predicted))
+                errors = [predicted - lower, upper - predicted]
+                plt.errorbar(x, predicted, yerr=errors, fmt='o', ecolor='gray', capsize=3)
+                
+                plt.xlabel('Observation Index')
+                plt.ylabel('Predicted Outcome')
+                plt.title('Outcome Predictions with Credible Intervals')
+                plt.show()
+            """
+            ).strip()
+
+            if "Posterior Mean (Treatment Effect)" in predictions:
+                self.code_plot3 = textwrap.dedent(
+                    """
+                    import matplotlib.pyplot as plt
+                    
+                    # Create histogram of treatment effects
+                    plt.figure(figsize=(8, 6))
+                    plt.hist(predictions['Posterior Mean (Treatment Effect)'], 
+                            bins=30, alpha=0.7, color='skyblue', edgecolor='black')
+                    
+                    plt.xlabel('Treatment Effect')
+                    plt.ylabel('Frequency')
+                    plt.title('Distribution of Treatment Effects')
+                    plt.show()
+                """
+                ).strip()
+            else:
+                self.code_plot3 = textwrap.dedent(
+                    """
+                    import matplotlib.pyplot as plt
+                    
+                    # Create histogram of predictions
+                    plt.figure(figsize=(8, 6))
+                    plt.hist(predicted, bins=30, alpha=0.7, color='skyblue', edgecolor='black')
+                    
+                    plt.xlabel('Predicted Outcome')
+                    plt.ylabel('Frequency')
+                    plt.title('Distribution of Outcome Predictions')
+                    plt.show()
+                """
+                ).strip()
 
 
 def main() -> None:
