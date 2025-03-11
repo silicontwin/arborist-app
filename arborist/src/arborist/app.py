@@ -2311,9 +2311,17 @@ class PlotTab(QWidget):
         """
         super().__init__(parent)
 
-        self.grid_layout = QGridLayout(self)
+        self.main_layout = QVBoxLayout(self)
+        self.back_button = QPushButton("Back to Train")
+        self.back_button.setMaximumWidth(200)
+        self.back_button.clicked.connect(self.navigate_to_train)
+        button_layout = QHBoxLayout()
+        button_layout.addWidget(self.back_button)
+        button_layout.addStretch()
+        self.main_layout.addLayout(button_layout)
+        self.grid_layout = QGridLayout()
         self.grid_layout.setSpacing(10)
-
+        self.main_layout.addLayout(self.grid_layout)
         self.plot_frames = {}
         self.copy_buttons = {}
         for i in range(6):
@@ -2328,6 +2336,7 @@ class PlotTab(QWidget):
             col_layout.setSpacing(5)
             col_layout.addWidget(frame)
             col_layout.addWidget(copy_button)
+
             row = 0 if i < 3 else 1
             col = i if i < 3 else i - 3
             self.grid_layout.addLayout(col_layout, row, col)
@@ -2348,6 +2357,19 @@ class PlotTab(QWidget):
                     getattr(self, f"code_plot{code_var}")
                 )
             )
+
+    def navigate_to_train(self):
+        """Navigate back to the Train tab"""
+        parent = self.parent()
+        while parent and not isinstance(parent, QTabWidget):
+            parent = parent.parent()
+
+        if parent:
+            parent.setCurrentIndex(1)
+        else:
+            window = QApplication.activeWindow()
+            if hasattr(window, "tabs"):
+                window.tabs.setCurrentIndex(1)
 
     def _add_canvas_to_frame(self, frame, canvas):
         """Helper method to add a matplotlib canvas to a QFrame"""
