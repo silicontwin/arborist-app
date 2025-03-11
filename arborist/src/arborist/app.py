@@ -1,5 +1,5 @@
 """
-The cross-platform app for efficiently performing Bayesian causal inference and supervised learning tasks 
+The cross-platform app for efficiently performing Bayesian causal inference and supervised learning tasks
 using tree-based models, including BCF, BART, and XBART.
 """
 
@@ -34,6 +34,7 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QPushButton,
+    QGridLayout,
 )
 from PySide6.QtCore import (
     Qt,
@@ -47,10 +48,9 @@ from PySide6.QtCore import (
     QTimer,
 )
 from PySide6.QtGui import QColor, QAction
-
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
-
+from scipy import stats
 from arborist.layouts.load import Ui_LoadTab
 from arborist.layouts.train import Ui_TrainTab
 from arborist.layouts.predict import Ui_PredictTab
@@ -2307,76 +2307,47 @@ class Arborist(QMainWindow):
 class PlotTab(QWidget):
     def __init__(self, parent=None):
         """
-        Initialize the PlotTab by creating the UI programmatically
+        Initialize the PlotTab with six plots specifically designed for BART/BCF analysis.
         """
         super().__init__(parent)
 
-        self.canvas1 = None
-        self.canvas2 = None
-        self.canvas3 = None
-        self.fig1 = None
-        self.fig2 = None
-        self.fig3 = None
+        self.grid_layout = QGridLayout(self)
+        self.grid_layout.setSpacing(10)
 
-        # Create main layout
-        main_layout = QVBoxLayout(self)
-        plot_layout = QHBoxLayout()
-
-        # Create the three plot columns
-        for i in range(3):
-            # Create vertical layout for each column
-            column_layout = QVBoxLayout()
-
-            # Create plot frame
-            plot_frame = QFrame()
-            plot_frame.setFrameShape(QFrame.Shape.Box)
-            plot_frame.setFrameShadow(QFrame.Shadow.Raised)
-            plot_frame.setMinimumSize(200, 200)
-            setattr(self, f"plotFrame{i+1}", plot_frame)
-
-            # Create copy button
+        self.plot_frames = {}
+        self.copy_buttons = {}
+        for i in range(6):
+            frame = QFrame()
+            frame.setFrameShape(QFrame.Shape.Box)
+            frame.setFrameShadow(QFrame.Shadow.Raised)
+            frame.setMinimumSize(200, 200)
+            self.plot_frames[i + 1] = frame
             copy_button = QPushButton("Copy Code")
-            setattr(self, f"copyCodeButton{i+1}", copy_button)
+            self.copy_buttons[i + 1] = copy_button
+            col_layout = QVBoxLayout()
+            col_layout.setSpacing(5)
+            col_layout.addWidget(frame)
+            col_layout.addWidget(copy_button)
+            row = 0 if i < 3 else 1
+            col = i if i < 3 else i - 3
+            self.grid_layout.addLayout(col_layout, row, col)
 
-            # Add widgets to column layout
-            column_layout.addWidget(plot_frame)
-            column_layout.addWidget(copy_button)
-
-            # Add column to plot layout
-            plot_layout.addLayout(column_layout)
-
-        # Add plot layout to main layout
-        main_layout.addLayout(plot_layout)
-
-        # Initialize matplotlib components
-        self.setup_matplotlib()
-
-        # Code strings for each plot
-        self.code_plot1 = ""
-        self.code_plot2 = ""
-        self.code_plot3 = ""
+        self.figures = {}
+        self.canvases = {}
+        for i in range(6):
+            fig = Figure(figsize=(4, 3))
+            canvas = FigureCanvas(fig)
+            self.figures[i + 1] = fig
+            self.canvases[i + 1] = canvas
+            self._add_canvas_to_frame(self.plot_frames[i + 1], canvas)
 
         # Connect copy buttons to their handlers
-        self.copyCodeButton1.clicked.connect(lambda: self.copy_code(self.code_plot1))
-        self.copyCodeButton2.clicked.connect(lambda: self.copy_code(self.code_plot2))
-        self.copyCodeButton3.clicked.connect(lambda: self.copy_code(self.code_plot3))
-
-    def setup_matplotlib(self):
-        """Set up matplotlib figures and canvases"""
-        from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-        from matplotlib.figure import Figure
-
-        self.fig1 = Figure(figsize=(4, 3))
-        self.canvas1 = FigureCanvas(self.fig1)
-        self.fig2 = Figure(figsize=(4, 3))
-        self.canvas2 = FigureCanvas(self.fig2)
-        self.fig3 = Figure(figsize=(4, 3))
-        self.canvas3 = FigureCanvas(self.fig3)
-
-        # Set up layouts in each plot frame and add the canvas
-        self._add_canvas_to_frame(self.plotFrame1, self.canvas1)
-        self._add_canvas_to_frame(self.plotFrame2, self.canvas2)
-        self._add_canvas_to_frame(self.plotFrame3, self.canvas3)
+        for i in range(6):
+            self.copy_buttons[i + 1].clicked.connect(
+                lambda _, code_var=i + 1: self.copy_code(
+                    getattr(self, f"code_plot{code_var}")
+                )
+            )
 
     def _add_canvas_to_frame(self, frame, canvas):
         """Helper method to add a matplotlib canvas to a QFrame"""
@@ -2394,152 +2365,472 @@ class PlotTab(QWidget):
         )
 
     def update_plots(self, df, predictions, outcome_col):
-        """Update the three plots based on the predictions and actual outcome data"""
-        import numpy as np
+        """
+        Update all six plots with BART/BCF specific visualizations
+        """
+        is_bcf = "Posterior Mean (Treatment Effect)" in predictions
 
-        # Plot 1: Predicted vs. Actual Outcomes
-        self.fig1.clf()
-        ax1 = self.fig1.add_subplot(111)
-        actual = df[outcome_col].to_numpy()
-        predicted = predictions.get("Posterior Mean (Outcome Effect)")
-        if predicted is None:
-            ax1.text(0.5, 0.5, "No Outcome Predictions", ha="center", va="center")
+        # Find the actual credible interval boundaries from the keys
+        outcome_keys = [
+            key for key in predictions.keys() if "Percentile (Outcome Effect)" in key
+        ]
+        treatment_keys = [
+            key for key in predictions.keys() if "Percentile (Treatment Effect)" in key
+        ]
+
+        if outcome_keys:
+            lower_bound = min([float(key.split("th")[0]) for key in outcome_keys])
+            upper_bound = max([float(key.split("th")[0]) for key in outcome_keys])
         else:
-            ax1.scatter(actual, predicted, alpha=0.7, label="Data points")
-            min_val = min(np.min(actual), np.min(predicted))
-            max_val = max(np.max(actual), np.max(predicted))
-            ax1.plot([min_val, max_val], [min_val, max_val], "r--", label="Ideal fit")
-            ax1.set_xlabel("Actual Outcome")
-            ax1.set_ylabel("Predicted Outcome")
-            ax1.set_title("Predicted vs. Actual Outcomes")
+            lower_bound, upper_bound = 0.5, 99.5  # Default for 99% CI
+
+        lower_key_out = f"{lower_bound:.1f}th Percentile (Outcome Effect)"
+        upper_key_out = f"{upper_bound:.1f}th Percentile (Outcome Effect)"
+
+        if is_bcf:
+            lower_key_tr = f"{lower_bound:.1f}th Percentile (Treatment Effect)"
+            upper_key_tr = f"{upper_bound:.1f}th Percentile (Treatment Effect)"
+
+        # Plot 1: Treatment Effect Distribution
+        fig1 = self.figures[1]
+        fig1.clf()
+        ax1 = fig1.add_subplot(111)
+
+        if is_bcf:
+            treatment_effects = predictions["Posterior Mean (Treatment Effect)"]
+            ax1.hist(
+                treatment_effects,
+                bins=30,
+                density=True,
+                alpha=0.7,
+                color="skyblue",
+                edgecolor="black",
+            )
+            ax1.set_xlabel("Treatment Effect")
+            ax1.set_ylabel("Density")
+            ax1.set_title("Distribution of Treatment Effects")
+
+            mean_te = np.mean(treatment_effects)
+            lower_te = np.mean(predictions[lower_key_tr])
+            upper_te = np.mean(predictions[upper_key_tr])
+
+            ax1.axvline(
+                mean_te, color="red", linestyle="--", label=f"Mean TE: {mean_te:.2f}"
+            )
+            ax1.axvline(
+                lower_te,
+                color="gray",
+                linestyle=":",
+                label=f"{lower_bound:.1f}th percentile",
+            )
+            ax1.axvline(
+                upper_te,
+                color="gray",
+                linestyle=":",
+                label=f"{upper_bound:.1f}th percentile",
+            )
             ax1.legend()
-
-        self.canvas1.draw()
-
-        # Plot 2: Outcome Predictions with Credible Intervals
-        self.fig2.clf()
-        ax2 = self.fig2.add_subplot(111)
-        if predicted is None:
-            ax2.text(0.5, 0.5, "No Outcome Predictions", ha="center", va="center")
         else:
-            lower = predictions.get("2.5th Percentile (Outcome Effect)")
-            upper = predictions.get("97.5th Percentile (Outcome Effect)")
-            if lower is None or upper is None:
-                ax2.text(
-                    0.5, 0.5, "No Credible Interval Data", ha="center", va="center"
+            outcome_effects = predictions["Posterior Mean (Outcome Effect)"]
+            ax1.hist(
+                outcome_effects,
+                bins=30,
+                density=True,
+                alpha=0.7,
+                color="skyblue",
+                edgecolor="black",
+            )
+            ax1.set_xlabel("Outcome Effect")
+            ax1.set_ylabel("Density")
+            ax1.set_title("Distribution of Outcome Effects")
+
+        self.canvases[1].draw()
+
+        # Plot 2: Treatment Effect Heterogeneity
+        fig2 = self.figures[2]
+        fig2.clf()
+        ax2 = fig2.add_subplot(111)
+
+        if is_bcf:
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+            max_correlation = 0
+            best_covariate = None
+
+            for col in numeric_cols:
+                if col != outcome_col:
+                    corr = abs(
+                        np.corrcoef(
+                            df[col], predictions["Posterior Mean (Treatment Effect)"]
+                        )[0, 1]
+                    )
+                    if corr > max_correlation:
+                        max_correlation = corr
+                        best_covariate = col
+
+            if best_covariate is not None:
+                sorted_idx = np.argsort(df[best_covariate])
+                x_sorted = df[best_covariate].iloc[sorted_idx]
+                te_sorted = predictions["Posterior Mean (Treatment Effect)"][sorted_idx]
+                lower_sorted = predictions[lower_key_tr][sorted_idx]
+                upper_sorted = predictions[upper_key_tr][sorted_idx]
+
+                ax2.scatter(
+                    x_sorted,
+                    te_sorted,
+                    alpha=0.5,
+                    color="blue",
+                    label="Treatment Effect",
                 )
-            else:
-                err_lower = predicted - lower
-                err_upper = upper - predicted
-                errors = [err_lower, err_upper]
-                x_values = np.arange(len(predicted))
-                ax2.errorbar(
-                    x_values, predicted, yerr=errors, fmt="o", ecolor="gray", capsize=3
+                ax2.fill_between(
+                    x_sorted,
+                    lower_sorted,
+                    upper_sorted,
+                    alpha=0.2,
+                    color="blue",
+                    label=f"{upper_bound-lower_bound}% CI",
                 )
-                ax2.set_xlabel("Observation Index")
-                ax2.set_ylabel("Predicted Outcome")
-                ax2.set_title("Outcome Predictions with Credible Intervals")
-
-        self.canvas2.draw()
-
-        # Plot 3: Distribution Histogram
-        self.fig3.clf()
-        ax3 = self.fig3.add_subplot(111)
-
-        if "Posterior Mean (Treatment Effect)" in predictions:
-            data_hist = predictions["Posterior Mean (Treatment Effect)"]
-            title = "Distribution of Treatment Effects"
-            xlabel = "Treatment Effect"
-        elif predicted is not None:
-            data_hist = predicted
-            title = "Distribution of Outcome Predictions"
-            xlabel = "Predicted Outcome"
+                ax2.set_xlabel(best_covariate)
+                ax2.set_ylabel("Treatment Effect")
+                ax2.set_title(f"Treatment Effect Heterogeneity\nby {best_covariate}")
+                ax2.legend()
         else:
-            ax3.text(0.5, 0.5, "No Prediction Data", ha="center", va="center")
-            self.canvas3.draw()
-            data_hist = None
+            ax2.text(
+                0.5,
+                0.5,
+                "Treatment Effect Heterogeneity\n(BCF model only)",
+                ha="center",
+                va="center",
+            )
 
-        if data_hist is not None:
-            ax3.hist(data_hist, bins=30, alpha=0.7, color="skyblue", edgecolor="black")
-            ax3.set_xlabel(xlabel)
-            ax3.set_ylabel("Frequency")
-            ax3.set_title(title)
+        self.canvases[2].draw()
 
-        self.canvas3.draw()
+        # Plot 3: Credible Intervals
+        fig3 = self.figures[3]
+        fig3.clf()
+        ax3 = fig3.add_subplot(111)
 
-        # Save example code for each plot
-        if data_hist is not None:
-            self.code_plot1 = textwrap.dedent(
+        if is_bcf:
+            effect_mean = predictions["Posterior Mean (Treatment Effect)"]
+            effect_lower = predictions[lower_key_tr]
+            effect_upper = predictions[upper_key_tr]
+        else:
+            effect_mean = predictions["Posterior Mean (Outcome Effect)"]
+            effect_lower = predictions[lower_key_out]
+            effect_upper = predictions[upper_key_out]
+
+        sorted_indices = np.argsort(effect_mean)
+        x = np.arange(len(effect_mean))
+
+        ax3.fill_between(
+            x,
+            effect_lower[sorted_indices],
+            effect_upper[sorted_indices],
+            alpha=0.3,
+            color="blue",
+            label=f"{upper_bound-lower_bound}% CI",
+        )
+        ax3.plot(x, effect_mean[sorted_indices], "b-", label="Posterior Mean")
+        ax3.set_xlabel("Sorted Sample Index")
+        ax3.set_ylabel("Effect Size")
+        ax3.set_title("Credible Intervals of Effects")
+        ax3.legend()
+
+        self.canvases[3].draw()
+
+        # Plot 4: Variable Importance
+        fig4 = self.figures[4]
+        fig4.clf()
+        ax4 = fig4.add_subplot(111)
+
+        importance_dict = {}
+        numeric_cols = df.select_dtypes(include=[np.number]).columns
+
+        for col in numeric_cols:
+            if col != outcome_col:
+                if is_bcf:
+                    corr = abs(
+                        np.corrcoef(
+                            df[col], predictions["Posterior Mean (Treatment Effect)"]
+                        )[0, 1]
+                    )
+                else:
+                    corr = abs(
+                        np.corrcoef(
+                            df[col], predictions["Posterior Mean (Outcome Effect)"]
+                        )[0, 1]
+                    )
+                importance_dict[col] = corr
+
+        sorted_importance = dict(
+            sorted(importance_dict.items(), key=lambda x: abs(x[1]), reverse=True)[:10]
+        )
+
+        y_pos = np.arange(len(sorted_importance))
+        ax4.barh(y_pos, list(sorted_importance.values()))
+        ax4.set_yticks(y_pos)
+        ax4.set_yticklabels(list(sorted_importance.keys()))
+        ax4.set_xlabel("Absolute Correlation")
+        ax4.set_title("Variable Importance")
+
+        self.canvases[4].draw()
+
+        # Plot 5: Model Fit Assessment
+        fig5 = self.figures[5]
+        fig5.clf()
+        ax5 = fig5.add_subplot(111)
+
+        actual = df[outcome_col]
+        predicted = predictions["Posterior Mean (Outcome Effect)"]
+
+        ax5.scatter(actual, predicted, alpha=0.5)
+
+        min_val = min(actual.min(), predicted.min())
+        max_val = max(actual.max(), predicted.max())
+        ax5.plot([min_val, max_val], [min_val, max_val], "r--", label="Perfect Fit")
+
+        ax5.set_xlabel("Actual Values")
+        ax5.set_ylabel("Predicted Values")
+        ax5.set_title("Model Fit Assessment")
+        ax5.legend()
+
+        self.canvases[5].draw()
+
+        # Plot 6: Uncertainty Analysis
+        fig6 = self.figures[6]
+        fig6.clf()
+        ax6 = fig6.add_subplot(111)
+
+        if is_bcf:
+            ci_width_treat = predictions[upper_key_tr] - predictions[lower_key_tr]
+            ax6.hist(
+                ci_width_treat,
+                bins=30,
+                alpha=0.7,
+                color="blue",
+                label="Treatment Effect",
+            )
+
+        ci_width_outcome = predictions[upper_key_out] - predictions[lower_key_out]
+        ax6.hist(
+            ci_width_outcome, bins=30, alpha=0.7, color="green", label="Outcome Effect"
+        )
+
+        ax6.set_xlabel("Credible Interval Width")
+        ax6.set_ylabel("Frequency")
+        ax6.set_title(f"Uncertainty Analysis ({upper_bound-lower_bound}% CI)")
+        ax6.legend()
+
+        self.canvases[6].draw()
+
+    def _update_code_strings(self, df, predictions, outcome_col, is_bcf):
+        """Update the code strings for each plot"""
+        self.code_plot1 = self._generate_treatment_effect_dist_code(is_bcf)
+        self.code_plot2 = self._generate_heterogeneity_code(is_bcf)
+        self.code_plot3 = self._generate_credible_intervals_code(is_bcf)
+        self.code_plot4 = self._generate_variable_importance_code(is_bcf)
+        self.code_plot5 = self._generate_model_fit_code()
+        self.code_plot6 = self._generate_uncertainty_analysis_code(is_bcf)
+
+    def _generate_treatment_effect_dist_code(self, is_bcf):
+        """Generate code for treatment effect distribution plot"""
+        if is_bcf:
+            return textwrap.dedent(
                 """
                 import matplotlib.pyplot as plt
                 import numpy as np
+
+                # Plot treatment effect distribution
+                treatment_effects = predictions["Posterior Mean (Treatment Effect)"]
+                plt.figure(figsize=(10, 6))
+                plt.hist(treatment_effects, bins=30, density=True, alpha=0.7,
+                        color='skyblue', edgecolor='black')
+                plt.xlabel("Treatment Effect")
+                plt.ylabel("Density")
+                plt.title("Distribution of Treatment Effects")
                 
-                # Create scatter plot
-                plt.figure(figsize=(8, 6))
-                plt.scatter(actual, predicted, alpha=0.7, label='Data points')
-                
-                # Add reference line
-                min_val = min(min(actual), min(predicted))
-                max_val = max(max(actual), max(predicted))
-                plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='Ideal fit')
-                
-                plt.xlabel('Actual Outcome')
-                plt.ylabel('Predicted Outcome')
-                plt.title('Predicted vs. Actual Outcomes')
+                # Add mean line
+                mean_te = np.mean(treatment_effects)
+                plt.axvline(mean_te, color='red', linestyle='--',
+                          label=f'Mean TE: {mean_te:.2f}')
                 plt.legend()
                 plt.show()
             """
             ).strip()
-
-            self.code_plot2 = textwrap.dedent(
+        else:
+            return textwrap.dedent(
                 """
                 import matplotlib.pyplot as plt
-                import numpy as np
-                
-                # Create error bar plot
-                plt.figure(figsize=(8, 6))
-                x = np.arange(len(predicted))
-                errors = [predicted - lower, upper - predicted]
-                plt.errorbar(x, predicted, yerr=errors, fmt='o', ecolor='gray', capsize=3)
-                
-                plt.xlabel('Observation Index')
-                plt.ylabel('Predicted Outcome')
-                plt.title('Outcome Predictions with Credible Intervals')
+
+                # Plot outcome effect distribution
+                outcome_effects = predictions["Posterior Mean (Outcome Effect)"]
+                plt.figure(figsize=(10, 6))
+                plt.hist(outcome_effects, bins=30, density=True, alpha=0.7,
+                        color='skyblue', edgecolor='black')
+                plt.xlabel("Outcome Effect")
+                plt.ylabel("Density")
+                plt.title("Distribution of Outcome Effects")
                 plt.show()
             """
             ).strip()
 
-            if "Posterior Mean (Treatment Effect)" in predictions:
-                self.code_plot3 = textwrap.dedent(
-                    """
-                    import matplotlib.pyplot as plt
-                    
-                    # Create histogram of treatment effects
-                    plt.figure(figsize=(8, 6))
-                    plt.hist(predictions['Posterior Mean (Treatment Effect)'], 
-                            bins=30, alpha=0.7, color='skyblue', edgecolor='black')
-                    
-                    plt.xlabel('Treatment Effect')
-                    plt.ylabel('Frequency')
-                    plt.title('Distribution of Treatment Effects')
-                    plt.show()
+    def _generate_heterogeneity_code(self, is_bcf):
+        """Generate code for treatment effect heterogeneity plot"""
+        if is_bcf:
+            return textwrap.dedent(
                 """
-                ).strip()
+                import matplotlib.pyplot as plt
+                import numpy as np
+
+                # Find most correlated numeric covariate
+                numeric_cols = df.select_dtypes(include=[np.number]).columns
+                max_correlation = 0
+                best_covariate = None
+                
+                for col in numeric_cols:
+                    if col != outcome_col:
+                        corr = abs(np.corrcoef(df[col], 
+                                 predictions["Posterior Mean (Treatment Effect)"])[0,1])
+                        if corr > max_correlation:
+                            max_correlation = corr
+                            best_covariate = col
+
+                # Plot heterogeneity
+                plt.figure(figsize=(10, 6))
+                plt.scatter(df[best_covariate], 
+                          predictions["Posterior Mean (Treatment Effect)"],
+                          alpha=0.5)
+                plt.xlabel(best_covariate)
+                plt.ylabel("Treatment Effect")
+                plt.title(f"Treatment Effect Heterogeneity by {best_covariate}")
+                plt.show()
+            """
+            ).strip()
+        else:
+            return (
+                "# Treatment Effect Heterogeneity plot is only available for BCF models"
+            )
+
+    def _generate_credible_intervals_code(self, is_bcf):
+        """Generate code for credible intervals plot"""
+        return textwrap.dedent(
+            """
+            import matplotlib.pyplot as plt
+            import numpy as np
+
+            # Get effect values
+            if is_bcf:
+                effect_mean = predictions["Posterior Mean (Treatment Effect)"]
+                effect_lower = predictions["2.5th Percentile (Treatment Effect)"]
+                effect_upper = predictions["97.5th Percentile (Treatment Effect)"]
             else:
-                self.code_plot3 = textwrap.dedent(
-                    """
-                    import matplotlib.pyplot as plt
-                    
-                    # Create histogram of predictions
-                    plt.figure(figsize=(8, 6))
-                    plt.hist(predicted, bins=30, alpha=0.7, color='skyblue', edgecolor='black')
-                    
-                    plt.xlabel('Predicted Outcome')
-                    plt.ylabel('Frequency')
-                    plt.title('Distribution of Outcome Predictions')
-                    plt.show()
-                """
-                ).strip()
+                effect_mean = predictions["Posterior Mean (Outcome Effect)"]
+                effect_lower = predictions["2.5th Percentile (Outcome Effect)"]
+                effect_upper = predictions["97.5th Percentile (Outcome Effect)"]
+
+            # Sort by mean effect
+            sorted_indices = np.argsort(effect_mean)
+            x = np.arange(len(effect_mean))
+
+            plt.figure(figsize=(10, 6))
+            plt.fill_between(x, effect_lower[sorted_indices], effect_upper[sorted_indices],
+                           alpha=0.3, color='blue', label='95% CI')
+            plt.plot(x, effect_mean[sorted_indices], 'b-', label='Posterior Mean')
+            plt.xlabel("Sorted Sample Index")
+            plt.ylabel("Effect Size")
+            plt.title("Credible Intervals of Effects")
+            plt.legend()
+            plt.show()
+        """
+        ).strip()
+
+    def _generate_variable_importance_code(self, is_bcf):
+        """Generate code for variable importance plot"""
+        return textwrap.dedent(
+            """
+            import matplotlib.pyplot as plt
+            import numpy as np
+
+            # Calculate variable importance based on correlations
+            importance_dict = {}
+            numeric_cols = df.select_dtypes(include=[np.number]).columns
+
+            for col in numeric_cols:
+                if col != outcome_col:
+                    if is_bcf:
+                        corr = abs(np.corrcoef(df[col], 
+                                 predictions["Posterior Mean (Treatment Effect)"])[0,1])
+                    else:
+                        corr = abs(np.corrcoef(df[col], 
+                                 predictions["Posterior Mean (Outcome Effect)"])[0,1])
+                    importance_dict[col] = corr
+
+            # Sort and plot top 10 variables
+            sorted_importance = dict(sorted(importance_dict.items(), 
+                                          key=lambda x: abs(x[1]), reverse=True)[:10])
+
+            plt.figure(figsize=(10, 6))
+            y_pos = np.arange(len(sorted_importance))
+            plt.barh(y_pos, list(sorted_importance.values()))
+            plt.yticks(y_pos, list(sorted_importance.keys()))
+            plt.xlabel("Absolute Correlation")
+            plt.title("Variable Importance")
+            plt.show()
+        """
+        ).strip()
+
+    def _generate_model_fit_code(self):
+        """Generate code for model fit assessment plot"""
+        return textwrap.dedent(
+            """
+            import matplotlib.pyplot as plt
+            import numpy as np
+
+            # Plot actual vs predicted
+            actual = df[outcome_col]
+            predicted = predictions["Posterior Mean (Outcome Effect)"]
+
+            plt.figure(figsize=(10, 6))
+            plt.scatter(actual, predicted, alpha=0.5)
+
+            # Add 45-degree line
+            min_val = min(actual.min(), predicted.min())
+            max_val = max(actual.max(), predicted.max())
+            plt.plot([min_val, max_val], [min_val, max_val], 'r--', label='Perfect Fit')
+
+            plt.xlabel("Actual Values")
+            plt.ylabel("Predicted Values")
+            plt.title("Model Fit Assessment")
+            plt.legend()
+            plt.show()
+        """
+        ).strip()
+
+    def _generate_uncertainty_analysis_code(self, is_bcf):
+        """Generate code for uncertainty analysis plot"""
+        return textwrap.dedent(
+            """
+            import matplotlib.pyplot as plt
+
+            plt.figure(figsize=(10, 6))
+
+            if is_bcf:
+                ci_width_treat = (predictions["97.5th Percentile (Treatment Effect)"] - 
+                                predictions["2.5th Percentile (Treatment Effect)"])
+                plt.hist(ci_width_treat, bins=30, alpha=0.7, color='blue', 
+                        label='Treatment Effect')
+
+            ci_width_outcome = (predictions["97.5th Percentile (Outcome Effect)"] - 
+                              predictions["2.5th Percentile (Outcome Effect)"])
+            plt.hist(ci_width_outcome, bins=30, alpha=0.7, color='green', 
+                    label='Outcome Effect')
+
+            plt.xlabel("Credible Interval Width")
+            plt.ylabel("Frequency")
+            plt.title("Uncertainty Analysis")
+            plt.legend()
+            plt.show()
+        """
+        ).strip()
 
 
 def main() -> None:
